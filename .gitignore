@@ -1,0 +1,11 @@
+kiavc
+kiavc-bag
+kiavc-unbag
+kiavc.exe
+kiavc-bag.exe
+kiavc-unbag.exe
+*.d
+*.o
+*.obj
+*.bag
+dll
