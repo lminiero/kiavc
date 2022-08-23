@@ -47,6 +47,8 @@ To launch the engine, just type:
 
 This will have the engine automatically try and look for a `main.lua` script in the `lua` folder, to initialize the actual game. In case no such file is available, the engine will exit with an error.
 
+The `demo` folder contains a demo you can use to test the engine, so follow the instructions there to try it out.
+
 ## Packaging game files
 
 Notice that, by default, the engine expects the files to be available on the disk in subfolders (e.g., `lua` and `assets`). In case you want to package the game files in an archive instead, you can use the `kiavc-bag` tool, which will create a BAG file that you can pass to the engine.
@@ -65,4 +67,4 @@ This will tell the engine to load all files from the archive, rather than from d
 
 ## Documentation
 
-Sadly, no documentation is available at the moment: the README in the `lua` folder contains some information on how to start working on a script, though. Detailed articles on the engine internals (which also includes some examples) are often posted on [this blog](https://kiavc.wordpress.com) as well. Besides, a sample `main.lua` (plus some assets) is available as a reference too, to showcase the engine functionality in a more practical way: it's probably buggy and incomplete (it's all WIP, after all), but it should give a good starting point.
+Sadly, no documentation is available at the moment: the README in the `lua` folder contains some information on how to start working on a script, though. Detailed articles on the engine internals (which also includes some examples) are often posted on [this blog](https://kiavc.wordpress.com) as well. Besides, a sample `main.lua` (plus some assets) is available as a reference in the `demo` folder too too, to showcase the engine functionality in a more practical way: it's probably buggy and incomplete (it's all WIP, after all), but it should give a good starting point.

@@ -1,7 +1,7 @@
 KIAVC scripting
 ===============
 
-The Lua folder is the heart of the KIAVC scripting functionality. In fact, while the engine is written in C, the actual games implemented on top of the engine must be written in Lua instead, where the logic to use the engine functionality will reside. Specifically, you must provide at least one file called `main.lua`, which acts as the entry point for the game. The one in this repo is just an example, not what you HAVE to do.
+The Lua folder is the heart of the KIAVC scripting functionality. In fact, while the engine is written in C, the actual games implemented on top of the engine must be written in Lua instead, where the logic to use the engine functionality will reside. Specifically, you must provide at least one file called `main.lua`, which acts as the entry point for the game. A demo game example is provided in the `demo` folder (you can check the `README.md` there for more information), but notice it's just an example, not what you HAVE to do.
 
 A typical structure for testing the engine is the following:
 
