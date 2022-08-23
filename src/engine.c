@@ -1150,7 +1150,8 @@ int kiavc_engine_render(void) {
 							if(!background_drawn) {
 								background_drawn = true;
 								SDL_SetRenderDrawColor(renderer, engine.dialog->background.r,
-									engine.dialog->background.g, engine.dialog->background.b, SDL_ALPHA_OPAQUE);
+									engine.dialog->background.g, engine.dialog->background.b, engine.dialog->background.a);
+								SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 								SDL_RenderFillRect(renderer, NULL);
 								SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 							}
@@ -1222,7 +1223,8 @@ int kiavc_engine_render(void) {
 			clip.h = (engine.dialog->area.h + 4) * kiavc_screen_scale;
 			SDL_RenderSetViewport(renderer, &clip);
 			SDL_SetRenderDrawColor(renderer, engine.dialog->background.r,
-				engine.dialog->background.g, engine.dialog->background.b, SDL_ALPHA_OPAQUE);
+				engine.dialog->background.g, engine.dialog->background.b, engine.dialog->background.a);
+			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 			SDL_RenderFillRect(renderer, NULL);
 			SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 			SDL_RenderSetViewport(renderer, NULL);

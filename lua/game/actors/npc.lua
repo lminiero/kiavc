@@ -52,8 +52,10 @@ npc:show()
 -- Basic test of interaction with the npc
 function npcDialog()
 	while(true) do
+		-- Let's show the dialog on top, with a semitransparent background
 		startDialog({ id = 'test', font = 'dialogues', color = blue, selected = cyan,
-			background = black, area = { x1 = 0, y1 = 0, x2 = 320, y2 = 36 } })
+			background = { r = 0, g = 0, b = 0, a = 96 },
+			area = { x1 = 0, y1 = 0, x2 = 320, y2 = 36 } })
 		local lines = {
 			{ name = "1", text = "npcTalk1", say = "npcTalk1" },
 			{ name = "2", text = "npcTalk2", say = "npcTalk2" },

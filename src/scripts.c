@@ -820,6 +820,10 @@ static int kiavc_lua_method_startdialog(lua_State *s) {
 	background.g = luaL_checknumber(s, ++idx);
 	lua_getfield(s, tidx, "b");
 	background.b = luaL_checknumber(s, ++idx);
+	idx++;
+	background.a = 255;
+	if(lua_getfield(s, tidx, "a") != LUA_TNIL)
+		background.a = luaL_checknumber(s, idx);
 	lua_getfield(s, 1, "area");
 	tidx = ++idx;
 	luaL_checktype(s, tidx, LUA_TTABLE);
