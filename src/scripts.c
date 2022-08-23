@@ -164,7 +164,9 @@ static int kiavc_lua_method_setcostumeanimation(lua_State *s);
 static int kiavc_lua_method_registerobject(lua_State *s);
 /* Set the current animation for an object */
 static int kiavc_lua_method_setobjectanimation(lua_State *s);
-/* Mark this object as part of the UI */
+/* Mark whether this object is interactable */
+static int kiavc_lua_method_setobjectinteractable(lua_State *s);
+/* Mark whether this object iss part of the UI */
 static int kiavc_lua_method_setobjectui(lua_State *s);
 /* Set the UI position for this object */
 static int kiavc_lua_method_setobjectuiposition(lua_State *s);
@@ -295,6 +297,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "setCostumeAnimation", kiavc_lua_method_setcostumeanimation);
 	lua_register(lua_state, "registerObject", kiavc_lua_method_registerobject);
 	lua_register(lua_state, "setObjectAnimation", kiavc_lua_method_setobjectanimation);
+	lua_register(lua_state, "setObjectInteractable", kiavc_lua_method_setobjectinteractable);
 	lua_register(lua_state, "setObjectUi", kiavc_lua_method_setobjectui);
 	lua_register(lua_state, "setObjectUiPosition", kiavc_lua_method_setobjectuiposition);
 	lua_register(lua_state, "setObjectUiAnimation", kiavc_lua_method_setobjectuianimation);
@@ -1766,9 +1769,9 @@ static int kiavc_lua_method_setobjectanimation(lua_State *s) {
 	return 0;
 }
 
-/* Mark this object as part of the UI */
-static int kiavc_lua_method_setobjectui(lua_State *s) {
-	int n = lua_gettop(s), exp = 1;
+/* Mark whether this object can be interacted with */
+static int kiavc_lua_method_setobjectinteractable(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
 		return 0;
@@ -1779,8 +1782,29 @@ static int kiavc_lua_method_setobjectui(lua_State *s) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
 		return 0;
 	}
+	bool interactable = lua_toboolean(s, 2);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_ui(id);
+	kiavc_cb->set_object_interactable(id, interactable);
+	return 0;
+
+}
+
+/* Mark whether this object is of the UI */
+static int kiavc_lua_method_setobjectui(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
+		return 0;
+	}
+	bool ui = lua_toboolean(s, 2);
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->set_object_ui(id, ui);
 	return 0;
 
 }

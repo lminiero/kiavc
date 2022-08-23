@@ -185,7 +185,8 @@ static void kiavc_engine_register_costume(const char *id);
 static void kiavc_engine_set_costume_animation(const char *id, const char *type, const char *direction, const char *canim);
 static void kiavc_engine_register_object(const char *id);
 static void kiavc_engine_set_object_animation(const char *id, const char *canim);
-static void kiavc_engine_set_object_ui(const char *id);
+static void kiavc_engine_set_object_interactable(const char *id, bool interactable);
+static void kiavc_engine_set_object_ui(const char *id, bool ui);
 static void kiavc_engine_set_object_ui_position(const char *id, int x, int y);
 static void kiavc_engine_set_object_ui_animation(const char *id, const char *canim);
 static void kiavc_engine_move_object_to(const char *id, const char *room, int x, int y);
@@ -262,6 +263,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.set_costume_animation = kiavc_engine_set_costume_animation,
 		.register_object = kiavc_engine_register_object,
 		.set_object_animation = kiavc_engine_set_object_animation,
+		.set_object_interactable = kiavc_engine_set_object_interactable,
 		.set_object_ui = kiavc_engine_set_object_ui,
 		.set_object_ui_position = kiavc_engine_set_object_ui_position,
 		.set_object_ui_animation = kiavc_engine_set_object_ui_animation,
@@ -452,6 +454,10 @@ static void kiavc_engine_check_hovering(void) {
 			if(resource->type == KIAVC_OBJECT) {
 				/* FIXME Check if we're in the box */
 				kiavc_object *object = (kiavc_object *)resource;
+				if(!object->interactable) {
+					item = item->next;
+					continue;
+				}
 				if(object->room && object->room == engine.room && (object->hover.from_x >= 0 ||
 						object->hover.from_y >= 0 || object->hover.to_x >= 0 || object->hover.to_y >= 0)) {
 					/* Use the provided hover coordinates to detect where the object is */
@@ -1045,7 +1051,7 @@ int kiavc_engine_render(void) {
 			} else if(resource->type == KIAVC_OBJECT) {
 				/* This is an object */
 				kiavc_object *object = (kiavc_object *)resource;
-				if(object && (object->ui || object->room == engine.room)) {
+				if(object && ((object->ui && !engine.cutscene && !engine.dialog) || object->room == engine.room)) {
 					int room_x = !object->ui && engine.room ? engine.room->x : 0;
 					int room_y = !object->ui && engine.room ? engine.room->y : 0;
 					kiavc_animation *animation = object->ui ? object->ui_animation : object->animation;
@@ -2424,7 +2430,23 @@ static void kiavc_engine_set_object_animation(const char *id, const char *canim)
 	object->animation = anim;
 	SDL_Log("Set animation of object '%s' to '%s'\n", object->id, anim->id);
 }
-static void kiavc_engine_set_object_ui(const char *id) {
+static void kiavc_engine_set_object_interactable(const char *id, bool interactable) {
+	if(!id)
+		return;
+	/* Access object */
+	kiavc_object *object = kiavc_map_lookup(objects, id);
+	if(!object) {
+		/* No such object */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object interactable state, no such object '%s'\n", id);
+		return;
+	}
+	/* Done */
+	object->interactable = interactable;
+	object->x = -1;
+	object->y = -1;
+	SDL_Log("Marked object '%s' as %s\n", object->id, interactable ? "interactable" : "NOT interactable");
+}
+static void kiavc_engine_set_object_ui(const char *id, bool ui) {
 	if(!id)
 		return;
 	/* Access object */
@@ -2435,10 +2457,10 @@ static void kiavc_engine_set_object_ui(const char *id) {
 		return;
 	}
 	/* Done */
-	object->ui = true;
+	object->ui = ui;
 	object->x = -1;
 	object->y = -1;
-	SDL_Log("Marked object '%s' as part of the UI\n", object->id);
+	SDL_Log("Marked object '%s' as %s of the UI\n", object->id, ui ? "part" : "NOT part");
 }
 static void kiavc_engine_set_object_ui_position(const char *id, int x, int y) {
 	if(!id)
@@ -2541,7 +2563,7 @@ static void kiavc_engine_show_object(const char *id) {
 	}
 	object->visible = true;
 	/* Done */
-	if(object->room == engine.room && !kiavc_list_find(engine.render_list, object))
+	if((object->ui || object->room == engine.room) && !kiavc_list_find(engine.render_list, object))
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	SDL_Log("Shown object '%s'\n", object->id);
 }
@@ -2615,8 +2637,6 @@ static void kiavc_engine_add_object_to_inventory(const char *id, const char *own
 	object->room = NULL;
 	object->owner = actor;
 	object->visible = false;
-	/* Also mark as part of the UI, now */
-	kiavc_engine_set_object_ui(id);
 	/* Done */
 	SDL_Log("Added object '%s' to actor '%s' inventory\n", object->id, actor->id);
 }

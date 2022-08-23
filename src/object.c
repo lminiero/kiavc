@@ -24,6 +24,7 @@ kiavc_object *kiavc_object_create(const char *id) {
 	object->res.type = KIAVC_OBJECT;
 	object->id = SDL_strdup(id);
 	/* FIXME */
+	object->interactable = true;
 	object->scale = 1.0;
 	object->hover.from_x = -1;
 	object->hover.from_y = -1;

@@ -81,6 +81,34 @@ onUserInput('Escape', quit)
 onUserInput('Q', quit)
 onUserInput('.', skipActorsText)
 
+-- We create our own object for the inventory, e.g., to keep track of
+-- positions in the list and decide how to render it: in fact, the
+-- engine leaves UI related aspects to the script, and otherwise only
+-- keeps track of who owns what or what's where, but not if they should
+-- displayed or how. Notice that for the sake of simplicity we're keeping
+-- a single object as we only have a single main actor, but you may want
+-- to keep different objects for different actors.
+inventory = {}
+local inventoryVisible = false
+function showInventory()
+	inventoryVisible = true
+	showObject('inventory')
+	for _, id in ipairs(inventory) do
+		showObject(id)
+	end
+end
+function hideInventory()
+	if activeActor == nil then return end
+	inventoryVisible = false
+	hideObject('inventory')
+	for index, id in ipairs(inventory) do
+		hideObject(id)
+	end
+end
+Image:new({ id = 'inventory-bg', path = './assets/images/inventory.png' })
+Object:new({ id = 'inventory', uiAnimation = 'inventory-bg', ui = true, interactable = false, plane = 10 })
+setObjectUiPosition('inventory', 0, 0);
+
 -- Let's configure what to do when we're hovering on something
 onHovering = function(target)
 	if target == nil then
@@ -98,7 +126,35 @@ onHovering = function(target)
 	end
 end
 
--- Let's configure what to do when an object is selected or deselected
+-- Let's configure what to do when the inventory of an actor is updated
+onInventoryUpdated = function(actorId, objectId, owned)
+	local actor = actors[actorId]
+	local object = objects[objectId]
+	if actor == nil or object == nil then
+		return
+	end
+	if owned then
+		-- Add to our local inventory
+		inventory[#inventory+1] = objectId
+		showObject(objectId)
+		setObjectPlane(objectId, 11)
+	else
+		-- Remove from our local inventory
+		for index, id in ipairs(inventory) do
+			if id == objectId then
+				table.remove(inventory, index)
+				hideObject(objectId)
+				break
+			end
+		end
+	end
+	-- FIXME Update the position of all objects
+	for index, id in ipairs(inventory) do
+		setObjectUiPosition(objectId, index-1, 0);
+	end
+end
+
+-- Let's configure what to do when an owned object is selected or deselected
 onSelectedObject = function()
 	if selectedObject == nil then
 		-- Let's reset the cursors
@@ -125,6 +181,7 @@ setActiveActor('detective')
 activeActor:follow()
 activeActor:moveTo('street', 148, 148)
 activeActor:show()
+showInventory()
 rooms['street']:enter()
 
 -- This is the script we'll use for the intro cutscene: we have the

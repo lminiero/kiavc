@@ -48,6 +48,8 @@ typedef struct kiavc_object {
 	kiavc_object_box hover;
 	/* Whether the object is visible or not */
 	bool visible;
+	/* Whether the object can be interacted with or not */
+	bool interactable;
 	/* Scaling of the actor, if needed */
 	float scale;
 	/* Current frame in an object animation */

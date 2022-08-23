@@ -6,6 +6,8 @@ selectedObject = nil
 -- Objects class
 Object = {
 	inventory = false,
+	ui = false,
+	interactable = true,
 	onAction = 'useWith',
 	defaultVerbs = {
 		lookAt = function(self)
@@ -195,10 +197,11 @@ Object = {
 			self.owner = actor.id
 			-- Tell the engine the object is now in the inventory
 			addObjectToInventory(self.id, actor.id)
-			-- FIXME Simulate an inventory UI
-			setObjectUi(self.id, 0, 144);
-			setObjectUiPosition(self.id, 0, 144);
-			showObject(self.id)
+			self:setUi(true)
+			-- Invoke the callback that manages the inventory
+			if onInventoryUpdated then
+				onInventoryUpdated(actor.id, self.id, true)
+			end
 		end,
 	removeFromInventory =
 		function(self, owner)
@@ -211,8 +214,13 @@ Object = {
 			end
 			actor[self.id] = nil
 			self.owner = nil
+			self:setUi(false)
 			-- Tell the engine the object is now in the inventory
 			removeObjectFromInventory(self.id, actor.id)
+			-- Invoke the callback that manages the inventory
+			if onInventoryUpdated then
+				onInventoryUpdated(actor.id, self.id, true)
+			end
 		end,
 	setHover =
 		function(self, coords)
@@ -244,6 +252,26 @@ Object = {
 				x = interaction.x,
 				y = interaction.y
 			}
+		end,
+	setInteractable =
+		function(self, interactable)
+			if interactable == nil or (interactable ~= true and interactable ~= false) then
+				kiavcError('Invalid interactable state')
+				return
+			end
+			self.interactable = interactable
+			-- Tell the engine whether this object is interactable
+			setObjectInteractable(self.id, interactable)
+		end,
+	setUi =
+		function(self, ui)
+			if ui == nil or (ui ~= true and ui ~= false) then
+				kiavcError('Invalid UI value')
+				return
+			end
+			self.ui = ui
+			-- Tell the engine whether this object is part of the UI
+			setObjectUi(self.id, ui)
 		end,
 	scale =
 		function(self, scale)
@@ -350,6 +378,14 @@ function Object:new(object)
 	-- If an UI animation was provided, set it now
 	if object.uiAnimation ~= nil then
 		object:setUiAnimation(object.uiAnimation)
+	end
+	-- If an UI property was provided, set it now
+	if object.ui ~= nil then
+		object:setUi(object.ui)
+	end
+	-- If an interactable property was provided, set it now
+	if object.interactable ~= nil then
+		object:setInteractable(object.interactable)
 	end
 	-- If a scale was provided, set it now
 	if object.scaleFactor ~= nil then
