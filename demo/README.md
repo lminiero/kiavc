@@ -34,6 +34,12 @@ Another interesting feature of the street room is that it automatically starts a
 
 The outskirts is a smaller room you reach going on the far right of the streets: its only interesting feature is an object you can pick up, and then use with the other objects (and the NPC). The inventory management is very barebone at the moment, and in fact the object will simply appear in the bottom left when you pick it up: in the future, I plan to make this more flexible, in order to allow game developers to show the inventory any way they want (e.g., always on the bottom, or on demand clicking on a button, or appearing when you hover on top, etc.). Until then, it's ugly but functional for the demo!
 
+Finally, a simple localization is implemented too, and two languages are available: English (default) and Italian. To test the localization features, press `F8` to open the debugging console, and type:
+
+	lang = 'it'
+
+This should have the demo start showing all text (descriptions, dialogues, etc.) in Italian rather than English.
+
 The demo is incomplete since there's no purpose at all, so don't bash your head too hard trying to figure out puzzles that are not there :joy:
 
 ## Credits
