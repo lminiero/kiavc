@@ -49,6 +49,5 @@ local detective = Actor:new({
 	costume = 'detective-costume',
 	font = 'dialogues',
 	textColor = white,
-	scaleFactor = 0.76,
 	speed = 4
 })

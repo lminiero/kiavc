@@ -53,6 +53,7 @@ Room:new({
 			activeActor:moveTo('street', 570, 170)
 			activeActor:look('left')
 		end
+		activeActor:scale(0.76)
 		-- We automatically start a script to show noises out of the girls bar
 		self:startScript('noises', noisesScript)
 		-- We also start a script to make the NPC do something

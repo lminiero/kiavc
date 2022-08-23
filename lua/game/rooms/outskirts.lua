@@ -26,6 +26,7 @@ Room:new({
 			activeActor:moveTo('outskirts', 30, 126)
 			activeActor:look('down')
 		end
+		activeActor:scale(1)
 	end,
 	onleave = function(self)
 		-- When we leave the room, we fade out the local music track
