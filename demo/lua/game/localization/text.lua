@@ -61,8 +61,8 @@ translations = {
 		it = "Che animazione gagliarda!",
 	},
 	fireUse = {
-		en = "Aaah, nothing better than warming\nup at a fire in a cold night like this.",
-		it = "Aaah, non c'è niente di meglio\ndi riscaldarsi al fuoco in\nuna notte fredda come questa.",
+		en = "Aaah, nothing better than warming up at a fire in a cold night like this.",
+		it = "Aaah, non c'è niente di meglio di riscaldarsi al fuoco in una notte fredda come questa.",
 	},
 	skylineName = {
 		en = "skyline",
@@ -188,8 +188,8 @@ translations = {
 		it = "I suoi giorni di gozzoviglie sono finiti.",
 	},
 	skullUseRestaurant = {
-		en = "Crashing a window with a skull\nmay be considered vandalism.",
-		it = "Fracassare una vetrina con un teschio\npotrebbe essere considerato vandalismo.",
+		en = "Crashing a window with a skull may be considered vandalism.",
+		it = "Fracassare una vetrina con un teschio potrebbe essere considerato vandalismo.",
 	},
 	skullUseBoat = {
 		en = "It's afraid of water.",
@@ -240,12 +240,12 @@ translations = {
 		it = "Non me lo ricordo!",
 	},
 	npcResp22 = {
-		en = "Not that it matters, since\nI can't find it anyway...",
-		it = "Non che conti qualcosa, dato\nche comunque non lo trovo...",
+		en = "Not that it matters, since I can't find it anyway...",
+		it = "Non che conti qualcosa, dato che comunque non lo trovo...",
 	},
 	npcResp31 = {
-		en = "I don't think so, I've\nnever seen you in my life.",
-		it = "Non penso proprio, non\nti ho mai visto in vita mia",
+		en = "I don't think so, I've never seen you in my life.",
+		it = "Non penso proprio, non ti ho mai visto in vita mia",
 	},
 	npcResp41 = {
 		en = "Yeah, whatever.",

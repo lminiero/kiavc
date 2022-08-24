@@ -2277,7 +2277,7 @@ static void kiavc_engine_say_actor(const char *id, const char *text, const char 
 		engine.render_list = kiavc_list_remove(engine.render_list, actor->line);
 		kiavc_font_text_destroy(actor->line);
 	}
-	int max_width = kiavc_screen_width / kiavc_screen_scale;
+	int max_width = (2 * kiavc_screen_width) / (3 * kiavc_screen_scale);
 	actor->line = kiavc_font_render_text(font, renderer, text, color, outline, max_width);
 	if(actor->line == NULL)
 		return;

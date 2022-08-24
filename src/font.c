@@ -115,29 +115,56 @@ kiavc_font_text *kiavc_font_render_text(kiavc_font *font, SDL_Renderer *renderer
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error generating text: invalid font\n");
 		return NULL;
 	}
-	/* Check if there's any newline */
+	/* Estimate the rendered text size */
+	int w = 0, h = 0;
+	if(TTF_SizeUTF8(font->instance, text, &w, &h) < 0) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't estimate text size: %s\n", TTF_GetError());
+	} else {
+		SDL_Log("Estimated text size to %dx%d (max width is %d)\n", w, h, max_width);
+	}
+	/* Check if we should split on multiple lines */
 	SDL_Surface *s_text = NULL;
-	if(!SDL_strstr(text, "\n")) {
-		/* No new line, render as it is */
+	if(max_width == 0 || w <= max_width) {
+		/* The text fits the maximum width, render as it is */
 		s_text = kiavc_font_render_helper(font, renderer, text, color, bg_color, max_width);
 	} else {
 		/* Split in multiple strings before rendering */
-		char **lines = g_strsplit(text, "\n", -1);
-		int index = 0, s_height = 0, s_width = 0;
+		int len = strlen(text);
+		float diff = (float)w / (float)max_width;
+		int diff_dec = (int)diff;
+		if(diff > (float)diff_dec)
+			diff_dec++;
+		int line_len = len / diff_dec;
+		char **words = g_strsplit(text, " ", -1);
+		int index = 0, s_height = 0, s_width = 0, word_len = 0, line_offset = 0;
+		char line[256];
+		line[0] = '\0';
 		SDL_Surface *s_line = NULL;
 		kiavc_list *surfaces = NULL;
-		if(lines) {
-			while(lines[index]) {
-				if(SDL_strlen(lines[index]) > 0) {
-					s_line = kiavc_font_render_helper(font, renderer, lines[index], color, bg_color, max_width);
+		if(words) {
+			while(true) {
+				word_len = words[index] ? SDL_strlen(words[index]) : 0;
+				if(!words[index] || line_offset + word_len > line_len) {
+					/* Render the string we came up with so far */
+					s_line = kiavc_font_render_helper(font, renderer, line, color, bg_color, max_width);
 					if(s_width < s_line->w)
 						s_width = s_line->w;
 					s_height += s_line->h;
 					surfaces = kiavc_list_append(surfaces, s_line);
+					line[0] = '\0';
+					line_offset = 0;
 				}
+				if(!words[index])
+					break;
+				/* Add another word to the current line */
+				SDL_snprintf(line + line_offset, sizeof(line) - line_offset - 1,
+					"%s%s", line_offset ? " " : "", words[index]);
+				line_offset += word_len;
+				if(line_offset > word_len)
+					line_offset++;
 				index++;
 			}
-			g_strfreev(lines);
+			g_strfreev(words);
 		}
 		/* Create the complete surface */
 		s_text = kiavc_create_surface(s_width, s_height);
