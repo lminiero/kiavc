@@ -46,6 +46,7 @@ static int kiavc_screen_scale = -1, kiavc_screen_scale_prev = -1;
 static int kiavc_screen_width = -1;
 static int kiavc_screen_height = -1;
 static int kiavc_screen_fps = -1;
+static bool kiavc_screen_grab_mouse = false;
 static bool kiavc_screen_fullscreen = false;
 static bool kiavc_screen_scanlines = false;
 static SDL_Texture *kiavc_screen_scanlines_texture = NULL;
@@ -125,6 +126,7 @@ static kiavc_engine engine = { 0 };
 static void kiavc_engine_set_resolution(int width, int height, int fps, int scale);
 static void kiavc_engine_set_title(const char *title);
 static void kiavc_engine_set_icon(const char *path);
+static void kiavc_engine_grab_mouse(bool grab);
 static void kiavc_engine_set_fullscreen(bool fullscreen);
 static void kiavc_engine_set_scanlines(bool scanlines);
 static void kiavc_engine_debug_walkboxes(bool debug);
@@ -204,6 +206,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.set_resolution = kiavc_engine_set_resolution,
 		.set_title = kiavc_engine_set_title,
 		.set_icon = kiavc_engine_set_icon,
+		.grab_mouse = kiavc_engine_grab_mouse,
 		.set_fullscreen = kiavc_engine_set_fullscreen,
 		.set_scanlines = kiavc_engine_set_scanlines,
 		.debug_walkboxes = kiavc_engine_debug_walkboxes,
@@ -281,6 +284,8 @@ static kiavc_scripts_callbacks scripts_callbacks =
 
 /* Helper to renegerate the scanlines texture (if scanlines are enabled) */
 static void kiavc_engine_regenerate_scanlines(void) {
+	if(kiavc_screen_width == 0 || kiavc_screen_height == 0 || !renderer)
+		return;
 	if(kiavc_screen_scanlines_texture)
 		SDL_DestroyTexture(kiavc_screen_scanlines_texture);
 	kiavc_screen_scanlines_texture = NULL;
@@ -313,6 +318,61 @@ static void kiavc_engine_regenerate_fade(void) {
 	SDL_FillRect(surface, NULL, color);
 	engine.fade_texture = SDL_CreateTextureFromSurface(renderer, surface);
 	SDL_FreeSurface(surface);
+}
+
+/* Helper to trigger a fullscreen change */
+static void kiavc_engine_trigger_fullscreen(void) {
+	if(kiavc_screen_width == 0 || kiavc_screen_height == 0 || !window || !renderer)
+		return;
+	if(!kiavc_screen_fullscreen) {
+		/* Back to windowed mode */
+		SDL_Log("Windowed mode\n");
+		SDL_SetWindowFullscreen(window, 0);
+		if(kiavc_screen_scale_prev != -1) {
+			kiavc_screen_width = (kiavc_screen_width/kiavc_screen_scale) * kiavc_screen_scale_prev;
+			kiavc_screen_height = (kiavc_screen_height/kiavc_screen_scale) * kiavc_screen_scale_prev;
+			kiavc_screen_scale = kiavc_screen_scale_prev;
+			kiavc_engine_regenerate_scanlines();
+			kiavc_engine_regenerate_fade();
+			SDL_SetWindowSize(window, kiavc_screen_width, kiavc_screen_height);
+			kiavc_screen_scale_prev = -1;
+		}
+	} else {
+		/* Query the display */
+		int display = SDL_GetWindowDisplayIndex(window);
+		if(display < 0) {
+			/* Just go "real" fullscreen */
+			SDL_Log("Fullscreen mode\n");
+			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+		} else {
+			SDL_DisplayMode mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
+			if(SDL_GetDisplayMode(display, 0, &mode) < 0) {
+				/* Just go "real" fullscreen */
+				SDL_Log("Fullscreen mode\n");
+				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+			} else {
+				int w = kiavc_screen_width / kiavc_screen_scale;
+				int h = kiavc_screen_height / kiavc_screen_scale;
+				if(mode.w <= w || mode.h <= h) {
+					/* Just go "real" fullscreen */
+					SDL_Log("Fullscreen mode\n");
+					SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+				} else {
+					SDL_Log("Fullscreen mode (desktop)\n");
+					int scale_w = mode.w / w;
+					int scale_h = mode.h / h;
+					kiavc_screen_scale_prev = kiavc_screen_scale;
+					kiavc_screen_scale = scale_w < scale_h ? scale_w : scale_h;
+					kiavc_screen_width = (kiavc_screen_width/kiavc_screen_scale_prev) * kiavc_screen_scale;
+					kiavc_screen_height = (kiavc_screen_height/kiavc_screen_scale_prev) * kiavc_screen_scale;
+					kiavc_engine_regenerate_scanlines();
+					kiavc_engine_regenerate_fade();
+					SDL_SetWindowSize(window, kiavc_screen_width, kiavc_screen_height);
+					SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+				}
+			}
+		}
+	}
 }
 
 /* Helper to sort rendering resources */
@@ -408,7 +468,16 @@ int kiavc_engine_init(const char *bagfile) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error creating renderer: %s\n", SDL_GetError());
 		return -1;
 	}
+	/* Check if we need to confine the mouse to the window */
+	if(kiavc_screen_grab_mouse)
+		SDL_SetWindowMouseGrab(window, kiavc_screen_grab_mouse);
 	SDL_ShowCursor(SDL_DISABLE);
+	/* Check if we need to start fullscreen */
+	if(kiavc_screen_fullscreen)
+		kiavc_engine_trigger_fullscreen();
+	/* Check if we need to enable scanlines */
+	if(kiavc_screen_scanlines)
+		kiavc_engine_regenerate_scanlines();
 
 	/* Done */
 	return 0;
@@ -1342,61 +1411,24 @@ static void kiavc_engine_set_icon(const char *path) {
 		SDL_FreeSurface(icon);
 	}
 }
+static void kiavc_engine_grab_mouse(bool grab) {
+	if(kiavc_screen_grab_mouse == grab) {
+		/* Nothing to do */
+		return;
+	}
+	kiavc_screen_grab_mouse = grab;
+	if(window)
+		SDL_SetWindowMouseGrab(window, kiavc_screen_grab_mouse);
+	SDL_Log("%s mouse grabbing\n", kiavc_screen_grab_mouse ? "Enabling" : "Disabling");
+}
 static void kiavc_engine_set_fullscreen(bool fullscreen) {
 	if(kiavc_screen_fullscreen == fullscreen) {
 		/* Nothing to do */
 		return;
 	}
 	kiavc_screen_fullscreen = fullscreen;
-	if(!kiavc_screen_fullscreen) {
-		/* Back to windowed mode */
-		SDL_Log("Windowed mode\n");
-		SDL_SetWindowFullscreen(window, 0);
-		if(kiavc_screen_scale_prev != -1) {
-			kiavc_screen_width = (kiavc_screen_width/kiavc_screen_scale) * kiavc_screen_scale_prev;
-			kiavc_screen_height = (kiavc_screen_height/kiavc_screen_scale) * kiavc_screen_scale_prev;
-			kiavc_screen_scale = kiavc_screen_scale_prev;
-			kiavc_engine_regenerate_scanlines();
-			kiavc_engine_regenerate_fade();
-			SDL_SetWindowSize(window, kiavc_screen_width, kiavc_screen_height);
-			kiavc_screen_scale_prev = -1;
-		}
-	} else {
-		/* Query the display */
-		int display = SDL_GetWindowDisplayIndex(window);
-		if(display < 0) {
-			/* Just go "real" fullscreen */
-			SDL_Log("Fullscreen mode\n");
-			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
-		} else {
-			SDL_DisplayMode mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
-			if(SDL_GetDisplayMode(display, 0, &mode) < 0) {
-				/* Just go "real" fullscreen */
-				SDL_Log("Fullscreen mode\n");
-				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
-			} else {
-				int w = kiavc_screen_width / kiavc_screen_scale;
-				int h = kiavc_screen_height / kiavc_screen_scale;
-				if(mode.w <= w || mode.h <= h) {
-					/* Just go "real" fullscreen */
-					SDL_Log("Fullscreen mode\n");
-					SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
-				} else {
-					SDL_Log("Fullscreen mode (desktop)\n");
-					int scale_w = mode.w / w;
-					int scale_h = mode.h / h;
-					kiavc_screen_scale_prev = kiavc_screen_scale;
-					kiavc_screen_scale = scale_w < scale_h ? scale_w : scale_h;
-					kiavc_screen_width = (kiavc_screen_width/kiavc_screen_scale_prev) * kiavc_screen_scale;
-					kiavc_screen_height = (kiavc_screen_height/kiavc_screen_scale_prev) * kiavc_screen_scale;
-					kiavc_engine_regenerate_scanlines();
-					kiavc_engine_regenerate_fade();
-					SDL_SetWindowSize(window, kiavc_screen_width, kiavc_screen_height);
-					SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-				}
-			}
-		}
-	}
+	kiavc_engine_trigger_fullscreen();
+	SDL_Log("%s full-screen\n", kiavc_screen_fullscreen ? "Enabling" : "Disabling");
 }
 static void kiavc_engine_set_scanlines(bool scanlines) {
 	if(kiavc_screen_scanlines == scanlines) {

@@ -23,6 +23,13 @@ setTitle('KIAVC engine demo')
 -- We can also specify the window icon
 --~ setIcon('./assets/images/icon.png')
 
+-- A few other things we may want to do by default
+--~ grabMouse(true)
+--~ fullscreen = true
+--~ setFullscreen(fullscreen)
+--~ scanlines = true
+--~ setScanlines(scanlines)
+
 -- We enable the scripting console, and specify which font to use
 Font:new({ id = 'console', path = './assets/fonts/orangekid.ttf', size = 24 })
 enableConsole('console')

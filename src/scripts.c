@@ -46,6 +46,8 @@ static int kiavc_lua_method_setresolution(lua_State *s);
 static int kiavc_lua_method_settitle(lua_State *s);
 /* Set window icon */
 static int kiavc_lua_method_seticon(lua_State *s);
+/* Set whether we should grab the mouse and confine it to the window */
+static int kiavc_lua_method_grabmouse(lua_State *s);
 /* Set fullscreen mode */
 static int kiavc_lua_method_setfullscreen(lua_State *s);
 /* Set scanlines mode */
@@ -238,6 +240,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "setResolution", kiavc_lua_method_setresolution);
 	lua_register(lua_state, "setTitle", kiavc_lua_method_settitle);
 	lua_register(lua_state, "setIcon", kiavc_lua_method_seticon);
+	lua_register(lua_state, "grabMouse", kiavc_lua_method_grabmouse);
 	lua_register(lua_state, "setFullscreen", kiavc_lua_method_setfullscreen);
 	lua_register(lua_state, "setScanlines", kiavc_lua_method_setscanlines);
 	lua_register(lua_state, "debugWalkboxes", kiavc_lua_method_debugwalkboxes);
@@ -551,6 +554,20 @@ static int kiavc_lua_method_seticon(lua_State *s) {
 	}
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->set_icon(path);
+	return 0;
+}
+
+/* Set whether we should grab the mouse and confine it to the window */
+static int kiavc_lua_method_grabmouse(lua_State *s) {
+	/* This method allows the Lua script to enable or disable mouse grabbing */
+	int n = lua_gettop(s), exp = 1;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	bool grab = lua_toboolean(s, 1);
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->grab_mouse(grab);
 	return 0;
 }
 

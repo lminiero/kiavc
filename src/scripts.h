@@ -21,6 +21,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const set_resolution)(int width, int height, int fps, int scale);
 	void (* const set_title)(const char *title);
 	void (* const set_icon)(const char *path);
+	void (* const grab_mouse)(bool grab);
 	void (* const set_fullscreen)(bool fullscreen);
 	void (* const set_scanlines)(bool scanlines);
 	void (* const debug_walkboxes)(bool debug);
