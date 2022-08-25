@@ -79,6 +79,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const set_actor_direction)(const char *id, const char *direction);
 	void (* const controlled_actor)(const char *id);
 	void (* const skip_actors_text)(void);
+	void (* const set_actor_state)(const char *id, const char *type);
 	void (* const register_costume)(const char *id);
 	void (* const set_costume_animation)(const char *id, const char *type, const char *direction, const char *anim);
 	void (* const register_object)(const char *id);

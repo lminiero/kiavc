@@ -40,31 +40,16 @@ function Costume:new(costume)
 	costumes[costume.id] = costume
 	-- Register the costume at the engine
 	registerCostume(costume)
-	-- If still images were provided, set them now
-	if costume.still ~= nil then
-		local still = costume.still
-		costume.still = nil
-		for direction, anim in pairs(still) do
-			costume:setAnimation('still', direction, anim)
+	-- If images/animations were provided, set them now
+	local sets = { 'still', 'talking', 'walking', 'usehigh', 'usemid', 'uselow' }
+	for _, type in ipairs(sets) do
+		local set = costume[type]
+		if set then
+			for direction, anim in pairs(set) do
+				costume:setAnimation(type, direction, anim)
+			end
 		end
-	end
-	-- If walking animations were provided, set them now
-	if costume.walking ~= nil then
-		local walking = costume.walking
-		costume.walking = nil
-		for direction, anim in pairs(walking) do
-			-- FIXME
-			costume:setAnimation('walking', direction, anim)
-		end
-	end
-	-- If talking animations were provided, set them now
-	if costume.talking ~= nil then
-		local talking = costume.talking
-		costume.talking = nil
-		for direction, anim in pairs(talking) do
-			-- FIXME
-			costume:setAnimation('talking', direction, anim)
-		end
+		costume[type] = nil
 	end
 	return costume
 end

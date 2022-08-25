@@ -13,7 +13,7 @@ local skull = Object:new({
 	name = 'skullName',
 	animation = 'skull',
 	uiAnimation = 'skull-inventory',
-	interaction = { direction = 'right', x = 150, y = 166 },
+	interaction = { direction = 'right', use = 'low', x = 150, y = 166 },
 	plane = -1,
 	verbs = {
 		lookAt = function(self)
@@ -44,8 +44,11 @@ local skull = Object:new({
 			activeActor:say(text('skullTake'))
 			waitFor(activeActor.id)
 			activeActor:look(self.interaction.direction)
+			self:use()
+			waitMs(500)
 			self:addToInventory(activeActor.id)
 			self.onLeftClick = 'select'
+			activeActor:setState('still')
 		end,
 		useWith = function(self, object)
 			if self.owner == nil then

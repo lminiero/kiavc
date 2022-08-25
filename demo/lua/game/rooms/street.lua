@@ -84,9 +84,11 @@ local fire = Object:new({
 	animation = 'fire-loop',
 	plane = -1,
 	description = "fireDesc",
-	interaction = { direction = 'up', x = 498, y = 172 },
+	interaction = { direction = 'up', use = 'mid', x = 498, y = 172 },
 	verbs = {
 		use = function(self)
+			self:use()
+			waitMs(1000)
 			activeActor:say(text('fireUse'))
 		end
 	},
@@ -138,6 +140,7 @@ local girls = Object:new({
 	verbs = {
 		use = function(self)
 			disableInput()
+			self:use()
 			soundfxs['locked-fx']:play()
 			waitMs(1000)
 			activeActor:look('down')

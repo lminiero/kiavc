@@ -158,6 +158,8 @@ static int kiavc_lua_method_setactordirection(lua_State *s);
 static int kiavc_lua_method_controlledactor(lua_State *s);
 /* Skip the text any actor is saying */
 static int kiavc_lua_method_skipactorstext(lua_State *s);
+/* Set a specific state for an actor */
+static int kiavc_lua_method_setactorstate(lua_State *s);
 /* Register a new custome in the engine */
 static int kiavc_lua_method_registercostume(lua_State *s);
 /* Set the current animation for a costume */
@@ -296,6 +298,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "setActorDirection", kiavc_lua_method_setactordirection);
 	lua_register(lua_state, "controlledActor", kiavc_lua_method_controlledactor);
 	lua_register(lua_state, "skipActorsText", kiavc_lua_method_skipactorstext);
+	lua_register(lua_state, "setActorState", kiavc_lua_method_setactorstate);
 	lua_register(lua_state, "registerCostume", kiavc_lua_method_registercostume);
 	lua_register(lua_state, "setCostumeAnimation", kiavc_lua_method_setcostumeanimation);
 	lua_register(lua_state, "registerObject", kiavc_lua_method_registerobject);
@@ -1702,6 +1705,25 @@ static int kiavc_lua_method_skipactorstext(lua_State *s) {
 	kiavc_cb->skip_actors_text();
 	return 0;
 
+}
+
+/* Set a specific state for an actor */
+static int kiavc_lua_method_setactorstate(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	const char *type = luaL_checkstring(s, 2);
+	if(id == NULL || type == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID or type\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->set_actor_state(id, type);
+	return 0;
 }
 
 /* Register a new costume in the engine */

@@ -249,6 +249,7 @@ Object = {
 			-- Take note of how to interact with the object
 			self.interaction = {
 				direction = interaction.direction,
+				use = interaction.use,
 				x = interaction.x,
 				y = interaction.y
 			}
@@ -294,6 +295,17 @@ Object = {
 		function(self)
 			-- Tell the engine the object will be invisible
 			hideObject(self.id)
+		end,
+	use =
+		function(self)
+			-- Tell the engine to switch the actor to a "using" animation
+			local where = 'mid'
+			if self.interaction and self.interaction.use then
+				where = self.interaction.use
+			end
+			if activeActor then
+				setActorState(activeActor.id, 'use' .. where)
+			end
 		end,
 	leftClick =
 		function(self)

@@ -28,6 +28,13 @@
 #define KIAVC_ACTOR_STILL		1
 #define KIAVC_ACTOR_WALKING		2
 #define KIAVC_ACTOR_TALKING		3
+#define KIAVC_ACTOR_USING_H		4
+#define KIAVC_ACTOR_USING_M		5
+#define KIAVC_ACTOR_USING_L		6
+/* Helper to convert a string actor state to one of the above defines */
+int kiavc_actor_state(const char *state_str);
+/* Helper to stringify an actor state */
+const char *kiavc_actor_state_str(int state);
 
 /* Abstraction of an actor in the KIAVC engine */
 typedef struct kiavc_actor {

@@ -19,6 +19,18 @@ Animation:new({ id = 'detective-talking-left', path = './assets/images/dvtalkl.p
 Animation:new({ id = 'detective-talking-right', path = './assets/images/dvtalkr.png', frames = 3 })
 Animation:new({ id = 'detective-talking-up', path = './assets/images/dvtalku.png', frames = 3 })
 Animation:new({ id = 'detective-talking-down', path = './assets/images/dvtalkd.png', frames = 3 })
+Image:new({ id = 'detective-usehigh-left', path = './assets/images/dvuselh.png' })
+Image:new({ id = 'detective-usehigh-right', path = './assets/images/dvuserh.png' })
+Image:new({ id = 'detective-usehigh-up', path = './assets/images/dvuseuh.png' })
+Image:new({ id = 'detective-usehigh-down', path = './assets/images/dvusedh.png' })
+Image:new({ id = 'detective-usemid-left', path = './assets/images/dvuselm.png' })
+Image:new({ id = 'detective-usemid-right', path = './assets/images/dvuserm.png' })
+Image:new({ id = 'detective-usemid-up', path = './assets/images/dvuseum.png' })
+Image:new({ id = 'detective-usemid-down', path = './assets/images/dvusedm.png' })
+Image:new({ id = 'detective-uselow-left', path = './assets/images/dvusell.png' })
+Image:new({ id = 'detective-uselow-right', path = './assets/images/dvuserl.png' })
+Image:new({ id = 'detective-uselow-up', path = './assets/images/dvuseul.png' })
+Image:new({ id = 'detective-uselow-down', path = './assets/images/dvusedl.png' })
 -- Initialize the costume. Remember that actors and costumes are not
 -- "married", and that different actors can actually use the same costume
 Costume:new({
@@ -40,7 +52,25 @@ Costume:new({
 		right = 'detective-talking-right',
 		up = 'detective-talking-up',
 		down = 'detective-talking-down'
-	}
+	},
+	usehigh = {
+		left = 'detective-usehigh-left',
+		right = 'detective-usehigh-right',
+		up = 'detective-usehigh-up',
+		down = 'detective-usehigh-down'
+	},
+	usemid = {
+		left = 'detective-usemid-left',
+		right = 'detective-usemid-right',
+		up = 'detective-usemid-up',
+		down = 'detective-usemid-down'
+	},
+	uselow = {
+		left = 'detective-uselow-left',
+		right = 'detective-uselow-right',
+		up = 'detective-uselow-up',
+		down = 'detective-uselow-down'
+	},
 })
 
 -- Now let's register the actor and their settings

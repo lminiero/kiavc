@@ -32,6 +32,7 @@ local npc = Actor:new({
 			self:look('left')
 			activeActor:say(text("npcGiveSkull1"))
 			waitFor(activeActor.id)
+			activeActor:setState('usemid')
 			if object == 'skull' then
 				self:say(text("npcGiveSkull2"))
 				waitFor(self.id)
@@ -39,6 +40,7 @@ local npc = Actor:new({
 			self:say(text("npcGiveSkull3"))
 			waitFor(self.id)
 			rooms['street']:startScript('searching', npcSearchingScript)
+			activeActor:setState('still')
 			enableInput()
 		end
 	},

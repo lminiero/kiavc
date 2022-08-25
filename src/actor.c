@@ -41,3 +41,43 @@ void kiavc_actor_destroy(kiavc_actor *actor) {
 		SDL_free(actor);
 	}
 }
+
+/* Helper to convert a string actor state to one of the above defines */
+int kiavc_actor_state(const char *state_str) {
+	if(!state_str)
+		return KIAVC_ACTOR_INVISIBLE;
+	else if(!SDL_strcasecmp(state_str, "still"))
+		return KIAVC_ACTOR_STILL;
+	else if(!SDL_strcasecmp(state_str, "walking"))
+		return KIAVC_ACTOR_WALKING;
+	else if(!SDL_strcasecmp(state_str, "talking"))
+		return KIAVC_ACTOR_TALKING;
+	else if(!SDL_strcasecmp(state_str, "usehigh"))
+		return KIAVC_ACTOR_USING_H;
+	else if(!SDL_strcasecmp(state_str, "usemid"))
+		return KIAVC_ACTOR_USING_M;
+	else if(!SDL_strcasecmp(state_str, "uselow"))
+		return KIAVC_ACTOR_USING_L;
+	return KIAVC_ACTOR_STILL;
+}
+
+/* Helper to stringify an actor state */
+const char *kiavc_actor_state_str(int state) {
+	switch(state) {
+		case KIAVC_ACTOR_STILL:
+			return "still";
+		case KIAVC_ACTOR_WALKING:
+			return "walking";
+		case KIAVC_ACTOR_TALKING:
+			return "talking";
+		case KIAVC_ACTOR_USING_H:
+			return "usehigh";
+		case KIAVC_ACTOR_USING_M:
+			return "usemid";
+		case KIAVC_ACTOR_USING_L:
+			return "uselow";
+		default:
+			break;
+	}
+	return NULL;
+}

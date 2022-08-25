@@ -190,6 +190,11 @@ Actor = {
 				y = interaction.y
 			}
 		end,
+	setState =
+		function(self, state)
+			-- Tell the engine to switch the actor to a different animation
+			setActorState(self.id, state)
+		end,
 	show =
 		function(self)
 			-- Tell the engine to show the actor in the room they're in

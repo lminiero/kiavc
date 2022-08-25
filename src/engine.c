@@ -183,6 +183,7 @@ static void kiavc_engine_say_actor(const char *id, const char *text, const char 
 static void kiavc_engine_set_actor_direction(const char *id, const char *direction);
 static void kiavc_engine_controlled_actor(const char *id);
 static void kiavc_engine_skip_actors_text(void);
+static void kiavc_engine_set_actor_state(const char *id, const char *type);
 static void kiavc_engine_register_costume(const char *id);
 static void kiavc_engine_set_costume_animation(const char *id, const char *type, const char *direction, const char *canim);
 static void kiavc_engine_register_object(const char *id);
@@ -262,6 +263,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.set_actor_direction = kiavc_engine_set_actor_direction,
 		.controlled_actor = kiavc_engine_controlled_actor,
 		.skip_actors_text = kiavc_engine_skip_actors_text,
+		.set_actor_state = kiavc_engine_set_actor_state,
 		.register_costume = kiavc_engine_register_costume,
 		.set_costume_animation = kiavc_engine_set_costume_animation,
 		.register_object = kiavc_engine_register_object,
@@ -568,13 +570,7 @@ static void kiavc_engine_check_hovering(void) {
 				kiavc_actor *actor = (kiavc_actor *)resource;
 				if(actor != engine.actor && actor->costume && actor->room && actor->room == engine.room) {
 					int w = 0, h = 0;
-					kiavc_costume_set *set = NULL;
-					if(actor->state == KIAVC_ACTOR_STILL)
-						set = kiavc_map_lookup(actor->costume->sets, "still");
-					else if(actor->state == KIAVC_ACTOR_WALKING)
-						set = kiavc_map_lookup(actor->costume->sets, "walking");
-					else if(actor->state == KIAVC_ACTOR_TALKING)
-						set = kiavc_map_lookup(actor->costume->sets, "talking");
+					kiavc_costume_set *set = kiavc_costume_get_set(actor->costume, kiavc_actor_state_str(actor->state));
 					if(set && set->animations[actor->direction]) {
 						w = set->animations[actor->direction]->w;
 						h = set->animations[actor->direction]->h;
@@ -1054,15 +1050,9 @@ int kiavc_engine_render(void) {
 				if(actor && actor->room == engine.room && actor->visible && actor->costume) {
 					int room_x = engine.room ? engine.room->x : 0;
 					int room_y = engine.room ? engine.room->y : 0;
-					kiavc_costume_set *set = NULL;
-					if(actor->state == KIAVC_ACTOR_STILL)
-						set = kiavc_map_lookup(actor->costume->sets, "still");
-					else if(actor->state == KIAVC_ACTOR_WALKING)
-						set = kiavc_map_lookup(actor->costume->sets, "walking");
-					else if(actor->state == KIAVC_ACTOR_TALKING)
-						set = kiavc_map_lookup(actor->costume->sets, "talking");
-					kiavc_costume_load_set(set, renderer);
+					kiavc_costume_set *set = kiavc_costume_get_set(actor->costume, kiavc_actor_state_str(actor->state));
 					if(set && set->animations[actor->direction]) {
+						kiavc_costume_load_set(set, renderer);
 						clip.w = set->animations[actor->direction]->w;
 						clip.h = set->animations[actor->direction]->h;
 						if(actor->frame >= set->animations[actor->direction]->frames)
@@ -2342,6 +2332,21 @@ static void kiavc_engine_skip_actors_text(void) {
 	/* Done */
 	SDL_Log("Skipped actors text\n");
 }
+static void kiavc_engine_set_actor_state(const char *id, const char *type) {
+	if(!id || !type)
+		return;
+	/* Get the actor */
+	kiavc_actor *actor = kiavc_map_lookup(actors, id);
+	if(!actor) {
+		/* No such actor */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't have actor use object, no such object '%s'\n", id);
+		return;
+	}
+	actor->state = kiavc_actor_state(type);
+	/* Done */
+	SDL_Log("Set actor '%s' state to '%s'\n", id, type);
+}
+
 static void kiavc_engine_register_costume(const char *id) {
 	if(!id)
 		return;
@@ -2361,8 +2366,9 @@ static void kiavc_engine_register_costume(const char *id) {
 static void kiavc_engine_set_costume_animation(const char *id, const char *type, const char *direction, const char *canim) {
 	if(!id || !type || !direction || !canim)
 		return;
-	/* FIXME We only accept still, walking and talking for animations at the moment */
-	if(SDL_strcasecmp(type, "still") && SDL_strcasecmp(type, "walking") && SDL_strcasecmp(type, "talking")) {
+	/* FIXME We only accept still, walking, talking and using for animations at the moment */
+	if(SDL_strcasecmp(type, "still") && SDL_strcasecmp(type, "walking") && SDL_strcasecmp(type, "talking") &&
+			SDL_strcasecmp(type, "usehigh") && SDL_strcasecmp(type, "usemid") && SDL_strcasecmp(type, "uselow")) {
 		/* Invalid direction */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set costume animation, invalid type '%s'\n", type);
 		return;
