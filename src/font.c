@@ -119,8 +119,6 @@ kiavc_font_text *kiavc_font_render_text(kiavc_font *font, SDL_Renderer *renderer
 	int w = 0, h = 0;
 	if(TTF_SizeUTF8(font->instance, text, &w, &h) < 0) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't estimate text size: %s\n", TTF_GetError());
-	} else {
-		SDL_Log("Estimated text size to %dx%d (max width is %d)\n", w, h, max_width);
 	}
 	/* Check if we should split on multiple lines */
 	SDL_Surface *s_text = NULL;
