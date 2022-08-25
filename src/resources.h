@@ -22,12 +22,18 @@
 /* Dynamic renderable resource (rooms and cursors are excluded since
  * there can only be a single instance of each displayed at any time) */
 typedef struct kiavc_resource {
-	/* All renderable resources will have a type as their first attribute */
+	/* Resource type */
 	Uint8 type;
-	/* All resources will have a z-plane value as their second attribute */
+	/* Z-plane */
 	int zplane;
-	/* All resources will have a ticks timer as their third attribute */
+	/* Ticks timer */
 	uint32_t ticks;
+	/* Whether we're fading the object in or out, and how long that should be */
+	int fade_in, fade_out;
+	/* Fade alpha to apply */
+	Uint8 fade_alpha, fade_start, fade_range;
+	/* Fade in/out ticks */
+	uint32_t fade_ticks;
 } kiavc_resource;
 
 #endif

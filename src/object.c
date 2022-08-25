@@ -22,6 +22,7 @@ kiavc_object *kiavc_object_create(const char *id) {
 		return NULL;
 	kiavc_object *object = SDL_calloc(1, sizeof(kiavc_object));
 	object->res.type = KIAVC_OBJECT;
+	object->res.fade_alpha = 255;
 	object->id = SDL_strdup(id);
 	/* FIXME */
 	object->interactable = true;

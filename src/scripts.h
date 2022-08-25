@@ -71,6 +71,8 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const show_actor)(const char *id);
 	void (* const follow_actor)(const char *id);
 	void (* const hide_actor)(const char *id);
+	void (* const fade_actor_in)(const char *id, int ms);
+	void (* const fade_actor_out)(const char *id, int ms);
 	void (* const set_actor_plane)(const char *id, int zplane);
 	void (* const set_actor_speed)(const char *id, int speed);
 	void (* const scale_actor)(const char *id, float scale);
@@ -92,6 +94,8 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const set_object_hover)(const char *id, int from_x, int from_y, int to_x, int to_y);
 	void (* const show_object)(const char *id);
 	void (* const hide_object)(const char *id);
+	void (* const fade_object_in)(const char *id, int ms);
+	void (* const fade_object_out)(const char *id, int ms);
 	void (* const set_object_plane)(const char *id, int zplane);
 	void (* const scale_object)(const char *id, float scale);
 	void (* const add_object_to_inventory)(const char *id, const char *owner);

@@ -210,6 +210,16 @@ Actor = {
 			-- Tell the engine the actor will be invisible
 			hideActor(self.id)
 		end,
+	fadeIn =
+		function(self, ms)
+			-- Tell the engine to fade the actor in
+			fadeActorIn(self.id, ms)
+		end,
+	fadeOut =
+		function(self, ms)
+			-- Tell the engine to fade the actor out
+			fadeActorOut(self.id, ms)
+		end,
 	walkTo =
 		function(self, x, y)
 			-- Tell the engine the actor to make the actor walk

@@ -296,6 +296,16 @@ Object = {
 			-- Tell the engine the object will be invisible
 			hideObject(self.id)
 		end,
+	fadeIn =
+		function(self, ms)
+			-- Tell the engine to fade the object in
+			fadeObjectIn(self.id, ms)
+		end,
+	fadeOut =
+		function(self, ms)
+			-- Tell the engine to fade the object out
+			fadeObjectOut(self.id, ms)
+		end,
 	use =
 		function(self)
 			-- Tell the engine to switch the actor to a "using" animation

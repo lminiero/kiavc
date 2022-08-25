@@ -142,6 +142,10 @@ static int kiavc_lua_method_showactor(lua_State *s);
 static int kiavc_lua_method_followactor(lua_State *s);
 /* Hide an actor in the room they're in */
 static int kiavc_lua_method_hideactor(lua_State *s);
+/* Fade an actor in */
+static int kiavc_lua_method_fadeactorin(lua_State *s);
+/* Fade an actor out */
+static int kiavc_lua_method_fadeactorout(lua_State *s);
 /* Set the z-plane for the actor */
 static int kiavc_lua_method_setactorplane(lua_State *s);
 /* Set the movement speed for the actor */
@@ -184,6 +188,10 @@ static int kiavc_lua_method_setobjecthover(lua_State *s);
 static int kiavc_lua_method_showobject(lua_State *s);
 /* Hide an object in the room they're in */
 static int kiavc_lua_method_hideobject(lua_State *s);
+/* Fade an object in */
+static int kiavc_lua_method_fadeobjectin(lua_State *s);
+/* Fade an object out */
+static int kiavc_lua_method_fadeobjectout(lua_State *s);
 /* Set the z-plane for the object */
 static int kiavc_lua_method_setobjectplane(lua_State *s);
 /* Scale an object */
@@ -290,6 +298,8 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "showActor", kiavc_lua_method_showactor);
 	lua_register(lua_state, "followActor", kiavc_lua_method_followactor);
 	lua_register(lua_state, "hideActor", kiavc_lua_method_hideactor);
+	lua_register(lua_state, "fadeActorIn", kiavc_lua_method_fadeactorin);
+	lua_register(lua_state, "fadeActorOut", kiavc_lua_method_fadeactorout);
 	lua_register(lua_state, "setActorPlane", kiavc_lua_method_setactorplane);
 	lua_register(lua_state, "setActorSpeed", kiavc_lua_method_setactorspeed);
 	lua_register(lua_state, "scaleActor", kiavc_lua_method_scaleactor);
@@ -311,6 +321,8 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "setObjectHover", kiavc_lua_method_setobjecthover);
 	lua_register(lua_state, "showObject", kiavc_lua_method_showobject);
 	lua_register(lua_state, "hideObject", kiavc_lua_method_hideobject);
+	lua_register(lua_state, "fadeObjectIn", kiavc_lua_method_fadeobjectin);
+	lua_register(lua_state, "fadeObjectOut", kiavc_lua_method_fadeobjectout);
 	lua_register(lua_state, "setObjectPlane", kiavc_lua_method_setobjectplane);
 	lua_register(lua_state, "scaleObject", kiavc_lua_method_scaleobject);
 	lua_register(lua_state, "addObjectToInventory", kiavc_lua_method_addobjecttoinventory);
@@ -1532,6 +1544,44 @@ static int kiavc_lua_method_hideactor(lua_State *s) {
 	return 0;
 }
 
+/* Fade an actor in */
+static int kiavc_lua_method_fadeactorin(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	int ms = luaL_checknumber(s, 2);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->fade_actor_in(id, ms);
+	return 0;
+}
+
+/* Fade an actor out */
+static int kiavc_lua_method_fadeactorout(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	int ms = luaL_checknumber(s, 2);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->fade_actor_out(id, ms);
+	return 0;
+}
+
 /* Set the z-plane for the actor */
 static int kiavc_lua_method_setactorplane(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
@@ -1969,6 +2019,44 @@ static int kiavc_lua_method_hideobject(lua_State *s) {
 	}
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->hide_object(id);
+	return 0;
+}
+
+/* Fade an object in */
+static int kiavc_lua_method_fadeobjectin(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	int ms = luaL_checknumber(s, 2);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->fade_object_in(id, ms);
+	return 0;
+}
+
+/* Fade an object out */
+static int kiavc_lua_method_fadeobjectout(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	int ms = luaL_checknumber(s, 2);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->fade_object_out(id, ms);
 	return 0;
 }
 

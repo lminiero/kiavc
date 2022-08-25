@@ -89,6 +89,8 @@ typedef struct kiavc_engine {
 	Uint8 fade_alpha;
 	/* Fade in/out ticks */
 	uint32_t fade_ticks;
+	/* Other fading resources, if any */
+	kiavc_list *fading;
 	/* Current mouse coordinates */
 	int mouse_x, mouse_y;
 	/* Current cursors (main and/or hotspot) */
@@ -175,6 +177,8 @@ static void kiavc_engine_move_actor_to(const char *id, const char *room, int x, 
 static void kiavc_engine_show_actor(const char *id);
 static void kiavc_engine_follow_actor(const char *id);
 static void kiavc_engine_hide_actor(const char *id);
+static void kiavc_engine_fade_actor_in(const char *id, int ms);
+static void kiavc_engine_fade_actor_out(const char *id, int ms);
 static void kiavc_engine_set_actor_plane(const char *id, int zplane);
 static void kiavc_engine_set_actor_speed(const char *id, int speed);
 static void kiavc_engine_scale_actor(const char *id, float scale);
@@ -196,6 +200,8 @@ static void kiavc_engine_move_object_to(const char *id, const char *room, int x,
 static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y);
 static void kiavc_engine_show_object(const char *id);
 static void kiavc_engine_hide_object(const char *id);
+static void kiavc_engine_fade_object_in(const char *id, int ms);
+static void kiavc_engine_fade_object_out(const char *id, int ms);
 static void kiavc_engine_set_object_plane(const char *id, int zplane);
 static void kiavc_engine_scale_object(const char *id, float scale);
 static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
@@ -255,6 +261,8 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.show_actor = kiavc_engine_show_actor,
 		.follow_actor = kiavc_engine_follow_actor,
 		.hide_actor = kiavc_engine_hide_actor,
+		.fade_actor_in = kiavc_engine_fade_actor_in,
+		.fade_actor_out = kiavc_engine_fade_actor_out,
 		.set_actor_plane = kiavc_engine_set_actor_plane,
 		.set_actor_speed = kiavc_engine_set_actor_speed,
 		.scale_actor = kiavc_engine_scale_actor,
@@ -276,6 +284,8 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.set_object_hover = kiavc_engine_set_object_hover,
 		.show_object = kiavc_engine_show_object,
 		.hide_object = kiavc_engine_hide_object,
+		.fade_object_in = kiavc_engine_fade_object_in,
+		.fade_object_out = kiavc_engine_fade_object_out,
 		.set_object_plane = kiavc_engine_set_object_plane,
 		.scale_object = kiavc_engine_scale_object,
 		.add_object_to_inventory = kiavc_engine_add_object_to_inventory,
@@ -778,12 +788,22 @@ int kiavc_engine_update_world(void) {
 		engine.mouse_ticks = ticks;
 	if(engine.room_ticks == 0)
 		engine.room_ticks = ticks;
+	/* Check if we're fading in/out the whole screen */
 	if((engine.fade_in > 0 || engine.fade_out > 0) && engine.fade_ticks == 0) {
 		engine.fade_ticks = ticks;
 		engine.fade_alpha = 255;
 		kiavc_engine_regenerate_fade();
 	}
+	/* Check if we're fading in/out individual resources */
 	kiavc_resource *resource = NULL;
+	kiavc_list *fading = engine.fading;
+	while(fading) {
+		resource = (kiavc_resource *)fading->data;
+		if((resource->fade_in > 0 || resource->fade_out > 0) && resource->fade_ticks == 0)
+			resource->fade_ticks = ticks;
+		fading = fading->next;
+	}
+	/* Loop on all resources to render, which are already ordered by z-plane */
 	kiavc_list *item = engine.render_list, *to_remove = NULL;
 	while(item) {
 		resource = (kiavc_resource *)item->data;
@@ -987,6 +1007,42 @@ int kiavc_engine_update_world(void) {
 			engine.fade_alpha = engine.fade_out > 0 ? (int)update : (255 - (int)update);
 		}
 	}
+	/* Check if we're fading in/out individual resources, and update the state in case */
+	kiavc_list *faded = NULL;
+	fading = engine.fading;
+	while(fading) {
+		resource = (kiavc_resource *)fading->data;
+		if(resource->fade_range == 0 ||
+				ticks >= (resource->fade_ticks + (resource->fade_in > 0 ? resource->fade_in : resource->fade_out))) {
+			/* We're done */
+			resource->fade_ticks = 0;
+			resource->fade_alpha = resource->fade_in > 0 ? 255 : 0;
+			resource->fade_in = 0;
+			resource->fade_out = 0;
+			faded = kiavc_list_append(faded, resource);
+			/* Signal the script */
+			if(resource->type == KIAVC_OBJECT) {
+				kiavc_object *object = (kiavc_object *)resource;
+				kiavc_scripts_run_command("signal('fade-%s')", object->id);
+			} else if(resource->type == KIAVC_ACTOR) {
+				kiavc_actor *actor = (kiavc_actor *)resource;
+				kiavc_scripts_run_command("signal('fade-%s')", actor->id);
+			}
+		} else {
+			/* Calculate the alpha to use for the black texture */
+			int diff = ticks - resource->fade_ticks;
+			float percent = (float)diff/(float)(resource->fade_in > 0 ? resource->fade_in : resource->fade_out);
+			float update = resource->fade_range * percent;
+			resource->fade_alpha = resource->fade_in ? (resource->fade_start + (int)update) : (resource->fade_range - (int)update);
+		}
+		fading = fading->next;
+	}
+	fading = faded;
+	while(fading) {
+		engine.fading = kiavc_list_remove(engine.fading, fading->data);
+		fading = fading->next;
+	}
+	kiavc_list_destroy(faded);
 	/* Done */
 	return 0;
 }
@@ -1071,8 +1127,10 @@ int kiavc_engine_render(void) {
 						rect.w = w * kiavc_screen_scale;
 						rect.h = h * kiavc_screen_scale;
 						if(rect.x < kiavc_screen_width && rect.y < kiavc_screen_height &&
-								rect.x + rect.w > 0 && rect.y + rect.h > 0)
+								rect.x + rect.w > 0 && rect.y + rect.h > 0) {
+							SDL_SetTextureAlphaMod(set->animations[actor->direction]->texture, actor->res.fade_alpha);
 							SDL_RenderCopy(renderer, set->animations[actor->direction]->texture, &clip, &rect);
+						}
 					}
 				}
 			} else if(resource->type == KIAVC_OBJECT) {
@@ -1101,8 +1159,10 @@ int kiavc_engine_render(void) {
 						rect.w = w * kiavc_screen_scale;
 						rect.h = h * kiavc_screen_scale;
 						if(rect.x < kiavc_screen_width && rect.y < kiavc_screen_height &&
-								rect.x + rect.w > 0 && rect.y + rect.h > 0)
+								rect.x + rect.w > 0 && rect.y + rect.h > 0) {
+							SDL_SetTextureAlphaMod(animation->texture, object->res.fade_alpha);
 							SDL_RenderCopy(renderer, animation->texture, &clip, &rect);
+						}
 					}
 				}
 			} else if(resource->type == KIAVC_FONT_TEXT) {
@@ -2167,6 +2227,49 @@ static void kiavc_engine_hide_actor(const char *id) {
 	/* Done */
 	SDL_Log("Hidden actor '%s'\n", actor->id);
 }
+static void kiavc_engine_fade_actor_in(const char *id, int ms) {
+	if(!id || ms < 1)
+		return;
+	/* Get the actor */
+	kiavc_actor *actor = kiavc_map_lookup(actors, id);
+	if(!actor) {
+		/* No such actor */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't fade actor in, no such actor '%s'\n", id);
+		return;
+	}
+	if(actor->room == engine.room && !kiavc_list_find(engine.render_list, actor))
+		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
+	actor->res.fade_in = ms;
+	actor->res.fade_out = 0;
+	actor->res.fade_start = actor->res.fade_alpha;
+	actor->res.fade_range = 255 - actor->res.fade_alpha;
+	actor->res.fade_ticks = 0;
+	actor->visible = true;
+	if(!kiavc_list_find(engine.fading, actor))
+		engine.fading = kiavc_list_append(engine.fading, actor);
+	/* Done */
+	SDL_Log("Fading actor '%s' in\n", actor->id);
+}
+static void kiavc_engine_fade_actor_out(const char *id, int ms) {
+	if(!id || ms < 1)
+		return;
+	/* Get the actor */
+	kiavc_actor *actor = kiavc_map_lookup(actors, id);
+	if(!actor) {
+		/* No such actor */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't hide actor, no such actor '%s'\n", id);
+		return;
+	}
+	actor->res.fade_out = ms;
+	actor->res.fade_in = 0;
+	actor->res.fade_start = actor->res.fade_alpha;
+	actor->res.fade_range = actor->res.fade_alpha;
+	actor->res.fade_ticks = 0;
+	if(!kiavc_list_find(engine.fading, actor))
+		engine.fading = kiavc_list_append(engine.fading, actor);
+	/* Done */
+	SDL_Log("Fading actor '%s' out\n", actor->id);
+}
 static void kiavc_engine_set_actor_plane(const char *id, int zplane) {
 	if(!id)
 		return;
@@ -2589,6 +2692,49 @@ static void kiavc_engine_hide_object(const char *id) {
 	engine.render_list = kiavc_list_remove(engine.render_list, object);
 	/* Done */
 	SDL_Log("Hidden object '%s'\n", object->id);
+}
+static void kiavc_engine_fade_object_in(const char *id, int ms) {
+	if(!id || ms < 1)
+		return;
+	/* Get the object */
+	kiavc_object *object = kiavc_map_lookup(objects, id);
+	if(!object) {
+		/* No such object */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't fade object in, no such object '%s'\n", id);
+		return;
+	}
+	if((object->ui || object->room == engine.room) && !kiavc_list_find(engine.render_list, object))
+		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
+	object->res.fade_in = ms;
+	object->res.fade_out = 0;
+	object->res.fade_start = object->res.fade_alpha;
+	object->res.fade_range = 255 - object->res.fade_alpha;
+	object->res.fade_ticks = 0;
+	object->visible = true;
+	if(!kiavc_list_find(engine.fading, object))
+		engine.fading = kiavc_list_append(engine.fading, object);
+	/* Done */
+	SDL_Log("Fading object '%s' in\n", object->id);
+}
+static void kiavc_engine_fade_object_out(const char *id, int ms) {
+	if(!id || ms < 1)
+		return;
+	/* Get the object */
+	kiavc_object *object = kiavc_map_lookup(objects, id);
+	if(!object) {
+		/* No such object */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't hide object, no such object '%s'\n", id);
+		return;
+	}
+	object->res.fade_out = ms;
+	object->res.fade_in = 0;
+	object->res.fade_start = object->res.fade_alpha;
+	object->res.fade_range = object->res.fade_alpha;
+	object->res.fade_ticks = 0;
+	if(!kiavc_list_find(engine.fading, object))
+		engine.fading = kiavc_list_append(engine.fading, object);
+	/* Done */
+	SDL_Log("Fading object '%s' out\n", object->id);
 }
 static void kiavc_engine_set_object_plane(const char *id, int zplane) {
 	if(!id)

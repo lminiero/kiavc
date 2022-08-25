@@ -23,6 +23,7 @@ kiavc_actor *kiavc_actor_create(const char *id) {
 		return NULL;
 	kiavc_actor *actor = SDL_calloc(1, sizeof(kiavc_actor));
 	actor->res.type = KIAVC_ACTOR;
+	actor->res.fade_alpha = 255;
 	actor->id = SDL_strdup(id);
 	actor->direction = KIAVC_DOWN;
 	actor->scale = 1.0;
