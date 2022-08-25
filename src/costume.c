@@ -22,20 +22,29 @@ kiavc_costume *kiavc_costume_create(const char *id) {
 		return NULL;
 	kiavc_costume *costume = SDL_calloc(1, sizeof(kiavc_costume));
 	costume->id = SDL_strdup(id);
+	costume->sets = kiavc_map_create(SDL_free);
 	return costume;
 }
 
-/* Helper to load all textures */
-void kiavc_costume_load_all(kiavc_costume *costume, SDL_Renderer *renderer) {
-	if(!costume)
+/* Get or add a costume set */
+kiavc_costume_set *kiavc_costume_get_set(kiavc_costume *costume, const char *name) {
+	if(!costume || !name)
+		return NULL;
+	kiavc_costume_set *set = kiavc_map_lookup(costume->sets, name);
+	if(set)
+		return set;
+	set = SDL_calloc(1, sizeof(kiavc_costume_set));
+	kiavc_map_insert(costume->sets, SDL_strdup(name), set);
+	return set;
+}
+
+/* Helper to load textures for a specific set */
+void kiavc_costume_load_set(kiavc_costume_set *set, SDL_Renderer *renderer) {
+	if(!set)
 		return;
 	int i = 0, loaded = 0;
 	for(i = KIAVC_UP; i<= KIAVC_RIGHT; i++) {
-		if(costume->still[i] && kiavc_animation_load(costume->still[i], renderer) == 0)
-			loaded++;
-		if(costume->walking[i] && kiavc_animation_load(costume->walking[i], renderer) == 0)
-			loaded++;
-		if(costume->talking[i] && kiavc_animation_load(costume->talking[i], renderer) == 0)
+		if(set && set->animations[i] && kiavc_animation_load(set->animations[i], renderer) == 0)
 			loaded++;
 	}
 }
@@ -44,6 +53,7 @@ void kiavc_costume_load_all(kiavc_costume *costume, SDL_Renderer *renderer) {
 void kiavc_costume_destroy(kiavc_costume *costume) {
 	if(costume) {
 		SDL_free(costume->id);
+		kiavc_map_destroy(costume->sets);
 		SDL_free(costume);
 	}
 }

@@ -568,15 +568,16 @@ static void kiavc_engine_check_hovering(void) {
 				kiavc_actor *actor = (kiavc_actor *)resource;
 				if(actor != engine.actor && actor->costume && actor->room && actor->room == engine.room) {
 					int w = 0, h = 0;
-					if(actor->state == KIAVC_ACTOR_STILL && actor->costume->still[actor->direction]) {
-						w = actor->costume->still[actor->direction]->w;
-						h = actor->costume->still[actor->direction]->h;
-					} else if(actor->state == KIAVC_ACTOR_WALKING && actor->costume->walking[actor->direction]) {
-						w = actor->costume->walking[actor->direction]->w;
-						h = actor->costume->walking[actor->direction]->h;
-					} else if(actor->state == KIAVC_ACTOR_TALKING && actor->costume->talking[actor->direction]) {
-						w = actor->costume->talking[actor->direction]->w;
-						h = actor->costume->talking[actor->direction]->h;
+					kiavc_costume_set *set = NULL;
+					if(actor->state == KIAVC_ACTOR_STILL)
+						set = kiavc_map_lookup(actor->costume->sets, "still");
+					else if(actor->state == KIAVC_ACTOR_WALKING)
+						set = kiavc_map_lookup(actor->costume->sets, "walking");
+					else if(actor->state == KIAVC_ACTOR_TALKING)
+						set = kiavc_map_lookup(actor->costume->sets, "talking");
+					if(set && set->animations[actor->direction]) {
+						w = set->animations[actor->direction]->w;
+						h = set->animations[actor->direction]->h;
 					}
 					if(actor->scale != 1.0 || (engine.walkbox && engine.walkbox->scale != 1.0)) {
 						float ws = engine.walkbox ? engine.walkbox->scale : 1.0;
@@ -869,11 +870,7 @@ int kiavc_engine_update_world(void) {
 						}
 					}
 				}
-				if(actor->state != KIAVC_ACTOR_STILL) {
-					actor->frame++;
-				} else {
-					actor->frame = 0;
-				}
+				actor->frame++;
 				if(actor->room == engine.room && engine.following == actor) {
 					int width = kiavc_screen_width/kiavc_screen_scale;
 					if(engine.room_direction == 0) {
@@ -1055,18 +1052,25 @@ int kiavc_engine_render(void) {
 				/* This is an actor */
 				kiavc_actor *actor = (kiavc_actor *)resource;
 				if(actor && actor->room == engine.room && actor->visible && actor->costume) {
-					kiavc_costume_load_all(actor->costume, renderer);
 					int room_x = engine.room ? engine.room->x : 0;
 					int room_y = engine.room ? engine.room->y : 0;
-					if(actor->state == KIAVC_ACTOR_WALKING && actor->costume->walking[actor->direction]) {
-						clip.w = actor->costume->walking[actor->direction]->w;
-						clip.h = actor->costume->walking[actor->direction]->h;
-						if(actor->frame >= actor->costume->walking[actor->direction]->frames)
+					kiavc_costume_set *set = NULL;
+					if(actor->state == KIAVC_ACTOR_STILL)
+						set = kiavc_map_lookup(actor->costume->sets, "still");
+					else if(actor->state == KIAVC_ACTOR_WALKING)
+						set = kiavc_map_lookup(actor->costume->sets, "walking");
+					else if(actor->state == KIAVC_ACTOR_TALKING)
+						set = kiavc_map_lookup(actor->costume->sets, "talking");
+					kiavc_costume_load_set(set, renderer);
+					if(set && set->animations[actor->direction]) {
+						clip.w = set->animations[actor->direction]->w;
+						clip.h = set->animations[actor->direction]->h;
+						if(actor->frame >= set->animations[actor->direction]->frames)
 							actor->frame = 0;
 						clip.x = actor->frame*(clip.w);
 						clip.y = 0;
-						int w = actor->costume->walking[actor->direction]->w;
-						int h = actor->costume->walking[actor->direction]->h;
+						int w = set->animations[actor->direction]->w;
+						int h = set->animations[actor->direction]->h;
 						if(actor->scale != 1.0 || (engine.walkbox && engine.walkbox->scale != 1.0)) {
 							float ws = engine.walkbox ? engine.walkbox->scale : 1.0;
 							w *= (actor->scale * ws);
@@ -1078,43 +1082,7 @@ int kiavc_engine_render(void) {
 						rect.h = h * kiavc_screen_scale;
 						if(rect.x < kiavc_screen_width && rect.y < kiavc_screen_height &&
 								rect.x + rect.w > 0 && rect.y + rect.h > 0)
-							SDL_RenderCopy(renderer, actor->costume->walking[actor->direction]->texture, &clip, &rect);
-					} else if(actor->state == KIAVC_ACTOR_TALKING && actor->costume->talking[actor->direction]) {
-						clip.w = actor->costume->talking[actor->direction]->w;
-						clip.h = actor->costume->talking[actor->direction]->h;
-						if(actor->frame >= actor->costume->talking[actor->direction]->frames)
-							actor->frame = 0;
-						clip.x = actor->frame*(clip.w);
-						clip.y = 0;
-						int w = actor->costume->talking[actor->direction]->w;
-						int h = actor->costume->talking[actor->direction]->h;
-						if(actor->scale != 1.0 || (engine.walkbox && engine.walkbox->scale != 1.0)) {
-							float ws = engine.walkbox ? engine.walkbox->scale : 1.0;
-							w *= (actor->scale * ws);
-							h *= (actor->scale * ws);
-						}
-						rect.x = (actor->x - w/2 - room_x) * kiavc_screen_scale;
-						rect.y = (actor->y - h - room_y) * kiavc_screen_scale;
-						rect.w = w * kiavc_screen_scale;
-						rect.h = h * kiavc_screen_scale;
-						if(rect.x < kiavc_screen_width && rect.y < kiavc_screen_height &&
-								rect.x + rect.w > 0 && rect.y + rect.h > 0)
-							SDL_RenderCopy(renderer, actor->costume->talking[actor->direction]->texture, &clip, &rect);
-					} else if(actor->state == KIAVC_ACTOR_STILL && actor->costume->still[actor->direction]) {
-						int w = actor->costume->still[actor->direction]->w;
-						int h = actor->costume->still[actor->direction]->h;
-						if(actor->scale != 1.0 || (engine.walkbox && engine.walkbox->scale != 1.0)) {
-							float ws = engine.walkbox ? engine.walkbox->scale : 1.0;
-							w *= (actor->scale * ws);
-							h *= (actor->scale * ws);
-						}
-						rect.x = (actor->x - w/2 - room_x) * kiavc_screen_scale;
-						rect.y = (actor->y - h - room_y) * kiavc_screen_scale;
-						rect.w = w * kiavc_screen_scale;
-						rect.h = h * kiavc_screen_scale;
-						if(rect.x < kiavc_screen_width && rect.y < kiavc_screen_height &&
-								rect.x + rect.w > 0 && rect.y + rect.h > 0)
-							SDL_RenderCopy(renderer, actor->costume->still[actor->direction]->texture, NULL, &rect);
+							SDL_RenderCopy(renderer, set->animations[actor->direction]->texture, &clip, &rect);
 					}
 				}
 			} else if(resource->type == KIAVC_OBJECT) {
@@ -1170,12 +1138,13 @@ int kiavc_engine_render(void) {
 					if(line->owner_type == KIAVC_ACTOR) {
 						kiavc_actor *actor = (kiavc_actor *)line->owner;
 						if(actor && actor->state == KIAVC_ACTOR_TALKING) {
+							kiavc_costume_set *set = kiavc_costume_get_set(actor->costume, "talking");
 							draw = true;
 							/* Don't draw the text if the actor isn't visible */
-							int w = (actor->costume && actor->costume->talking && actor->costume->talking[actor->direction]) ?
-								actor->costume->talking[actor->direction]->w : 0;
-							int h = (actor->costume && actor->costume->talking && actor->costume->talking[actor->direction]) ?
-								actor->costume->talking[actor->direction]->h : 0;
+							int w = (set && set->animations[actor->direction]) ?
+								set->animations[actor->direction]->w : 0;
+							int h = (set && set->animations[actor->direction]) ?
+								set->animations[actor->direction]->h : 0;
 							int ax = (actor->x - w/2 - room_x) * kiavc_screen_scale;
 							int ay = (actor->y - h - room_y) * kiavc_screen_scale;
 							int aw = w * kiavc_screen_scale;
@@ -1189,8 +1158,8 @@ int kiavc_engine_render(void) {
 							else if(rect.x + line->w * kiavc_screen_scale > kiavc_screen_width * kiavc_screen_scale)
 								rect.x = kiavc_screen_width * kiavc_screen_scale - line->w * kiavc_screen_scale;
 							int diff_y = kiavc_screen_height/20;
-							if(actor->costume && actor->costume->talking[actor->direction]) {
-								int h = actor->costume->talking[actor->direction]->h;
+							if(set && set->animations[actor->direction]) {
+								int h = set->animations[actor->direction]->h;
 								if(actor->scale != 1.0 || (engine.walkbox && engine.walkbox->scale != 1.0)) {
 									float ws = engine.walkbox ? engine.walkbox->scale : 1.0;
 									h *= (actor->scale * ws);
@@ -2418,12 +2387,13 @@ static void kiavc_engine_set_costume_animation(const char *id, const char *type,
 		return;
 	}
 	/* FIXME Done */
-	if(!SDL_strcasecmp(type, "still"))
-		costume->still[dir] = anim;
-	else if(!SDL_strcasecmp(type, "walking"))
-		costume->walking[dir] = anim;
-	else
-		costume->talking[dir] = anim;
+	kiavc_costume_set *set = kiavc_costume_get_set(costume, type);
+	if(!set) {
+		/* Error accessing set */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set costume animation for costume '%s', error adding/retrieving set '%s'\n", id, type);
+		return;
+	}
+	set->animations[dir] = anim;
 	SDL_Log("Set %s %s animation of costume '%s' to '%s'\n", direction, type, costume->id, anim->id);
 }
 static void kiavc_engine_register_object(const char *id) {

@@ -18,6 +18,7 @@
 #include <SDL2/SDL.h>
 
 #include "animation.h"
+#include "map.h"
 
 #define KIAVC_NONE		-1
 #define KIAVC_UP		0
@@ -31,18 +32,22 @@ int kiavc_costume_direction(const char *direction);
 typedef struct kiavc_costume {
 	/* Unique ID of the costume */
 	char *id;
-	/* Staying still (animated or not) */
-	kiavc_animation *still[4];
-	/* Walking animations */
-	kiavc_animation *walking[4];
-	/* Talking animations */
-	kiavc_animation *talking[4];
+	/* Set of costumes, indexed by type (e.g., still, talking, walking) */
+	kiavc_map *sets;
 } kiavc_costume;
+
+/* Set of animations for a specific activity */
+typedef struct kiavc_costume_set {
+	/* Animations for the four directions */
+	kiavc_animation *animations[4];
+} kiavc_costume_set;
 
 /* Costume constructor */
 kiavc_costume *kiavc_costume_create(const char *id);
-/* Helper to load all textures */
-void kiavc_costume_load_all(kiavc_costume *costume, SDL_Renderer *renderer);
+/* Get or add a costume set */
+kiavc_costume_set *kiavc_costume_get_set(kiavc_costume *costume, const char *name);
+/* Helper to load textures for a specific set */
+void kiavc_costume_load_set(kiavc_costume_set *set, SDL_Renderer *renderer);
 /* Costume destructor */
 void kiavc_costume_destroy(kiavc_costume *costume);
 
