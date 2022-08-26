@@ -108,6 +108,13 @@ function updateWorld(ticks)
 	currentTicks = ticks
 	-- Check if there's coroutines waiting on a timer
 	checkScheduled()
+	if action ~= nil and coroutine.status(action) == 'dead' then
+		action = nil
+	end
+	if cutscene ~= nil and coroutine.status(cutscene) == 'dead' then
+		cutscene = nil
+		cutsceneEscape = nil
+	end
 end
 
 -- Helper function to run a command from the core as a coroutine
@@ -151,6 +158,7 @@ function checkScheduled()
 	-- Awaken the coroutines that have waited long enough
 	for _, co in ipairs(toWake) do
 		scheduled[co] = nil
+		if coroutine.status(co) == "dead" then return end
 		local res = { coroutine.resume(co) }
 		if coroutine.status(co) == "dead" and res[1] ~= true then
 			kiavcError(res[2])
@@ -179,6 +187,7 @@ function signal(event)
 	end
 	waiting[event] = nil
 	for _, co in ipairs(toWake) do
+		if coroutine.status(co) == "dead" then return end
 		local res = { coroutine.resume(co) }
 		if coroutine.status(co) == "dead" and res[1] ~= true then
 			kiavcError(res[2])
@@ -205,11 +214,37 @@ end
 action = nil
 function startAction(func)
 	if action ~= nil then
-		debug.sethook(action, function()error("interrupted")end, "l")
+		debug.sethook(action, function()error("Action interrupted")end, "l")
+		if coroutine.status(action) == 'suspended' then
+			coroutine.resume(action)
+		end
 		action = nil
 	end
 	action = coroutine.create(func)
 	return coroutine.resume(action)
+end
+
+-- As above, but meant for cutscenes, and so interruptable
+cutscene = nil
+cutsceneEscape = nil
+function playCutscene(func, funcEscape)
+	if cutscene ~= nil then
+		endCutscene()
+	end
+	cutscene = coroutine.create(func)
+	cutsceneEscape = funcEscape
+	return coroutine.resume(cutscene)
+end
+function endCutscene()
+	if cutscene ~= nil then
+		debug.sethook(cutscene, function()error("Cutscene interrupted")end, "l")
+		if coroutine.status(cutscene) == 'suspended' then
+			coroutine.resume(cutscene)
+		end
+		if cutsceneEscape ~= nil then cutsceneEscape() end
+	end
+	cutscene = nil
+	cutsceneEscape = nil
 end
 
 -- Helper function to wait for a dialog choice
@@ -237,6 +272,7 @@ function dialogSelected(id, name)
 	selectedDialog[id] = name
 	waitingDialog[id] = nil
 	for _, co in ipairs(toWake) do
+		if coroutine.status(co) == "dead" then return end
 		local res = { coroutine.resume(co) }
 		if coroutine.status(co) == "dead" and res[1] ~= true then
 			kiavcError(res[2])

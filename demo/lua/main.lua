@@ -38,6 +38,7 @@ enableConsole('console')
 function scaleScreen(size)
 	setResolution({ width = 320, height = 180, fps = 60, scale = size })
 end
+-- When we press any number from 1 to 6, we scale the screen accordingly
 onUserInput('1', function()
 	scaleScreen(1)
 end)
@@ -56,6 +57,7 @@ end)
 onUserInput('6', function()
 	scaleScreen(6)
 end)
+-- When we press F, we get in or out of fullscreen
 onUserInput('F', function()
 	if fullscreen == nil or fullscreen == false then
 		fullscreen = true
@@ -64,7 +66,9 @@ onUserInput('F', function()
 	end
 	setFullscreen(fullscreen)
 end)
+-- Pressing F8 enables the interactive console
 onUserInput('F8', showConsole)
+-- Pressing F10 enables or disables scanlines
 onUserInput('F10', function()
 	if scanlines == nil or scanlines == false then
 		scanlines = true
@@ -73,6 +77,7 @@ onUserInput('F10', function()
 	end
 	setScanlines(scanlines)
 end)
+-- Pressing F11 enables or disables the debugging of walkboxes
 onUserInput('F11', function()
 	if walkboxes == nil or walkboxes == false then
 		walkboxes = true
@@ -81,11 +86,19 @@ onUserInput('F11', function()
 	end
 	debugWalkboxes(walkboxes)
 end)
+-- Pressing F12 saves a screenshot
 onUserInput('F12', function()
 	saveScreenshot('./screenshot-' .. currentTicks .. '.png')
 end)
-onUserInput('Escape', quit)
-onUserInput('Q', quit)
+-- Pressing Esc exits a cutscene (if one is playing) or leaves the game
+onUserInput('Escape', function ()
+	if cutscene ~= nil then
+		endCutscene()
+	else
+		quit()
+	end
+end)
+-- Pressing the dot skips the text of the actor currently speaking
 onUserInput('.', skipActorsText)
 
 -- We create our own object for the inventory, e.g., to keep track of
@@ -192,9 +205,10 @@ showInventory()
 rooms['street']:enter()
 
 -- This is the script we'll use for the intro cutscene: we have the
--- main actor come in from the right, walk to a specific coordinate,
--- look around and then say something. We use the startCutscene() and
--- stopCutscene() commands to hide the cursor and prevent interaction.
+-- main actor come in from the top, walk to a specific coordinate,
+-- look around and then say something. We use the startCutscene()
+-- command to hide the cursor and prevent interaction, and
+-- stopCutscene() to enable it again and allow the user to play.
 function intro()
 	startCutscene()
 	fadeIn(1000)
@@ -212,5 +226,13 @@ function intro()
 	waitFor(activeActor.id)
 	stopCutscene()
 end
+-- In case the cutscene is interrupted (Esc pressed), we have a different
+-- function to put the actor in what was supposed to be the final state
+function introEscape()
+	kiavcLog('Escaped intro cutscene')
+	activeActor:moveTo('street', 148, 170)
+	activeActor:look('down')
+	stopCutscene()
+end
 -- Start the cutscene as soon as the game starts
-startScript(intro)
+playCutscene(intro, introEscape)

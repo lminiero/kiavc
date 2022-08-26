@@ -2180,6 +2180,25 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 	actor->step = NULL;
 	actor->target_x = -1;
 	actor->target_y = -1;
+	/* FIXME Check which walkbox we're in */
+	if(engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes && engine.actor == actor) {
+		int x = engine.actor->x;
+		int y = engine.actor->y;
+		kiavc_pathfinding_point point = { .x = x, .y = y };
+		kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_context_find_walkbox(engine.room->pathfinding, &point);
+		if(walkbox != engine.walkbox) {
+			if(walkbox) {
+				SDL_Log("Now in walkbox (%dx%d -> %dx%d)",
+					walkbox->p1.x, walkbox->p1.y, walkbox->p2.x, walkbox->p2.y);
+				if(walkbox->name) {
+					/* Signal script */
+					SDL_Log("Triggered walkbox '%s'\n", walkbox->name);
+					kiavc_scripts_run_command("triggerWalkbox('%s', '%s')", engine.room->id, walkbox->name);
+				}
+			}
+			engine.walkbox = walkbox;
+		}
+	}
 	SDL_Log("Moved actor '%s' to room '%s' (%dx%d)\n", actor->id, room->id, actor->x, actor->y);
 }
 static void kiavc_engine_show_actor(const char *id) {
