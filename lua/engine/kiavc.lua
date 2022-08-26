@@ -117,7 +117,13 @@ function runCommand(cmd)
 	local co = coroutine.create(function()
 		f()
 	end)
-	return coroutine.resume(co)
+	local res = { coroutine.resume(co) }
+	while coroutine.status(co) ~= "dead" do
+		res = { coroutine.resume(co, coroutine.yield()) }
+	end
+	if res[1] ~= true then
+		kiavcError(res[2])
+	end
 end
 
 -- The following is code to run scripts as coroutines, including helpers
@@ -145,7 +151,10 @@ function checkScheduled()
 	-- Awaken the coroutines that have waited long enough
 	for _, co in ipairs(toWake) do
 		scheduled[co] = nil
-		coroutine.resume(co)
+		local res = { coroutine.resume(co) }
+		if coroutine.status(co) == "dead" and res[1] ~= true then
+			kiavcError(res[2])
+		end
 	end
 end
 
@@ -170,7 +179,10 @@ function signal(event)
 	end
 	waiting[event] = nil
 	for _, co in ipairs(toWake) do
-		coroutine.resume(co)
+		local res = { coroutine.resume(co) }
+		if coroutine.status(co) == "dead" and res[1] ~= true then
+			kiavcError(res[2])
+		end
 	end
 end
 
@@ -225,7 +237,10 @@ function dialogSelected(id, name)
 	selectedDialog[id] = name
 	waitingDialog[id] = nil
 	for _, co in ipairs(toWake) do
-		coroutine.resume(co)
+		local res = { coroutine.resume(co) }
+		if coroutine.status(co) == "dead" and res[1] ~= true then
+			kiavcError(res[2])
+		end
 	end
 end
 
