@@ -110,6 +110,16 @@ function updateWorld(ticks)
 	checkScheduled()
 end
 
+-- Helper function to run a command from the core as a coroutine
+function runCommand(cmd)
+	if cmd == nil then return end
+	local f = load(cmd)
+	local co = coroutine.create(function()
+		f()
+	end)
+	return coroutine.resume(co)
+end
+
 -- The following is code to run scripts as coroutines, including helpers
 -- to wait some time or wait for specific actions to occur in the engine
 local scheduled = {}

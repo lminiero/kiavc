@@ -377,9 +377,10 @@ void kiavc_scripts_run_command(const char *fmt, ...) {
 	va_start(args, fmt);
 	SDL_vsnprintf(command, sizeof(command)-1, fmt, args);
 	va_end(args);
-	int err = luaL_dostring(lua_state, command);
-	if(err) {
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error running command: %s\n",
+	lua_getglobal(lua_state, "runCommand");
+	lua_pushstring(lua_state, command);
+	if(lua_pcall(lua_state, 1, 0, 0) != 0) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error running function `updateWorld': %s",
 			lua_tostring(lua_state, -1));
 	}
 }
