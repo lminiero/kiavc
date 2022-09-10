@@ -245,6 +245,7 @@ Object = {
 					interaction.x == nil or interaction.y == nil then
 				kiavcError('Invalid coordinates')
 				self.interaction = nil
+				return
 			end
 			-- Take note of how to interact with the object
 			self.interaction = {
