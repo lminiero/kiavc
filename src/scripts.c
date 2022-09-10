@@ -435,6 +435,7 @@ static int kiavc_lua_method_kiavcrequire(lua_State *s) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error loading Lua script '%s': %s\n",
 			path, lua_tostring(lua_state, -1));
 	}
+	SDL_Log("Loaded script '%s'\n", path);
 	return 0;
 }
 
