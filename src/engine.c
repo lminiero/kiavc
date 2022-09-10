@@ -2604,7 +2604,7 @@ static void kiavc_engine_set_object_ui_position(const char *id, int x, int y) {
 	}
 	if(!object->ui) {
 		/* Not part of the UI */
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object UI state, object '%s' not part of the UI\n", id);
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object UI position, object '%s' not part of the UI\n", id);
 		return;
 	}
 	/* Done */
