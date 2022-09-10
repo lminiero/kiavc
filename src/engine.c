@@ -115,8 +115,6 @@ typedef struct kiavc_engine {
 	kiavc_list *render_list;
 	/* Resource we're currently hovering on */
 	kiavc_resource *hovering;
-	/* Walkbox the controlled actor is in */
-	kiavc_pathfinding_walkbox *walkbox;
 	/* Dialog we're running, if any */
 	kiavc_dialog *dialog;
 	/* Rendering ticks */
@@ -585,8 +583,8 @@ static void kiavc_engine_check_hovering(void) {
 						w = set->animations[actor->direction]->w;
 						h = set->animations[actor->direction]->h;
 					}
-					if(actor->scale != 1.0 || (engine.walkbox && engine.walkbox->scale != 1.0)) {
-						float ws = engine.walkbox ? engine.walkbox->scale : 1.0;
+					if(actor->scale != 1.0 || (actor->walkbox && actor->walkbox->scale != 1.0)) {
+						float ws = actor->walkbox ? actor->walkbox->scale : 1.0;
 						w *= (actor->scale * ws);
 						h *= (actor->scale * ws);
 					}
@@ -867,22 +865,23 @@ int kiavc_engine_update_world(void) {
 						}
 					}
 					/* FIXME Check which walkbox we're in */
-					if(engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes && engine.actor) {
-						int x = engine.actor->x;
-						int y = engine.actor->y;
+					if(engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes) {
+						int x = actor->x;
+						int y = actor->y;
 						kiavc_pathfinding_point point = { .x = x, .y = y };
 						kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_context_find_walkbox(engine.room->pathfinding, &point);
-						if(walkbox != engine.walkbox) {
+						if(walkbox != actor->walkbox) {
 							if(walkbox) {
-								SDL_Log("Now in walkbox (%dx%d -> %dx%d)",
+								SDL_Log("Actor '%s' now in walkbox (%dx%d -> %dx%d)", actor->id,
 									walkbox->p1.x, walkbox->p1.y, walkbox->p2.x, walkbox->p2.y);
 								if(walkbox->name) {
 									/* Signal script */
-									SDL_Log("Triggered walkbox '%s'\n", walkbox->name);
-									kiavc_scripts_run_command("triggerWalkbox('%s', '%s')", engine.room->id, walkbox->name);
+									SDL_Log("Actor '%s' triggered walkbox '%s'\n", actor->id, walkbox->name);
+									kiavc_scripts_run_command("triggerWalkbox('%s', '%s', '%s')",
+										engine.room->id, walkbox->name, actor->id);
 								}
 							}
-							engine.walkbox = walkbox;
+							actor->walkbox = walkbox;
 						}
 					}
 				}
@@ -1117,8 +1116,8 @@ int kiavc_engine_render(void) {
 						clip.y = 0;
 						int w = set->animations[actor->direction]->w;
 						int h = set->animations[actor->direction]->h;
-						if(actor->scale != 1.0 || (engine.walkbox && engine.walkbox->scale != 1.0)) {
-							float ws = engine.walkbox ? engine.walkbox->scale : 1.0;
+						if(actor->scale != 1.0 || (actor->walkbox && actor->walkbox->scale != 1.0)) {
+							float ws = actor->walkbox ? actor->walkbox->scale : 1.0;
 							w *= (actor->scale * ws);
 							h *= (actor->scale * ws);
 						}
@@ -1210,8 +1209,8 @@ int kiavc_engine_render(void) {
 							int diff_y = kiavc_screen_height/20;
 							if(set && set->animations[actor->direction]) {
 								int h = set->animations[actor->direction]->h;
-								if(actor->scale != 1.0 || (engine.walkbox && engine.walkbox->scale != 1.0)) {
-									float ws = engine.walkbox ? engine.walkbox->scale : 1.0;
+								if(actor->scale != 1.0 || (actor->walkbox && actor->walkbox->scale != 1.0)) {
+									float ws = actor->walkbox ? actor->walkbox->scale : 1.0;
 									h *= (actor->scale * ws);
 								}
 								rect.y = (actor->y - h - room_y - line->h) * kiavc_screen_scale - diff_y;
@@ -2181,22 +2180,23 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 	actor->target_x = -1;
 	actor->target_y = -1;
 	/* FIXME Check which walkbox we're in */
-	if(engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes && engine.actor == actor) {
-		int x = engine.actor->x;
-		int y = engine.actor->y;
+	if(engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes) {
+		int x = actor->x;
+		int y = actor->y;
 		kiavc_pathfinding_point point = { .x = x, .y = y };
 		kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_context_find_walkbox(engine.room->pathfinding, &point);
-		if(walkbox != engine.walkbox) {
+		if(walkbox != actor->walkbox) {
 			if(walkbox) {
-				SDL_Log("Now in walkbox (%dx%d -> %dx%d)",
+				SDL_Log("Actor '%s' now in walkbox (%dx%d -> %dx%d)", actor->id,
 					walkbox->p1.x, walkbox->p1.y, walkbox->p2.x, walkbox->p2.y);
 				if(walkbox->name) {
 					/* Signal script */
-					SDL_Log("Triggered walkbox '%s'\n", walkbox->name);
-					kiavc_scripts_run_command("triggerWalkbox('%s', '%s')", engine.room->id, walkbox->name);
+					SDL_Log("Actor '%s' triggered walkbox '%s'\n", actor->id, walkbox->name);
+					kiavc_scripts_run_command("triggerWalkbox('%s', '%s', '%s')",
+						engine.room->id, walkbox->name, actor->id);
 				}
 			}
-			engine.walkbox = walkbox;
+			actor->walkbox = walkbox;
 		}
 	}
 	SDL_Log("Moved actor '%s' to room '%s' (%dx%d)\n", actor->id, room->id, actor->x, actor->y);

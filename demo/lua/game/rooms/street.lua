@@ -25,10 +25,12 @@ Room:new({
 		{ x1 = 580, y1 = 166, x2 = 608, y2 = 180 },
 	},
 	triggers = {
-		barrier1 = function()
+		barrier1 = function(actor)
 			-- When we trigger the walkbox called 'barrier', we start
 			-- a script that prevents us from going further: triggers
-			-- on walkboxes can be helpful to do different things
+			-- on walkboxes can be helpful to do different things, and
+			-- since we know which actor caused the trigger, we can
+			-- choose to react differently depending on the scenario
 			startCutscene()
 			activeActor:look('down')
 			activeActor:say(text('streetBarrier1'))

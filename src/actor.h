@@ -46,6 +46,8 @@ typedef struct kiavc_actor {
 	kiavc_costume *costume;
 	/* Room this actor is in */
 	kiavc_room *room;
+	/* Walkbox this actor is in */
+	kiavc_pathfinding_walkbox *walkbox;
 	/* Whether the actor is visible */
 	bool visible;
 	/* Coordinates of the actor */

@@ -196,11 +196,11 @@ function signal(event)
 end
 
 -- Helper function to react to a walkbox trigger
-function triggerWalkbox(id, name)
-	kiavcLog("Walkbox '" .. name .. "' triggered in room '" .. id .. "'")
+function triggerWalkbox(id, name, actor)
+	kiavcLog("Walkbox '" .. name .. "' triggered in room '" .. id .. "' by actor '" .. actor .. "'")
 	local room = rooms[id]
 	if room ~= nil then
-		room:triggerWalkbox(name)
+		room:triggerWalkbox(name, actor)
 	end
 end
 

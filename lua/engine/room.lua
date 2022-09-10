@@ -122,13 +122,13 @@ Room = {
 			disableRoomWalkbox(self.id, walkboxId)
 		end,
 	triggerWalkbox =
-		function(self, walkboxId)
+		function(self, walkboxId, actorId)
 			if walkboxId == nil then
 				kiavcError('Invalid walkbox')
 				return
 			end
 			if self.triggers[walkboxId] ~= nil then
-				self:startScript(walkboxId, self.triggers[walkboxId])
+				self:startScript(walkboxId, self.triggers[walkboxId], actorId)
 			end
 		end,
 	show =
@@ -137,13 +137,13 @@ Room = {
 			showRoom(self.id)
 		end,
 	startScript =
-		function(self, name, func)
+		function(self, name, func, arg)
 			-- If a script with that name exists already, stop it
 			self:stopScript(name)
 			-- Start the script as a coroutine
 			kiavcLog("Starting room script '" .. name .. "'")
 			self.scripts[name] = coroutine.create(func)
-			return coroutine.resume(self.scripts[name])
+			return coroutine.resume(self.scripts[name], arg)
 		end,
 	stopScript =
 		function(self, name)
