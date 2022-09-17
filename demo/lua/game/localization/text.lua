@@ -326,7 +326,7 @@ translations = {
 	},
 	npcResp3_1 = {
 		en = "I don't think so, I've never seen you in my life.",
-		it = "Non penso proprio, non ti ho mai visto in vita mia",
+		it = "Non penso proprio, non ti ho mai visto in vita mia.",
 	},
 	npcResp4_1 = {
 		en = "Yeah, whatever.",
