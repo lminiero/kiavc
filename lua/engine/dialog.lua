@@ -76,11 +76,6 @@ function enterDialog(dialog)
 					-- We only display maximum 4 options per dialogue
 					break
 				end
-				if option.once == true and state.dialogues[dialogId][current][option.name] and
-						state.dialogues[dialogId][current][option.name].selected > 0 then
-					-- This has to be displayed only if not previously selected, which happened
-					goto continue
-				end
 				if option.notif then
 					-- This only has to be displayed if not matching a specific state
 					for name, value in pairs(option.notif) do
@@ -88,6 +83,19 @@ function enterDialog(dialog)
 							goto continue
 						end
 					end
+				end
+				if option.onlyif then
+					-- This only has to be displayed if matching a specific state
+					for name, value in pairs(option.onlyif) do
+						if state[name] ~= value then
+							goto continue
+						end
+					end
+				end
+				if option.once == true and state.dialogues[dialogId][current][option.name] and
+						state.dialogues[dialogId][current][option.name].selected > 0 then
+					-- This has to be displayed only if not previously selected, which happened
+					goto continue
 				end
 				if state.dialogues[dialogId][current][option.name] == nil then
 					state.dialogues[dialogId][current][option.name] = { displayed = 0, selected = 0 }
@@ -103,7 +111,6 @@ function enterDialog(dialog)
 						dialogLine[name] = value
 					end
 				end
-				kiavcLog(dumpTable(dialogLine))
 				lines[#lines+1] = dialogLine
 				::continue::
 			end
@@ -156,11 +163,28 @@ function enterDialog(dialog)
 				if option.next then
 					kiavcLog('Moving to block ' .. option.next)
 					current = option.next
+					goto changeblock
 				end
 			end
 		else
 			-- We have a series of steps to perform
 			for _, step in ipairs(block.steps) do
+				if step.notif then
+					-- This only has to be performed if not matching a specific state
+					for name, value in pairs(step.notif) do
+						if state[name] == value then
+							goto skip
+						end
+					end
+				end
+				if step.onlyif then
+					-- This only has to be performed if matching a specific state
+					for name, value in pairs(step.onlyif) do
+						if state[name] ~= value then
+							goto skip
+						end
+					end
+				end
 				-- Check which actor will perform this step
 				local actor = activeActor
 				if step.actor then
@@ -194,13 +218,16 @@ function enterDialog(dialog)
 				if step.next then
 					kiavcLog('Moving to block ' .. step.next)
 					current = step.next
+					goto changeblock
 				end
 				-- If we're done, stop here
 				if step.exitDialog == true then
 					stopDialog(dialogId)
 					return
 				end
+				::skip::
 			end
 		end
+		::changeblock::
 	end
 end

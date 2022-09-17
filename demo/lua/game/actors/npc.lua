@@ -69,7 +69,9 @@ local npcDialog = {
 		options = {
 			{ name = "1", text = "npcTalk1", once = true, next = "greeting" },
 			{ name = "2", text = "npcTalk2", notif = { npcAskedWhat = true }, next = "looking" },
-			{ name = "3", text = "npcTalk3", once = true, next = "clone" },
+			{ name = "3", text = "npcTalk3", notif = { npcAskedWhere1 = true }, next = "clone" },
+			{ name = "3b", text = "npcTalk3b", onlyif = { npcAskedWhere1 = true }, notif = { npcAskedWhere2 = true }, next = "clone" },
+			{ name = "3c", text = "npcTalk3c", onlyif = { npcAskedWhere2 = true }, notif = { npcAskedWhere3 = true }, next = "clone" },
 			{ name = "4", text = "npcTalk4", next = "done" }
 		}
 	},
@@ -130,8 +132,23 @@ local npcDialog = {
 		}
 	},
 	clone = {
+		-- This is an example of conditional responses: we have three separate
+		-- possible paths we can go through, depending on some state variables.
+		-- It's probably easier to just use different blocks, but in some cases
+		-- such an approach may be useful to prevent "block overload".
 		steps = {
-			{ actor = "npc", say = "npcResp3_1", state = { npcAskedWhere = true }, next = "main" }
+			-- Path #1
+			{ actor = "npc", say = "npcResp3_1", notif = { npcAskedWhere1 = true }, state = { npcAskedWhere1 = true }, next = "main" },
+			-- Path #2
+			{ actor = "npc", say = "npcResp3b_1", onlyif = { npcAskedWhere1 = true }, notif = { npcAskedWhere2 = true } },
+			{ actor = "npc", say = "npcResp3b_2", onlyif = { npcAskedWhere1 = true },
+				notif = { npcAskedWhere2 = true }, state = { npcAskedWhere2 = true }, next = "main" },
+			-- Path #3
+			{ actor = "npc", say = "npcResp3c_1", onlyif = { npcAskedWhere2 = true }, notif = { npcAskedWhere3 = true } },
+			{ actor = "npc", say = "npcResp3c_2", onlyif = { npcAskedWhere2 = true }, notif = { npcAskedWhere3 = true } },
+			{ say = "npcResp3c_3", onlyif = { npcAskedWhere2 = true }, notif = { npcAskedWhere3 = true } },
+			{ actor = "npc", say = "npcSearch3", onlyif = { npcAskedWhere2 = true }, notif = { npcAskedWhere3 = true },
+				state = { npcAskedWhere3 = true }, next = "main" }
 		}
 	},
 	-- This is our way out, since there's an "exitDialog = true" item

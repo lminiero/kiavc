@@ -219,6 +219,14 @@ translations = {
 		en = "Hey, don't I know you from somewhere?",
 		it = "Hey, ma non ci siamo conosciuti da qualche parte?",
 	},
+	npcTalk3b = {
+		en = "I'm pretty sure I've seen you before...",
+		it = "Sono abbastanza sicuro di averti già visto...",
+	},
+	npcTalk3c = {
+		en = "But you look so familiar!",
+		it = "Ma hai una faccia così conosciuta!",
+	},
 	npcTalk4 = {
 		en = "I should go.",
 		it = "Meglio che vada.",
@@ -327,6 +335,30 @@ translations = {
 	npcResp3_1 = {
 		en = "I don't think so, I've never seen you in my life.",
 		it = "Non penso proprio, non ti ho mai visto in vita mia.",
+	},
+	npcResp3b_1 = {
+		en = "Again?",
+		it = "Di nuovo?",
+	},
+	npcResp3b_2 = {
+		en = "I don't know you!",
+		it = "Non ci conosciamo!",
+	},
+	npcResp3b_3 = {
+		en = "I think I'd remember a face like yours, wouldn't I?",
+		it = "Penso che ricorderei una faccia come la tua, non credi?",
+	},
+	npcResp3c_1 = {
+		en = "Will you drop it?!",
+		it = "La smetti?!",
+	},
+	npcResp3c_2 = {
+		en = "WE'VE. NEVER. MET.",
+		it = "NON. CI. SIAMO. MAI. INCONTRATI.",
+	},
+	npcResp3c_3 = {
+		en = "If you say so... It'll come to me.",
+		it = "Se lo dici tu... Mi tornerà in mente.",
 	},
 	npcResp4_1 = {
 		en = "Yeah, whatever.",
