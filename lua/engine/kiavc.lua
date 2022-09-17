@@ -9,10 +9,11 @@ kiavcRequire('engine/room')
 kiavcRequire('engine/actor')
 kiavcRequire('engine/costume')
 kiavcRequire('engine/object')
+kiavcRequire('engine/dialog')
 kiavcRequire('engine/translation')
 
 -- Table where we keep the state of the dynamic variables
-state = {}
+state = { dialogues = {} }
 
 -- Functions to handle user input from the keyboard
 inputTrigger = {}

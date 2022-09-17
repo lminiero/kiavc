@@ -22,7 +22,7 @@ local npc = Actor:new({
 				activeActor:say(text('npcTalk'))
 			else
 				rooms['street']:stopScript('searching')
-				startScript(npcDialog)
+				startScript(startNpcDialog)
 				self:look('left')
 			end
 		end,
@@ -51,67 +51,99 @@ local npc = Actor:new({
 npc:moveTo('street', 460, 180)
 npc:show()
 
--- Basic test of interaction with the npc
-function npcDialog()
-	while(true) do
-		-- Let's show the dialog on top, with a semitransparent background
-		startDialog({ id = 'test', font = 'dialogues', color = blue, selected = cyan,
-			background = { r = 0, g = 0, b = 0, a = 128 },
-			area = { x1 = 0, y1 = 144, x2 = 320, y2 = 180 } })
-		local lines = {
-			{ name = "1", text = "npcTalk1", say = "npcTalk1" },
-			{ name = "2", text = "npcTalk2", say = "npcTalk2" },
-			{ name = "3", text = "npcTalk3", say = "npcTalk3" },
-			{ name = "4", text = "npcTalk4", say = "npcTalk4" },
+-- Basic test of interaction with the NPC: first of all we create the
+-- dialog tree, starting with the settings and the point of entry (main),
+-- and then we define all the blocks the dialogue may go through. At the
+-- end, we pass this object to the enterDialog() function to run it.
+local npcDialog = {
+	-- All dialogue objects need settings: this is the object that is
+	-- automatically passed to the startDialog() core engine function
+	settings = { id = 'test', font = 'dialogues', color = blue, selected = cyan,
+		background = { r = 0, g = 0, b = 0, a = 128 },
+		area = { x1 = 0, y1 = 144, x2 = 320, y2 = 180 } },
+	-- All dialogue objects also need a "main" block, which acts as an
+	-- entry point for the dialogue: it could present some options that
+	-- the user can pick (as the example below) or just some steps that
+	-- introduce the conversation before actually making it interactive
+	main = {
+		options = {
+			{ name = "1", text = "npcTalk1", once = true, next = "greeting" },
+			{ name = "2", text = "npcTalk2", notif = { npcAskedWhat = true }, next = "looking" },
+			{ name = "3", text = "npcTalk3", once = true, next = "clone" },
+			{ name = "4", text = "npcTalk4", next = "done" }
 		}
-		for _, line in ipairs(lines) do
-			if line.name == "1" and state.npcSaidHi then goto continue end
-			if line.name == "2" and state.npcAskedWhat then goto continue end
-			if line.name == "3" and state.npcAskedWhere then goto continue end
-			addDialogLine({ id = 'test', name = line.name, text = text(line.text) })
-			::continue::
-		end
-		kiavcLog('Waiting for dialog')
-		waitDialog('test')
-		kiavcLog('Dialog awaken')
-		local s = selectedDialog['test']
-		kiavcLog('  -- Line ' .. s)
-		local line = nil
-		for _, l in ipairs(lines) do
-			if l.name == s then
-				line = l
-				break
-			end
-		end
-		if line then
-			activeActor:say(text(line.say))
-			waitFor(activeActor.id)
-			if s == '1' then
-				state.npcSaidHi = true
-				npc:say(text("npcResp11"))
-				waitFor(npc.id)
-				waitMs(500)
-				npc:say(text("npcResp12"))
-				waitFor(npc.id)
-				npc:say(text("npcResp13"))
-				waitFor(npc.id)
-			elseif s == '2' then
-				state.npcAskedWhat = true
-				npc:say(text("npcResp21"))
-				waitFor(npc.id)
-				npc:say(text("npcResp22"))
-				waitFor(npc.id)
-			elseif s == '3' then
-				state.npcAskedWhere = true
-				npc:say(text("npcResp31"))
-				waitFor(npc.id)
-			elseif s == '4' then
-				stopDialog('test')
-				npc:say(text("npcResp41"))
-				waitFor(npc.id)
-				rooms['street']:startScript('searching', npcSearchingScript)
-				break
-			end
-		end
-	end
+	},
+	-- All the blocks below are possible iterations in the dialog: any
+	-- of them contain either a series of steps (actors doing or saying
+	-- something), or options that can be presented to the user. Adding
+	-- a "next" property to one of the items moves to the selected block
+	greeting = {
+		steps = {
+			{ actor = "npc", say = "npcResp1_1" },
+			{ actor = "npc", say = "npcResp1_2" },
+			{ actor = "npc", say = "npcResp1_3", state = { npcSaidHi = true }, next = "main" }
+		}
+	},
+	looking = {
+		steps = {
+			{ actor = "npc", say = "npcResp2_1" },
+			{ actor = "npc", say = "npcResp2_2" },
+			{ say = "npcTalk2_mh", next = "list" }
+		}
+	},
+	list = {
+		options = {
+			{ name = "1", text = "npcTalk2_list1", once = true, next = "no" },
+			{ name = "2", text = "npcTalk2_list2", once = true, next = "no" },
+			{ name = "3", text = "npcTalk2_list3", once = true, next = "no" },
+			{ name = "4", text = "npcTalk2_list4", once = true, next = "no" },
+			{ name = "5", text = "npcTalk2_list5", once = true, next = "nohat" },
+			{ name = "6", text = "npcTalk2_list6", once = true, next = "noglasses" },
+			{ name = "7", text = "npcTalk2_list7", once = true, next = "no" },
+			{ name = "8", text = "npcTalk2_list8", once = true, next = "no" },
+			{ name = "9", text = "npcTalk2_list9", once = true, next = "no" },
+			{ name = "10", text = "npcTalk2_list10", once = true, next = "no" },
+			{ name = "11", text = "npcTalk2_list11", once = true, next = "no" },
+			{ name = "12", text = "npcTalk2_list12", once = true, next = "no" },
+			{ name = "13", text = "npcTalk2_list13", once = true, next = "no" },
+			{ name = "14", text = "npcTalk2_list14", once = true, next = "no" },
+			{ name = "15", text = "npcTalk2_list15", state = { npcAskedWhat = true }, next = "main" },
+		}
+	},
+	no = {
+		steps = {
+			{ actor = "npc", say = "npcResp2_no", next = "list" },
+		}
+	},
+	nohat = {
+		steps = {
+			{ actor = "npc", say = "npcResp2_nohat1" },
+			{ actor = "npc", look = "down", sleep = 500 },
+			{ actor = "npc", look = "left", say = "npcResp2_nohat2" },
+			{ actor = "npc", sleep = 1000 },
+			{ actor = "npc", say = "npcResp2_nohat3", next = "list" },
+		}
+	},
+	noglasses = {
+		steps = {
+			{ actor = "npc", say = "npcResp2_noglasses", next = "list" },
+		}
+	},
+	clone = {
+		steps = {
+			{ actor = "npc", say = "npcResp3_1", state = { npcAskedWhere = true }, next = "main" }
+		}
+	},
+	-- This is our way out, since there's an "exitDialog = true" item
+	done = {
+		steps = {
+			{ actor = "npc", say = "npcResp4_1" },
+			{ load = "rooms['street']:startScript('searching', npcSearchingScript)", exitDialog = true }
+		}
+	}
+}
+
+-- Actually run the dialogue defined in the npcDialog object
+function startNpcDialog()
+	enterDialog(npcDialog)
 end

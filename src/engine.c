@@ -1640,6 +1640,7 @@ static void kiavc_engine_add_dialog_line(const char *id, const char *name, const
 	}
 	bool selected = (line == dialog->selected);
 	engine.render_list = kiavc_list_append(engine.render_list, selected ? line->selected : line->text);
+	kiavc_engine_check_hovering();
 	/* Done */
 	SDL_Log("Added dialog line to '%s' (%s)\n", id, name);
 }
