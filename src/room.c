@@ -47,6 +47,7 @@ kiavc_room_layer *kiavc_room_add_layer(kiavc_room *room, const char *id, int zpl
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Layer '%s' exists already\n", id);
 			return NULL;
 		}
+		list = list->next;
 	}
 	kiavc_room_layer *layer = SDL_calloc(1, sizeof(kiavc_room_layer));
 	layer->res.type = KIAVC_ROOM_LAYER;
