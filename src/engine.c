@@ -1085,10 +1085,16 @@ int kiavc_engine_render(void) {
 				kiavc_room_layer *layer = (kiavc_room_layer *)resource;
 				kiavc_animation_load(layer->background, renderer);
 				/* FIXME */
-				if(layer && layer->background && engine.room) {
-					clip.x = engine.room->x;
+				if(layer && layer->background && engine.room && engine.room->background) {
+					/* Since parallax may be involved, check how much
+					 * the width of background and this layer differ */
+					int screen_w = kiavc_screen_width/kiavc_screen_scale;
+					int room_range_w = engine.room->background->w - screen_w;
+					int layer_range_w = layer->background->w - screen_w;
+					float layer_x = ((float)engine.room->x / (float)room_range_w) * (float)layer_range_w;
+					clip.x = (int)layer_x;
 					clip.y = engine.room->y;
-					clip.w = kiavc_screen_width/kiavc_screen_scale;
+					clip.w = screen_w;
 					clip.h = layer->background->h;
 					rect.x = 0;
 					rect.y = 0;

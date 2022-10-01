@@ -4,16 +4,19 @@
 
 -- First we register the background image, with no z-plane layer. We're
 -- using a nice street background by https://ansimuz.itch.io/ for this test
-Image:new({ id = 'street-bg', path = './assets/images/cyberpunk-street.png' })
+Image:new({ id = 'street-bg', path = './assets/images/street.png' })
+Image:new({ id = 'street-bg-back', path = './assets/images/street-back.png' })
+Image:new({ id = 'street-bg-far', path = './assets/images/street-far.png' })
 -- Then we register the background music track we'll use
 local luke9 = Music:new({ id = 'luke9', path = './assets/music/luke9.ogg' })
 -- Now we define the room itself
 Room:new({
 	id = 'street',
 	background = 'street-bg',
-	--~ layers = {
-		--~ { id = 'street-overlay', image = 'street-bg-overlay', plane = 10 }
-	--~ },
+	layers = {
+		{ id = 'street-back', image = 'street-bg-back', plane = -100 },
+		{ id = 'street-far', image = 'street-bg-far', plane = -200 }
+	},
 	walkboxes = {
 		{ x1 = 127, y1 = 146, x2 = 172, y2 = 150, scale = 0.5 },
 		{ x1 = 118, y1 = 150, x2 = 180, y2 = 154, scale = 0.6 },
