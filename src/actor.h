@@ -56,6 +56,8 @@ typedef struct kiavc_actor {
 	kiavc_list *path, *step;
 	/* Next target coordinates of the actor, when walking */
 	int target_x, target_y;
+	/* Walking ticks (to separate them from animation ticks) */
+	int walk_ticks;
 	/* Current state of the actor */
 	int state;
 	/* Current direction of the actor */

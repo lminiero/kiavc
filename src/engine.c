@@ -99,8 +99,6 @@ typedef struct kiavc_engine {
 	bool cursor_visible;
 	/* Current cursor text, if any */
 	kiavc_font_text *cursor_text;
-	/* Cursor ticks */
-	uint32_t mouse_ticks;
 	/* Current room */
 	kiavc_room *room;
 	/* Room ticks */
@@ -145,7 +143,7 @@ static void kiavc_engine_start_dialog(const char *id, const char *font, SDL_Colo
 	SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area);
 static void kiavc_engine_add_dialog_line(const char *id, const char *name, const char *text);
 static void kiavc_engine_stop_dialog(const char *id);
-static void kiavc_engine_register_animation(const char *id, const char *path, int frames, SDL_Color *transparency);
+static void kiavc_engine_register_animation(const char *id, const char *path, int ms, int frames, SDL_Color *transparency);
 static void kiavc_engine_register_font(const char *id, const char *path, int size);
 static void kiavc_engine_register_cursor(const char *id);
 static void kiavc_engine_set_cursor_animation(const char *id, const char *canim);
@@ -782,8 +780,6 @@ int kiavc_engine_update_world(void) {
 	if(kiavc_scripts_update_world(ticks) < 0)
 		return -1;
 	/* Now update the world in the engine: initialize ticks, if needed */
-	if(engine.mouse_ticks == 0)
-		engine.mouse_ticks = ticks;
 	if(engine.room_ticks == 0)
 		engine.room_ticks = ticks;
 	/* Check if we're fading in/out the whole screen */
@@ -810,10 +806,12 @@ int kiavc_engine_update_world(void) {
 		if(resource->type == KIAVC_ACTOR) {
 			/* This is an actor */
 			kiavc_actor *actor = (kiavc_actor *)resource;
-			if(actor && actor->line && actor->line->started == 0)
+			if(actor->line && actor->line->started == 0)
 				actor->line->started = ticks;
-			if(ticks - actor->res.ticks >= 100) {
-				actor->res.ticks += 100;
+			if(actor->walk_ticks == 0)
+				actor->walk_ticks = ticks;
+			if(ticks - actor->walk_ticks >= 100) {
+				actor->walk_ticks += 100;
 				if(actor->target_x != -1 && actor->target_y != -1) {
 					if(actor->state != KIAVC_ACTOR_WALKING)
 						actor->frame = 0;
@@ -885,7 +883,6 @@ int kiavc_engine_update_world(void) {
 						}
 					}
 				}
-				actor->frame++;
 				if(actor->room == engine.room && engine.following == actor) {
 					int width = kiavc_screen_width/kiavc_screen_scale;
 					if(engine.room_direction == 0) {
@@ -904,11 +901,18 @@ int kiavc_engine_update_world(void) {
 					}
 				}
 			}
+			kiavc_costume_set *set = kiavc_costume_get_set(actor->costume, kiavc_actor_state_str(actor->state));
+			int ms = (set && set->animations[actor->direction]) ? set->animations[actor->direction]->ms : 100;
+			if(ticks - actor->res.ticks >= ms) {
+				actor->res.ticks += ms;
+				actor->frame++;
+			}
 		} else if(resource->type == KIAVC_OBJECT) {
 			/* This is an object */
 			kiavc_object *object = (kiavc_object *)resource;
-			if(ticks - object->res.ticks >= 100) {
-				object->res.ticks += 100;
+			int ms = object->animation ? object->animation->ms : 100;
+			if(ticks - object->res.ticks >= ms) {
+				object->res.ticks += ms;
 				if(object->animation) {
 					object->frame++;
 				} else {
@@ -973,17 +977,30 @@ int kiavc_engine_update_world(void) {
 			}
 		}
 	}
-	if(ticks - engine.mouse_ticks >= 100) {
-		engine.mouse_ticks += 100;
-		if(engine.main_cursor && engine.main_cursor->animation) {
-			engine.main_cursor->frame++;
-			if(engine.main_cursor->frame >= engine.main_cursor->animation->frames)
+	if(engine.main_cursor) {
+		if(engine.main_cursor->res.ticks == 0)
+			engine.main_cursor->res.ticks = ticks;
+		int ms = engine.main_cursor->animation ? engine.main_cursor->animation->ms : 100;
+		if(ticks - engine.main_cursor->res.ticks >= ms) {
+			engine.main_cursor->res.ticks += ms;
+			if(engine.main_cursor->animation) {
+				engine.main_cursor->frame++;
+			} else {
 				engine.main_cursor->frame = 0;
+			}
 		}
-		if(engine.hotspot_cursor && engine.hotspot_cursor->animation) {
-			engine.hotspot_cursor->frame++;
-			if(engine.hotspot_cursor->frame >= engine.hotspot_cursor->animation->frames)
+	}
+	if(engine.hotspot_cursor) {
+		if(engine.hotspot_cursor->res.ticks == 0)
+			engine.hotspot_cursor->res.ticks = ticks;
+		int ms = engine.hotspot_cursor->animation ? engine.hotspot_cursor->animation->ms : 100;
+		if(ticks - engine.hotspot_cursor->res.ticks >= ms) {
+			engine.hotspot_cursor->res.ticks += ms;
+			if(engine.hotspot_cursor->animation) {
+				engine.hotspot_cursor->frame++;
+			} else {
 				engine.hotspot_cursor->frame = 0;
+			}
 		}
 	}
 	if(engine.fade_ticks > 0) {
@@ -1116,7 +1133,7 @@ int kiavc_engine_render(void) {
 						kiavc_costume_load_set(set, renderer);
 						clip.w = set->animations[actor->direction]->w;
 						clip.h = set->animations[actor->direction]->h;
-						if(actor->frame >= set->animations[actor->direction]->frames)
+						if(actor->frame < 0 || actor->frame >= set->animations[actor->direction]->frames)
 							actor->frame = 0;
 						clip.x = actor->frame*(clip.w);
 						clip.y = 0;
@@ -1149,7 +1166,7 @@ int kiavc_engine_render(void) {
 						kiavc_animation_load(animation, renderer);
 						clip.w = animation->w;
 						clip.h = animation->h;
-						if(object->frame >= animation->frames)
+						if(object->frame < 0 || object->frame >= animation->frames)
 							object->frame = 0;
 						clip.x = object->frame*(clip.w);
 						clip.y = 0;
@@ -1346,6 +1363,8 @@ int kiavc_engine_render(void) {
 			engine.hotspot_cursor : engine.main_cursor;
 		if(engine.cursor_visible && cursor && cursor->animation && cursor->animation && (!engine.cutscene || engine.dialog)) {
 			kiavc_animation_load(cursor->animation, renderer);
+			if(cursor->frame < 0 || cursor->frame >= cursor->animation->frames)
+				cursor->frame = 0;
 			clip.w = cursor->animation->w;
 			clip.h = cursor->animation->h;
 			clip.x = cursor->frame*(clip.w);
@@ -1677,7 +1696,7 @@ static void kiavc_engine_stop_dialog(const char *id) {
 	engine.dialog = NULL;
 	SDL_Log("Stopped dialog '%s'\n", id);
 }
-static void kiavc_engine_register_animation(const char *id, const char *path, int frames, SDL_Color *transparency) {
+static void kiavc_engine_register_animation(const char *id, const char *path, int frames, int ms, SDL_Color *transparency) {
 	if(!id || !path || frames < 1)
 		return;
 	/* Check if this animation ID exists already */
@@ -1688,7 +1707,7 @@ static void kiavc_engine_register_animation(const char *id, const char *path, in
 		return;
 	}
 	/* Create a new animation instance and add it to the map */
-	anim = kiavc_animation_create(id, path, frames, transparency);
+	anim = kiavc_animation_create(id, path, frames, ms, transparency);
 	kiavc_map_insert(animations, anim->id, anim);
 	/* Done */
 	SDL_Log("Registered %d-frames animation '%s' (%s)\n", frames, anim->id, anim->path);

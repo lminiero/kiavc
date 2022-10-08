@@ -37,11 +37,13 @@ typedef struct kiavc_animation {
 	int w, h;
 	/* Number of frames in the animation */
 	int frames;
+	/* How long each frame should appear */
+	int ms;
 } kiavc_animation;
 
 /* Animation constructor */
 kiavc_animation *kiavc_animation_create(const char *id, const char *path,
-	int frames, SDL_Color *transparency);
+	int frames, int ms, SDL_Color *transparency);
 /* Animation image initialization */
 int kiavc_animation_load(kiavc_animation *anim, SDL_Renderer *renderer);
 /* Animation image de-initialization */

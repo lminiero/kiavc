@@ -205,6 +205,31 @@ static int kiavc_lua_method_showtext(lua_State *s);
 /* Quit */
 static int kiavc_lua_method_quit(lua_State *s);
 
+/* Helper to print the content of the Lua stack for debugging purposes
+ * Adapted from https://stackoverflow.com/a/59097940 */
+static void kiavc_scripts_dumpstack(lua_State *s) {
+	int top = lua_gettop(s), i = 1;
+	for(i=1; i<=top; i++) {
+	switch(lua_type(s, i)) {
+		case LUA_TNUMBER:
+			SDL_Log("[%d] %s: %g\n", i, luaL_typename(s, i), lua_tonumber(s, i));
+			break;
+		case LUA_TSTRING:
+			SDL_Log("[%d] %s: %s\n", i, luaL_typename(s, i), lua_tostring(s, i));
+			break;
+		case LUA_TBOOLEAN:
+			SDL_Log("[%d] %s: %s\n", i, luaL_typename(s, i), (lua_toboolean(s, i) ? "true" : "false"));
+			break;
+		case LUA_TNIL:
+			SDL_Log("[%d] %s: nil\n", i, luaL_typename(s, i));
+			break;
+		default:
+			SDL_Log("[%d] %s: %p\n", i, luaL_typename(s,i), lua_topointer(s, i));
+			break;
+		}
+	}
+}
+
 /* Helper function to read scripts from files to strings */
 static char *kiavc_scripts_open_file(const char *path) {
 	if(!path)
@@ -936,14 +961,9 @@ static int kiavc_lua_method_registeranimation(lua_State *s) {
 	const char *path = luaL_checkstring(s, 3);
 	lua_getfield(s, 1, "frames");
 	int frames = luaL_checknumber(s, 4);
-	if(id == NULL || path == NULL || frames < 1) {
-		/* Ignore */
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing animation ID or path, or invalid number of frames\n");
-		return 0;
-	}
 	int tr = -1, tg = -1, tb = -1, idx = 4;
+	int tidx = ++idx;
 	if(lua_getfield(s, 1, "transparency") != LUA_TNIL) {
-		int tidx = ++idx;
 		luaL_checktype(s, tidx, LUA_TTABLE);
 		lua_getfield(s, tidx, "r");
 		tr = luaL_checknumber(s, ++idx);
@@ -952,14 +972,22 @@ static int kiavc_lua_method_registeranimation(lua_State *s) {
 		lua_getfield(s, tidx, "b");
 		tb = luaL_checknumber(s, ++idx);
 	}
+	int ms = 100;
+	if(lua_getfield(s, 1, "ms") != LUA_TNIL)
+		ms = luaL_checknumber(s, ++idx);
+	if(id == NULL || path == NULL || frames < 1 || ms < 1) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing animation ID or path, or invalid number of frames/timing\n");
+		return 0;
+	}
 	if(tr < 0 || tb < 0 || tg < 0) {
 		/* Invoke the application callback to enforce this */
-		kiavc_cb->register_animation(id, path, frames, NULL);
+		kiavc_cb->register_animation(id, path, frames, ms, NULL);
 	} else {
 		/* RGB for color keying was passed as well */
 		SDL_Color color = { .r = tr, .g = tg, .b = tb };
 		/* Invoke the application callback to enforce this */
-		kiavc_cb->register_animation(id, path, frames, &color);
+		kiavc_cb->register_animation(id, path, frames, ms, &color);
 	}
 	return 0;
 }

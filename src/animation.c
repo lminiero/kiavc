@@ -25,13 +25,14 @@
 
 /* Animation constructor */
 kiavc_animation *kiavc_animation_create(const char *id, const char *path,
-		int frames, SDL_Color *transparency) {
+		int frames, int ms, SDL_Color *transparency) {
 	if(!id || !path || frames < 1)
 		return NULL;
 	kiavc_animation *anim = SDL_calloc(1, sizeof(kiavc_animation));
 	anim->id = SDL_strdup(id);
 	anim->path = SDL_strdup(path);
 	anim->frames = frames;
+	anim->ms = ms;
 	if(transparency) {
 		anim->transparency = 1;
 		anim->t_r = transparency->r;
