@@ -47,7 +47,7 @@ static int kiavc_screen_width = -1;
 static int kiavc_screen_height = -1;
 static int kiavc_screen_fps = -1;
 static bool kiavc_screen_grab_mouse = false;
-static bool kiavc_screen_fullscreen = false;
+static bool kiavc_screen_fullscreen = false, kiavc_screen_fullscreen_desktop = false;
 static bool kiavc_screen_scanlines = false;
 static SDL_Texture *kiavc_screen_scanlines_texture = NULL;
 
@@ -125,16 +125,23 @@ static void kiavc_engine_set_resolution(int width, int height, int fps, int scal
 static void kiavc_engine_set_title(const char *title);
 static void kiavc_engine_set_icon(const char *path);
 static void kiavc_engine_grab_mouse(bool grab);
-static void kiavc_engine_set_fullscreen(bool fullscreen);
+static bool kiavc_engine_is_grabbing_mouse(void);
+static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop);
+static bool kiavc_engine_get_fullscreen(void);
 static void kiavc_engine_set_scanlines(bool scanlines);
+static bool kiavc_engine_get_scanlines(void);
 static void kiavc_engine_debug_walkboxes(bool debug);
+static bool kiavc_engine_is_debugging_walkboxes(void);
 static void kiavc_engine_save_screenshot(const char *path);
 static void kiavc_engine_enable_console(const char *font);
 static void kiavc_engine_show_console(void);
 static void kiavc_engine_hide_console(void);
 static void kiavc_engine_disable_console(void);
+static bool kiavc_engine_is_console_enabled(void);
+static bool kiavc_engine_is_console_visible(void);
 static void kiavc_engine_enable_input(void);
 static void kiavc_engine_disable_input(void);
+static bool kiavc_engine_is_input_enabled(void);
 static void kiavc_engine_start_cutscene(void);
 static void kiavc_engine_stop_cutscene(void);
 static void kiavc_engine_fade_in(int ms);
@@ -210,16 +217,23 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.set_title = kiavc_engine_set_title,
 		.set_icon = kiavc_engine_set_icon,
 		.grab_mouse = kiavc_engine_grab_mouse,
+		.is_grabbing_mouse = kiavc_engine_is_grabbing_mouse,
 		.set_fullscreen = kiavc_engine_set_fullscreen,
+		.get_fullscreen = kiavc_engine_get_fullscreen,
 		.set_scanlines = kiavc_engine_set_scanlines,
+		.get_scanlines = kiavc_engine_get_scanlines,
 		.debug_walkboxes = kiavc_engine_debug_walkboxes,
+		.is_debugging_walkboxes = kiavc_engine_is_debugging_walkboxes,
 		.save_screenshot = kiavc_engine_save_screenshot,
 		.enable_console = kiavc_engine_enable_console,
 		.show_console = kiavc_engine_show_console,
 		.hide_console = kiavc_engine_hide_console,
 		.disable_console = kiavc_engine_disable_console,
+		.is_console_enabled = kiavc_engine_is_console_enabled,
+		.is_console_visible = kiavc_engine_is_console_visible,
 		.enable_input = kiavc_engine_enable_input,
 		.disable_input = kiavc_engine_disable_input,
+		.is_input_enabled = kiavc_engine_is_input_enabled,
 		.start_cutscene = kiavc_engine_start_cutscene,
 		.stop_cutscene = kiavc_engine_stop_cutscene,
 		.fade_in = kiavc_engine_fade_in,
@@ -345,25 +359,33 @@ static void kiavc_engine_trigger_fullscreen(void) {
 			SDL_SetWindowSize(window, kiavc_screen_width, kiavc_screen_height);
 			kiavc_screen_scale_prev = -1;
 		}
+		return;
+	}
+	/* We need to go fullscreen, check the mode */
+	if(!kiavc_screen_fullscreen_desktop) {
+		/* Just go "real" fullscreen */
+		SDL_Log("Fullscreen mode\n");
+		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 	} else {
-		/* Query the display */
+		/* We're using the desktop mode, query the display first */
 		int display = SDL_GetWindowDisplayIndex(window);
 		if(display < 0) {
 			/* Just go "real" fullscreen */
-			SDL_Log("Fullscreen mode\n");
+			kiavc_screen_fullscreen_desktop = false;
+			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Couldn't query window display, using Fullscreen mode\n");
 			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 		} else {
 			SDL_DisplayMode mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
 			if(SDL_GetDisplayMode(display, 0, &mode) < 0) {
 				/* Just go "real" fullscreen */
-				SDL_Log("Fullscreen mode\n");
+				SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Couldn't get display mode, using Fullscreen mode\n");
 				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 			} else {
 				int w = kiavc_screen_width / kiavc_screen_scale;
 				int h = kiavc_screen_height / kiavc_screen_scale;
 				if(mode.w <= w || mode.h <= h) {
 					/* Just go "real" fullscreen */
-					SDL_Log("Fullscreen mode\n");
+					SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Display mode resolution too small, using Fullscreen mode\n");
 					SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 				} else {
 					SDL_Log("Fullscreen mode (desktop)\n");
@@ -1464,14 +1486,21 @@ static void kiavc_engine_grab_mouse(bool grab) {
 		SDL_SetWindowMouseGrab(window, kiavc_screen_grab_mouse);
 	SDL_Log("%s mouse grabbing\n", kiavc_screen_grab_mouse ? "Enabling" : "Disabling");
 }
-static void kiavc_engine_set_fullscreen(bool fullscreen) {
+static bool kiavc_engine_is_grabbing_mouse(void) {
+	return kiavc_screen_grab_mouse;
+}
+static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop) {
 	if(kiavc_screen_fullscreen == fullscreen) {
 		/* Nothing to do */
 		return;
 	}
 	kiavc_screen_fullscreen = fullscreen;
+	kiavc_screen_fullscreen_desktop = desktop;
 	kiavc_engine_trigger_fullscreen();
 	SDL_Log("%s full-screen\n", kiavc_screen_fullscreen ? "Enabling" : "Disabling");
+}
+static bool kiavc_engine_get_fullscreen(void) {
+	return kiavc_screen_fullscreen;
 }
 static void kiavc_engine_set_scanlines(bool scanlines) {
 	if(kiavc_screen_scanlines == scanlines) {
@@ -1482,6 +1511,9 @@ static void kiavc_engine_set_scanlines(bool scanlines) {
 	kiavc_engine_regenerate_scanlines();
 	SDL_Log("%s scanlines\n", kiavc_screen_scanlines ? "Enabling" : "Disabling");
 }
+static bool kiavc_engine_get_scanlines(void) {
+	return kiavc_screen_scanlines;
+}
 static void kiavc_engine_debug_walkboxes(bool debug) {
 	if(kiavc_debug_walkboxes == debug) {
 		/* Nothing to do */
@@ -1489,6 +1521,9 @@ static void kiavc_engine_debug_walkboxes(bool debug) {
 	}
 	kiavc_debug_walkboxes = debug;
 	SDL_Log("%s walkboxes debugging\n", kiavc_debug_walkboxes ? "Enabling" : "Disabling");
+}
+static bool kiavc_engine_is_debugging_walkboxes(void) {
+	return kiavc_debug_walkboxes;
 }
 static void kiavc_engine_save_screenshot(const char *filename) {
 	if(!filename)
@@ -1545,6 +1580,12 @@ static void kiavc_engine_disable_console(void) {
 	console_font = NULL;
 	SDL_Log("Disabled console\n");
 }
+static bool kiavc_engine_is_console_enabled(void) {
+	return !!console_font;
+}
+static bool kiavc_engine_is_console_visible(void) {
+	return !!console_font && console_active;
+}
 static void kiavc_engine_enable_input(void) {
 	if(engine.input_disabled) {
 		SDL_Log("Enabling user input\n");
@@ -1560,6 +1601,9 @@ static void kiavc_engine_disable_input(void) {
 		kiavc_engine_hide_cursor_text();
 		engine.hovering = NULL;
 	}
+}
+static bool kiavc_engine_is_input_enabled(void) {
+	return !engine.input_disabled;
 }
 static void kiavc_engine_start_cutscene(void) {
 	if(!engine.cutscene) {

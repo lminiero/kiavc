@@ -25,10 +25,8 @@ setTitle('KIAVC engine demo')
 
 -- A few other things we may want to do by default
 --~ grabMouse(true)
---~ fullscreen = true
---~ setFullscreen(fullscreen)
---~ scanlines = true
---~ setScanlines(scanlines)
+--~ setFullscreen(true)
+--~ setScanlines(true)
 
 -- We enable the scripting console, and specify which font to use
 Font:new({ id = 'console', path = './assets/fonts/orangekid.ttf', size = 24 })
@@ -59,32 +57,17 @@ onUserInput('6', function()
 end)
 -- When we press F, we get in or out of fullscreen
 onUserInput('F', function()
-	if fullscreen == nil or fullscreen == false then
-		fullscreen = true
-	else
-		fullscreen = false
-	end
-	setFullscreen(fullscreen)
+	setFullscreen(not getFullscreen())
 end)
--- Pressing F8 enables the interactive console
+-- Pressing F8 enables the interactive console (ESC disables it)
 onUserInput('F8', showConsole)
 -- Pressing F10 enables or disables scanlines
 onUserInput('F10', function()
-	if scanlines == nil or scanlines == false then
-		scanlines = true
-	else
-		scanlines = false
-	end
-	setScanlines(scanlines)
+	setScanlines(not getScanlines())
 end)
 -- Pressing F11 enables or disables the debugging of walkboxes
 onUserInput('F11', function()
-	if walkboxes == nil or walkboxes == false then
-		walkboxes = true
-	else
-		walkboxes = false
-	end
-	debugWalkboxes(walkboxes)
+	debugWalkboxes(not isDebuggingWalkboxes())
 end)
 -- Pressing F12 saves a screenshot
 onUserInput('F12', function()

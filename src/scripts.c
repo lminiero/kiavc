@@ -48,12 +48,20 @@ static int kiavc_lua_method_settitle(lua_State *s);
 static int kiavc_lua_method_seticon(lua_State *s);
 /* Set whether we should grab the mouse and confine it to the window */
 static int kiavc_lua_method_grabmouse(lua_State *s);
+/* Check whether we're grabbing the mouse and confining it to the window */
+static int kiavc_lua_method_isgrabbingmouse(lua_State *s);
 /* Set fullscreen mode */
 static int kiavc_lua_method_setfullscreen(lua_State *s);
+/* Check the fullscreen mode */
+static int kiavc_lua_method_getfullscreen(lua_State *s);
 /* Set scanlines mode */
 static int kiavc_lua_method_setscanlines(lua_State *s);
+/* Check the scanlines mode */
+static int kiavc_lua_method_getscanlines(lua_State *s);
 /* Set whether to debug walkboxes or not */
 static int kiavc_lua_method_debugwalkboxes(lua_State *s);
+/* Check whether walkboxes debugging is on or not */
+static int kiavc_lua_method_isdebuggingwalkboxes(lua_State *s);
 /* Save a screenshot */
 static int kiavc_lua_method_savescreenshot(lua_State *s);
 /* Enable the console and specify which font to use */
@@ -64,10 +72,16 @@ static int kiavc_lua_method_showconsole(lua_State *s);
 static int kiavc_lua_method_hideconsole(lua_State *s);
 /* Disable the console */
 static int kiavc_lua_method_disableconsole(lua_State *s);
+/* Check if the console is enabled */
+static int kiavc_lua_method_isconsoleenabled(lua_State *s);
+/* Check if the console is visible */
+static int kiavc_lua_method_isconsolevisible(lua_State *s);
 /* Enable input from the user */
 static int kiavc_lua_method_enableinput(lua_State *s);
 /* Disable input from the user */
 static int kiavc_lua_method_disableinput(lua_State *s);
+/* Check if input from the user is enabled */
+static int kiavc_lua_method_isinputenabled(lua_State *s);
 /* Start a cutscene */
 static int kiavc_lua_method_startcutscene(lua_State *s);
 /* Stop a cutscene */
@@ -276,16 +290,23 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "setTitle", kiavc_lua_method_settitle);
 	lua_register(lua_state, "setIcon", kiavc_lua_method_seticon);
 	lua_register(lua_state, "grabMouse", kiavc_lua_method_grabmouse);
+	lua_register(lua_state, "isGrabbingMouse", kiavc_lua_method_isgrabbingmouse);
 	lua_register(lua_state, "setFullscreen", kiavc_lua_method_setfullscreen);
+	lua_register(lua_state, "getFullscreen", kiavc_lua_method_getfullscreen);
 	lua_register(lua_state, "setScanlines", kiavc_lua_method_setscanlines);
+	lua_register(lua_state, "getScanlines", kiavc_lua_method_getscanlines);
 	lua_register(lua_state, "debugWalkboxes", kiavc_lua_method_debugwalkboxes);
+	lua_register(lua_state, "isDebuggingWalkboxes", kiavc_lua_method_isdebuggingwalkboxes);
 	lua_register(lua_state, "saveScreenshot", kiavc_lua_method_savescreenshot);
 	lua_register(lua_state, "enableConsole", kiavc_lua_method_enableconsole);
 	lua_register(lua_state, "showConsole", kiavc_lua_method_showconsole);
 	lua_register(lua_state, "hideConsole", kiavc_lua_method_hideconsole);
 	lua_register(lua_state, "disableConsole", kiavc_lua_method_disableconsole);
+	lua_register(lua_state, "isConsoleEnabled", kiavc_lua_method_isconsoleenabled);
+	lua_register(lua_state, "isConsoleVisible", kiavc_lua_method_isconsolevisible);
 	lua_register(lua_state, "enableInput", kiavc_lua_method_enableinput);
 	lua_register(lua_state, "disableInput", kiavc_lua_method_disableinput);
+	lua_register(lua_state, "isInputEnabled", kiavc_lua_method_isinputenabled);
 	lua_register(lua_state, "startCutscene", kiavc_lua_method_startcutscene);
 	lua_register(lua_state, "stopCutscene", kiavc_lua_method_stopcutscene);
 	lua_register(lua_state, "fadeIn", kiavc_lua_method_fadein);
@@ -613,18 +634,51 @@ static int kiavc_lua_method_grabmouse(lua_State *s) {
 	return 0;
 }
 
-/* Set fullscreen mode */
-static int kiavc_lua_method_setfullscreen(lua_State *s) {
-	/* This method allows the Lua script to enable or disable the fullscreen mode */
-	int n = lua_gettop(s), exp = 1;
+/* Check whether we're grabbing the mouse and confining it to the window */
+static int kiavc_lua_method_isgrabbingmouse(lua_State *s) {
+	/* This method allows the Lua script check if fullscreen is enabled */
+	int n = lua_gettop(s), exp = 0;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
 		return 0;
 	}
+	/* Invoke the application callback to query this */
+	bool grabbing = kiavc_cb->is_grabbing_mouse();
+	/* Pass the response back to the stack */
+	lua_pushboolean(s, grabbing);
+	return 1;
+}
+
+/* Set fullscreen mode */
+static int kiavc_lua_method_setfullscreen(lua_State *s) {
+	/* This method allows the Lua script to enable or disable the fullscreen mode */
+	int n = lua_gettop(s), exp = 1, exp2 = 2;
+	if(n != exp && n != exp2) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d or %d)\n", n, exp, exp2);
+		return 0;
+	}
 	bool fullscreen = lua_toboolean(s, 1);
+	bool desktop = false;
+	if(n == 2)
+		desktop = lua_toboolean(s, 2);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_fullscreen(fullscreen);
+	kiavc_cb->set_fullscreen(fullscreen, desktop);
 	return 0;
+}
+
+/* Get fullscreen mode */
+static int kiavc_lua_method_getfullscreen(lua_State *s) {
+	/* This method allows the Lua script check if fullscreen is enabled */
+	int n = lua_gettop(s), exp = 0;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	/* Invoke the application callback to query this */
+	bool fullscreen = kiavc_cb->get_fullscreen();
+	/* Pass the response back to the stack */
+	lua_pushboolean(s, fullscreen);
+	return 1;
 }
 
 /* Set scanlines mode */
@@ -641,6 +695,21 @@ static int kiavc_lua_method_setscanlines(lua_State *s) {
 	return 0;
 }
 
+/* Get scanlines mode */
+static int kiavc_lua_method_getscanlines(lua_State *s) {
+	/* This method allows the Lua script check if scanlines is enabled */
+	int n = lua_gettop(s), exp = 0;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	/* Invoke the application callback to query this */
+	bool scanlines = kiavc_cb->get_scanlines();
+	/* Pass the response back to the stack */
+	lua_pushboolean(s, scanlines);
+	return 1;
+}
+
 /* Set whether to debug walkboxes or not */
 static int kiavc_lua_method_debugwalkboxes(lua_State *s) {
 	/* This method allows the Lua script to debug walkboxes */
@@ -653,6 +722,21 @@ static int kiavc_lua_method_debugwalkboxes(lua_State *s) {
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->debug_walkboxes(debug);
 	return 0;
+}
+
+/* Check whether walkboxes debugging is on or not */
+static int kiavc_lua_method_isdebuggingwalkboxes(lua_State *s) {
+	/* This method allows the Lua script check if walkboxes debugging is enabled */
+	int n = lua_gettop(s), exp = 0;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	/* Invoke the application callback to query this */
+	bool debug = kiavc_cb->is_debugging_walkboxes();
+	/* Pass the response back to the stack */
+	lua_pushboolean(s, debug);
+	return 1;
 }
 
 /* Save a screenshot */
@@ -730,6 +814,36 @@ static int kiavc_lua_method_disableconsole(lua_State *s) {
 	return 0;
 }
 
+/* Check if the console is enabled */
+static int kiavc_lua_method_isconsoleenabled(lua_State *s) {
+	/* This method allows the Lua script check if the console is enabled */
+	int n = lua_gettop(s), exp = 0;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	/* Invoke the application callback to query this */
+	bool enabled = kiavc_cb->is_console_enabled();
+	/* Pass the response back to the stack */
+	lua_pushboolean(s, enabled);
+	return 1;
+}
+
+/* Check if the console is visible */
+static int kiavc_lua_method_isconsolevisible(lua_State *s) {
+	/* This method allows the Lua script check if the console is visible */
+	int n = lua_gettop(s), exp = 0;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	/* Invoke the application callback to query this */
+	bool visible = kiavc_cb->is_console_visible();
+	/* Pass the response back to the stack */
+	lua_pushboolean(s, visible);
+	return 1;
+}
+
 /* Enable input from the user */
 static int kiavc_lua_method_enableinput(lua_State *s) {
 	/* This method allows the Lua script to disable input from the user temporarily */
@@ -741,6 +855,21 @@ static int kiavc_lua_method_enableinput(lua_State *s) {
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->enable_input();
 	return 0;
+}
+
+/* Check if input from the user is enabled */
+static int kiavc_lua_method_isinputenabled(lua_State *s) {
+	/* This method allows the Lua script check if input from the user is enabled */
+	int n = lua_gettop(s), exp = 0;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	/* Invoke the application callback to query this */
+	bool enabled = kiavc_cb->is_input_enabled();
+	/* Pass the response back to the stack */
+	lua_pushboolean(s, enabled);
+	return 1;
 }
 
 /* Disable input from the user */
