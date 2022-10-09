@@ -33,8 +33,6 @@ typedef struct kiavc_room {
 	kiavc_list *layers;
 	/* Pathfinding context */
 	kiavc_pathfinding_context *pathfinding;
-	/* Current position of the background image */
-	int x, y;
 	/* List of actors in this room */
 	kiavc_list *actors;
 	/* List of objects in this room */

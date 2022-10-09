@@ -193,12 +193,12 @@ kiavc_font_text *kiavc_font_render_text(kiavc_font *font, SDL_Renderer *renderer
 	/* Now that we have rendered text, create a struct to host it */
 	kiavc_font_text *ft = SDL_calloc(1, sizeof(kiavc_font_text));
 	ft->res.type = KIAVC_FONT_TEXT;
+	ft->res.x = -1;
+	ft->res.y = -1;
 	ft->res.zplane = 50;	/* By default text is written on top of most things */
 	ft->texture = SDL_CreateTextureFromSurface(renderer, s_text);
 	ft->w = s_text->w;
 	ft->h = s_text->h;
-	ft->x = -1;
-	ft->y = -1;
 	/* FIXME Compute how long this should be displayed */
 	ft->duration = 1000 * (SDL_strlen(text)/10);
 	if(ft->duration == 0)

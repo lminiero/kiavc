@@ -41,8 +41,6 @@ typedef struct kiavc_font_text {
 	SDL_Texture *texture;
 	/* Size of the text */
 	int w, h;
-	/* Where to place the text */
-	int x, y;
 	/* Timers */
 	uint32_t duration, started;
 	/* Resource type of who owns this text */

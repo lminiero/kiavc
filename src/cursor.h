@@ -29,8 +29,6 @@ typedef struct kiavc_cursor {
 	char *id;
 	/* Cursor animation */
 	kiavc_animation *animation;
-	/* Current coordinates of the cursor */
-	int x, y;
 	/* Current frame in a cursor animation */
 	int frame;
 } kiavc_cursor;

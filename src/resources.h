@@ -24,6 +24,8 @@
 typedef struct kiavc_resource {
 	/* Resource type */
 	Uint8 type;
+	/* Current position */
+	int x, y;
 	/* Z-plane */
 	int zplane;
 	/* Ticks timer */

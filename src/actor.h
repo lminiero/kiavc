@@ -50,8 +50,6 @@ typedef struct kiavc_actor {
 	kiavc_pathfinding_walkbox *walkbox;
 	/* Whether the actor is visible */
 	bool visible;
-	/* Coordinates of the actor */
-	int x, y;
 	/* Walking path for an actor */
 	kiavc_list *path, *step;
 	/* Next target coordinates of the actor, when walking */

@@ -70,12 +70,12 @@ kiavc_dialog_line *kiavc_dialog_add_line(kiavc_dialog *dialog, const char *name,
 	/* FIXME */
 	int h = dialog->area.h / 4;
 	if(line->text) {
-		line->text->x = 0;
-		line->text->y = line->index * h;
+		line->text->res.x = 0;
+		line->text->res.y = line->index * h;
 	}
 	if(line->selected) {
-		line->selected->x = 0;
-		line->selected->y = line->index * h;
+		line->selected->res.x = 0;
+		line->selected->res.y = line->index * h;
 	}
 	dialog->lines = kiavc_list_append(dialog->lines, line);
 	return line;

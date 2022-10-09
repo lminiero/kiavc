@@ -42,8 +42,6 @@ typedef struct kiavc_object {
 	kiavc_actor *owner;
 	/* Object image or animation */
 	kiavc_animation *animation;
-	/* Current coordinates of the object */
-	int x, y;
 	/* FIXME Coordinates for detecting interaction */
 	kiavc_object_box hover;
 	/* Whether the object is visible or not */
