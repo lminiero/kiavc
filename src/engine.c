@@ -58,8 +58,8 @@ static char console_text[256];
 static kiavc_font_text *console_rendered = NULL;
 static kiavc_list *console_history = NULL, *console_current = NULL;
 
-/* Walkboxes debugging */
-static bool kiavc_debug_walkboxes = false;
+/* Visual debugging */
+static bool kiavc_debug_objects = false, kiavc_debug_walkboxes = false;
 
 /* Assets connection */
 static kiavc_bag *bag = NULL;
@@ -130,6 +130,8 @@ static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop);
 static bool kiavc_engine_get_fullscreen(void);
 static void kiavc_engine_set_scanlines(bool scanlines);
 static bool kiavc_engine_get_scanlines(void);
+static void kiavc_engine_debug_objects(bool debug);
+static bool kiavc_engine_is_debugging_objects(void);
 static void kiavc_engine_debug_walkboxes(bool debug);
 static bool kiavc_engine_is_debugging_walkboxes(void);
 static void kiavc_engine_save_screenshot(const char *path);
@@ -222,6 +224,8 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.get_fullscreen = kiavc_engine_get_fullscreen,
 		.set_scanlines = kiavc_engine_set_scanlines,
 		.get_scanlines = kiavc_engine_get_scanlines,
+		.debug_objects = kiavc_engine_debug_objects,
+		.is_debugging_objects = kiavc_engine_is_debugging_objects,
 		.debug_walkboxes = kiavc_engine_debug_walkboxes,
 		.is_debugging_walkboxes = kiavc_engine_is_debugging_walkboxes,
 		.save_screenshot = kiavc_engine_save_screenshot,
@@ -1321,6 +1325,45 @@ int kiavc_engine_render(void) {
 			}
 			item = item->next;
 		}
+		/* Check if we're debugging objects */
+		if(kiavc_debug_objects && engine.render_list) {
+			SDL_SetRenderDrawColor(renderer, 255, 0, 255, SDL_ALPHA_OPAQUE);
+			kiavc_resource *resource = NULL;
+			kiavc_object *object = NULL;
+			int x = 0, y = 0, w = 0, h = 0,
+				x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+			kiavc_list *temp = engine.render_list;
+			while(temp) {
+				resource = (kiavc_resource *)temp->data;
+				if(resource->type != KIAVC_OBJECT) {
+					temp = temp->next;
+					continue;
+				}
+				object = (kiavc_object *)resource;
+				x = y = w = h = 0;
+				if(object->hover.from_x >= 0 || object->hover.from_y >= 0 ||
+						object->hover.to_x >= 0 || object->hover.to_y >= 0) {
+					x = object->hover.from_x;
+					y = object->hover.from_y;
+					w = object->hover.to_x - x;
+					h = object->hover.to_y - y;
+				} else if(object->animation) {
+					x = object->res.x;
+					y = object->res.y;
+					w = object->animation->w;
+					h = object->animation->h;
+				}
+				x1 = (x - engine.room->res.x) * kiavc_screen_scale;
+				y1 = (y - engine.room->res.y) * kiavc_screen_scale;
+				x2 = (x + w - engine.room->res.x) * kiavc_screen_scale;
+				y2 = (y + h - engine.room->res.y) * kiavc_screen_scale;
+				SDL_RenderDrawLine(renderer, x1, y1, x2, y1);
+				SDL_RenderDrawLine(renderer, x2, y1, x2, y2);
+				SDL_RenderDrawLine(renderer, x2, y2, x1, y2);
+				SDL_RenderDrawLine(renderer, x1, y2, x1, y1);
+				temp = temp->next;
+			}
+		}
 		/* Check if we're debugging walkboxes */
 		if(kiavc_debug_walkboxes && engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes) {
 			SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
@@ -1523,6 +1566,17 @@ static void kiavc_engine_set_scanlines(bool scanlines) {
 }
 static bool kiavc_engine_get_scanlines(void) {
 	return kiavc_screen_scanlines;
+}
+static void kiavc_engine_debug_objects(bool debug) {
+	if(kiavc_debug_objects == debug) {
+		/* Nothing to do */
+		return;
+	}
+	kiavc_debug_objects = debug;
+	SDL_Log("%s objects debugging\n", kiavc_debug_objects ? "Enabling" : "Disabling");
+}
+static bool kiavc_engine_is_debugging_objects(void) {
+	return kiavc_debug_objects;
 }
 static void kiavc_engine_debug_walkboxes(bool debug) {
 	if(kiavc_debug_walkboxes == debug) {

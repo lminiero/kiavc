@@ -27,6 +27,8 @@ typedef struct kiavc_scripts_callbacks {
 	bool (* const get_fullscreen)(void);
 	void (* const set_scanlines)(bool scanlines);
 	bool (* const get_scanlines)(void);
+	void (* const debug_objects)(bool debug);
+	bool (* const is_debugging_objects)(void);
 	void (* const debug_walkboxes)(bool debug);
 	bool (* const is_debugging_walkboxes)(void);
 	void (* const save_screenshot)(const char *path);

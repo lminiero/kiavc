@@ -58,6 +58,10 @@ static int kiavc_lua_method_getfullscreen(lua_State *s);
 static int kiavc_lua_method_setscanlines(lua_State *s);
 /* Check the scanlines mode */
 static int kiavc_lua_method_getscanlines(lua_State *s);
+/* Set whether to debug objects or not */
+static int kiavc_lua_method_debugobjects(lua_State *s);
+/* Check whether objects debugging is on or not */
+static int kiavc_lua_method_isdebuggingobjects(lua_State *s);
 /* Set whether to debug walkboxes or not */
 static int kiavc_lua_method_debugwalkboxes(lua_State *s);
 /* Check whether walkboxes debugging is on or not */
@@ -295,6 +299,8 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "getFullscreen", kiavc_lua_method_getfullscreen);
 	lua_register(lua_state, "setScanlines", kiavc_lua_method_setscanlines);
 	lua_register(lua_state, "getScanlines", kiavc_lua_method_getscanlines);
+	lua_register(lua_state, "debugObjects", kiavc_lua_method_debugobjects);
+	lua_register(lua_state, "isDebuggingObjects", kiavc_lua_method_isdebuggingobjects);
 	lua_register(lua_state, "debugWalkboxes", kiavc_lua_method_debugwalkboxes);
 	lua_register(lua_state, "isDebuggingWalkboxes", kiavc_lua_method_isdebuggingwalkboxes);
 	lua_register(lua_state, "saveScreenshot", kiavc_lua_method_savescreenshot);
@@ -707,6 +713,35 @@ static int kiavc_lua_method_getscanlines(lua_State *s) {
 	bool scanlines = kiavc_cb->get_scanlines();
 	/* Pass the response back to the stack */
 	lua_pushboolean(s, scanlines);
+	return 1;
+}
+
+/* Set whether to debug objects or not */
+static int kiavc_lua_method_debugobjects(lua_State *s) {
+	/* This method allows the Lua script to debug objects */
+	int n = lua_gettop(s), exp = 1;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	bool debug = lua_toboolean(s, 1);
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->debug_objects(debug);
+	return 0;
+}
+
+/* Check whether objects debugging is on or not */
+static int kiavc_lua_method_isdebuggingobjects(lua_State *s) {
+	/* This method allows the Lua script check if objects debugging is enabled */
+	int n = lua_gettop(s), exp = 0;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	/* Invoke the application callback to query this */
+	bool debug = kiavc_cb->is_debugging_objects();
+	/* Pass the response back to the stack */
+	lua_pushboolean(s, debug);
 	return 1;
 }
 
