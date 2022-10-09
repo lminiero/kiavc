@@ -14,7 +14,7 @@ local skull = Object:new({
 	animation = 'skull',
 	uiAnimation = 'skull-inventory',
 	interaction = { direction = 'right', use = 'low', x = 150, y = 166 },
-	plane = -1,
+	plane = 0,
 	verbs = {
 		lookAt = function(self)
 			if state.lookedAtSkull == true then
@@ -82,5 +82,5 @@ objectInteractions.skull =
 	{ skyline = true, restaurant = true, girls = true, fire = true, boat = true, props = true }
 
 -- By default, we put the skull in the Melee harbour room
-skull:moveTo('outskirts', 170, 150)
+skull:moveTo('outskirts', 178, 166)
 skull:show()

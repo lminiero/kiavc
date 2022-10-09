@@ -12,7 +12,7 @@ local npc = Actor:new({
 	costume = 'detective-costume',
 	font = 'dialogues',
 	textColor = cyan,
-	interaction = { direction = 'right', x = 420, y = 180 },
+	interaction = { direction = 'right', x = 420, y = 172 },
 	plane = 0,
 	scaleFactor = 0.76,
 	verbs = {
@@ -48,7 +48,7 @@ local npc = Actor:new({
 	onLeftClick = 'talkTo'
 })
 -- By default, we put the actor in the streets room
-npc:moveTo('street', 460, 180)
+npc:moveTo('street', 460, 172)
 npc:show()
 
 -- Basic test of interaction with the NPC: first of all we create the

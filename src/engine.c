@@ -594,8 +594,8 @@ static void kiavc_engine_check_hovering(void) {
 							break;
 						}
 					} else {
-						if(w > 0 && h > 0 && x >= object->res.x && y >= object->res.y &&
-								x <= object->res.x + w && y <= object->res.y + h) {
+						if(w > 0 && h > 0 && x >= object->res.x - w/2 && y >= object->res.y - h &&
+								x <= object->res.x + w/2 && y <= object->res.y) {
 							hovering = resource;
 							break;
 						}
@@ -1212,8 +1212,13 @@ int kiavc_engine_render(void) {
 							w *= object->scale;
 							h *= object->scale;
 						}
-						rect.x = (object->res.x - room_x) * kiavc_screen_scale;
-						rect.y = (object->res.y - room_y) * kiavc_screen_scale;
+						if(object->ui) {
+							rect.x = (object->res.x - room_x) * kiavc_screen_scale;
+							rect.y = (object->res.y - room_y) * kiavc_screen_scale;
+						} else {
+							rect.x = (object->res.x - w/2 - room_x) * kiavc_screen_scale;
+							rect.y = (object->res.y - h - room_y) * kiavc_screen_scale;
+						}
 						rect.w = w * kiavc_screen_scale;
 						rect.h = h * kiavc_screen_scale;
 						if(rect.x < kiavc_screen_width && rect.y < kiavc_screen_height &&
@@ -1340,6 +1345,10 @@ int kiavc_engine_render(void) {
 					continue;
 				}
 				object = (kiavc_object *)resource;
+				if(object->ui)
+					SDL_SetRenderDrawColor(renderer, 0, 255, 255, SDL_ALPHA_OPAQUE);
+				else
+					SDL_SetRenderDrawColor(renderer, 255, 0, 255, SDL_ALPHA_OPAQUE);
 				x = y = w = h = 0;
 				if(object->hover.from_x >= 0 || object->hover.from_y >= 0 ||
 						object->hover.to_x >= 0 || object->hover.to_y >= 0) {
@@ -1347,16 +1356,21 @@ int kiavc_engine_render(void) {
 					y = object->hover.from_y;
 					w = object->hover.to_x - x;
 					h = object->hover.to_y - y;
-				} else if(object->animation) {
-					x = object->res.x;
-					y = object->res.y;
+				} else if(!object->ui && object->animation) {
+					x = object->res.x - object->animation->w/2;
+					y = object->res.y - object->animation->h;
 					w = object->animation->w;
 					h = object->animation->h;
+				} else if(object->ui && object->ui_animation) {
+					x = object->res.x;
+					y = object->res.y;
+					w = object->ui_animation->w;
+					h = object->ui_animation->h;
 				}
-				x1 = (x - engine.room->res.x) * kiavc_screen_scale;
-				y1 = (y - engine.room->res.y) * kiavc_screen_scale;
-				x2 = (x + w - engine.room->res.x) * kiavc_screen_scale;
-				y2 = (y + h - engine.room->res.y) * kiavc_screen_scale;
+				x1 = (x - (object->ui ? 0 : engine.room->res.x)) * kiavc_screen_scale;
+				y1 = (y - (object->ui ? 0 : engine.room->res.y)) * kiavc_screen_scale;
+				x2 = (x + w - (object->ui ? 0 : engine.room->res.x)) * kiavc_screen_scale;
+				y2 = (y + h - (object->ui ? 0 : engine.room->res.y)) * kiavc_screen_scale;
 				SDL_RenderDrawLine(renderer, x1, y1, x2, y1);
 				SDL_RenderDrawLine(renderer, x2, y1, x2, y2);
 				SDL_RenderDrawLine(renderer, x2, y2, x1, y2);

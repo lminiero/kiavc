@@ -89,7 +89,7 @@ local fire = Object:new({
 	animation = 'fire-loop',
 	plane = 0,
 	description = "fireDesc",
-	interaction = { direction = 'up', use = 'mid', x = 498, y = 172 },
+	interaction = { direction = 'up', use = 'mid', x = 498, y = 166 },
 	verbs = {
 		use = function(self)
 			self:use()
@@ -100,7 +100,7 @@ local fire = Object:new({
 	onRightClick = 'lookAt',
 	onLeftClick = 'use'
 })
-fire:moveTo('street', 494, 134)
+fire:moveTo('street', 506, 162)
 fire:show()
 
 -- The skyline is part of the background, so we don't register any image

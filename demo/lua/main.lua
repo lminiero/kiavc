@@ -61,6 +61,10 @@ onUserInput('F', function()
 end)
 -- Pressing F8 enables the interactive console (ESC disables it)
 onUserInput('F8', showConsole)
+-- Pressing F9 enables or disables the debugging of objects hovering
+onUserInput('F9', function()
+	debugObjects(not isDebuggingObjects())
+end)
 -- Pressing F10 enables or disables scanlines
 onUserInput('F10', function()
 	setScanlines(not getScanlines())
