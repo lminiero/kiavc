@@ -29,6 +29,8 @@ kiavc_list *kiavc_list_create(void);
 void kiavc_list_destroy(kiavc_list *list);
 /* Append an item to the list */
 kiavc_list *kiavc_list_append(kiavc_list *list, void *item);
+/* Sort the list */
+kiavc_list *kiavc_list_sort(kiavc_list *list, kiavc_list_item_compare compare);
 /* Insert an item in the list in a sorted way */
 kiavc_list *kiavc_list_insert_sorted(kiavc_list *list, void *item, kiavc_list_item_compare compare);
 /* Prepend an item to the list */

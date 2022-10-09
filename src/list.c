@@ -35,6 +35,11 @@ kiavc_list *kiavc_list_append(kiavc_list *list, void *item) {
 	return g_list_append(list, item);
 }
 
+/* Sort the list */
+kiavc_list *kiavc_list_sort(kiavc_list *list, kiavc_list_item_compare compare) {
+	return g_list_sort(list, compare);
+}
+
 /* Insert an item in the list in a sorted way */
 kiavc_list *kiavc_list_insert_sorted(kiavc_list *list, void *item, kiavc_list_item_compare compare) {
 	return g_list_insert_sorted(list, item, compare);

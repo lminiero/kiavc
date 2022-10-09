@@ -87,7 +87,7 @@ local fire = Object:new({
 	id = 'fire',
 	name = 'fireName',
 	animation = 'fire-loop',
-	plane = -1,
+	plane = 0,
 	description = "fireDesc",
 	interaction = { direction = 'up', use = 'mid', x = 498, y = 172 },
 	verbs = {

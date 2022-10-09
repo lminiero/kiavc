@@ -13,7 +13,7 @@ local npc = Actor:new({
 	font = 'dialogues',
 	textColor = cyan,
 	interaction = { direction = 'right', x = 420, y = 180 },
-	plane = 5,
+	plane = 0,
 	scaleFactor = 0.76,
 	verbs = {
 		talkTo = function(self)

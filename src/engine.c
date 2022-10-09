@@ -413,7 +413,11 @@ static int kiavc_engine_sort_resources(const kiavc_resource *r1, const kiavc_res
 		return -1;
 	else if(!r2)
 		return 1;
-	return r1->zplane - r2->zplane;
+	/* We check the z-plane first */
+	if(r1->zplane != r2->zplane)
+		return r1->zplane - r2->zplane;
+	/* For resources with the same z-plane, we check which one has a higher y coordinate */
+	return r1->y - r2->y;
 }
 
 /* Initialize the engine */
@@ -821,6 +825,7 @@ int kiavc_engine_update_world(void) {
 	}
 	/* Loop on all resources to render, which are already ordered by z-plane */
 	kiavc_list *item = engine.render_list, *to_remove = NULL;
+	bool sort = false;
 	while(item) {
 		resource = (kiavc_resource *)item->data;
 		if(resource && resource->ticks == 0)
@@ -863,7 +868,10 @@ int kiavc_engine_update_world(void) {
 					if(!p)
 						p = 1;
 					actor->res.x += (actor->target_x - actor->res.x) / p;
+					int prev_y = actor->res.y;
 					actor->res.y += (actor->target_y - actor->res.y) / p;
+					if(prev_y != actor->res.y)
+						sort = true;
 					if(actor->res.x == actor->target_x && actor->res.y == actor->target_y) {
 						/* Arrived, is it over? */
 						if(actor->step) {
@@ -986,6 +994,8 @@ int kiavc_engine_update_world(void) {
 		}
 		to_remove = kiavc_list_remove(to_remove, resource);
 	}
+	if(sort)
+		engine.render_list = kiavc_list_sort(engine.render_list, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	if(ticks - engine.room_ticks >= 15) {
 		engine.room_ticks += 15;
 		if(engine.room && engine.room->background && engine.room->background->w) {
@@ -2236,12 +2246,13 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 		actor->room->actors = kiavc_list_remove(actor->room->actors, actor);
 	if(!kiavc_list_find(room->actors, actor))
 		room->actors = kiavc_list_append(room->actors, actor);
-	if(actor->visible && !kiavc_list_find(engine.render_list, actor))
-		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
+	engine.render_list = kiavc_list_remove(engine.render_list, actor);
 	actor->room = room;
 	actor->state = KIAVC_ACTOR_STILL;
 	actor->res.x = x;
 	actor->res.y = y;
+	if(actor->visible)
+		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	if(engine.room && engine.following == actor && engine.following->room == room)
 		engine.room->res.x = engine.following->res.x - kiavc_screen_width/(2*kiavc_screen_scale);
 	g_list_free_full(actor->path, (GDestroyNotify)kiavc_pathfinding_point_destroy);
@@ -2725,12 +2736,13 @@ static void kiavc_engine_move_object_to(const char *id, const char *rid, int x, 
 		object->owner = NULL;
 	if(!kiavc_list_find(room->objects, object))
 		room->objects = kiavc_list_append(room->objects, object);
-	if(object->visible && !kiavc_list_find(engine.render_list, object))
-		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
+	engine.render_list = kiavc_list_remove(engine.render_list, object);
 	object->room = room;
 	object->ui = 0;
 	object->res.x = x;
 	object->res.y = y;
+	if(object->visible)
+		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	SDL_Log("Moved object '%s' to room '%s' (%dx%d)\n", object->id, room->id, object->res.x, object->res.y);
 }
 static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y) {
