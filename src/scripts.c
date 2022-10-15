@@ -204,6 +204,8 @@ static int kiavc_lua_method_setobjectparent(lua_State *s);
 static int kiavc_lua_method_removeobjectparent(lua_State *s);
 /* Move an object to a specific room */
 static int kiavc_lua_method_moveobjectto(lua_State *s);
+/* Float an object at some coordinates at a certain speed */
+static int kiavc_lua_method_floatobjectto(lua_State *s);
 /* Specify the hover coordinates for an object */
 static int kiavc_lua_method_setobjecthover(lua_State *s);
 /* Show an object in the room they're in */
@@ -224,6 +226,8 @@ static int kiavc_lua_method_addobjecttoinventory(lua_State *s);
 static int kiavc_lua_method_removeobjectfrominventory(lua_State *s);
 /* Show some text at some coordinates for some time */
 static int kiavc_lua_method_showtext(lua_State *s);
+/* Float some text at some coordinates at a certain speed */
+static int kiavc_lua_method_floattextto(lua_State *s);
 /* Remove rendered text, if an ID had been provided */
 static int kiavc_lua_method_removetext(lua_State *s);
 /* Quit */
@@ -378,6 +382,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "setObjectParent", kiavc_lua_method_setobjectparent);
 	lua_register(lua_state, "removeObjectParent", kiavc_lua_method_removeobjectparent);
 	lua_register(lua_state, "moveObjectTo", kiavc_lua_method_moveobjectto);
+	lua_register(lua_state, "floatObjectTo", kiavc_lua_method_floatobjectto);
 	lua_register(lua_state, "setObjectHover", kiavc_lua_method_setobjecthover);
 	lua_register(lua_state, "showObject", kiavc_lua_method_showobject);
 	lua_register(lua_state, "hideObject", kiavc_lua_method_hideobject);
@@ -388,6 +393,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "addObjectToInventory", kiavc_lua_method_addobjecttoinventory);
 	lua_register(lua_state, "removeObjectFromInventory", kiavc_lua_method_removeobjectfrominventory);
 	lua_register(lua_state, "showText", kiavc_lua_method_showtext);
+	lua_register(lua_state, "floatTextTo", kiavc_lua_method_floattextto);
 	lua_register(lua_state, "removeText", kiavc_lua_method_removetext);
 	lua_register(lua_state, "quit", kiavc_lua_method_quit);
 	/* Set the scripts folder */
@@ -619,7 +625,7 @@ static int kiavc_lua_method_settitle(lua_State *s) {
 
 /* Set window icon */
 static int kiavc_lua_method_seticon(lua_State *s) {
-	/* This method allows the Lua script to set the window title */
+	/* This method allows the Lua script to set the window icon */
 	int n = lua_gettop(s), exp = 1;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
@@ -834,7 +840,7 @@ static int kiavc_lua_method_showconsole(lua_State *s) {
 
 /* Hide the console */
 static int kiavc_lua_method_hideconsole(lua_State *s) {
-	/* This method allows the Lua script to disable the scripting console */
+	/* This method allows the Lua script to hide the scripting console */
 	int n = lua_gettop(s), exp = 0;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
@@ -985,7 +991,7 @@ static int kiavc_lua_method_fadeout(lua_State *s) {
 
 /* Start a new dialog session */
 static int kiavc_lua_method_startdialog(lua_State *s) {
-	/* This method allows the Lua script to set the window resolution and scaling */
+	/* This method allows the Lua script to start a new dialog session */
 	int n = lua_gettop(s), exp = 1;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
@@ -1291,7 +1297,7 @@ static int kiavc_lua_method_hidecursor(lua_State *s) {
 
 /* Show a cursor text */
 static int kiavc_lua_method_showcursortext(lua_State *s) {
-	/* This method allows the Lua script to set the window resolution and scaling */
+	/* This method allows the Lua script to show custom text on the cursor as it moves */
 	int n = lua_gettop(s), exp = 1;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
@@ -1864,7 +1870,7 @@ static int kiavc_lua_method_walkactorto(lua_State *s) {
 
 /* Have an actor say something */
 static int kiavc_lua_method_sayactor(lua_State *s) {
-	/* This method allows the Lua script to set the window resolution and scaling */
+	/* This method allows the Lua script to have an actor say something */
 	int n = lua_gettop(s), exp = 1;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
@@ -2199,6 +2205,33 @@ static int kiavc_lua_method_moveobjectto(lua_State *s) {
 	return 0;
 }
 
+/* Float an object at some coordinates at a certain speed */
+static int kiavc_lua_method_floatobjectto(lua_State *s) {
+	/* This method allows the Lua script to move an object around */
+	int n = lua_gettop(s), exp = 1;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	luaL_checktype(s, 1, LUA_TTABLE);
+	lua_getfield(s, 1, "id");
+	const char *id = luaL_checkstring(s, 2);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
+		return 0;
+	}
+	lua_getfield(s, 1, "x");
+	int x = luaL_checknumber(s, 3);
+	lua_getfield(s, 1, "y");
+	int y = luaL_checknumber(s, 4);
+	lua_getfield(s, 1, "speed");
+	int speed = luaL_checknumber(s, 5);
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->float_object_to(id, x, y, speed);
+	return 0;
+}
+
 /* Specify the hover coordinates for an object */
 static int kiavc_lua_method_setobjecthover(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
@@ -2378,7 +2411,6 @@ static int kiavc_lua_method_removeobjectfrominventory(lua_State *s) {
 
 /* Show some text at some coordinates for some time */
 static int kiavc_lua_method_showtext(lua_State *s) {
-	/* This method allows the Lua script to set the window resolution and scaling */
 	int n = lua_gettop(s), exp = 1;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
@@ -2427,6 +2459,33 @@ static int kiavc_lua_method_showtext(lua_State *s) {
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->show_text(id, text, font, &color,
 		(or != -1 && og != -1 && ob != -1 ? &outline : NULL), x, y, ms);
+	return 0;
+}
+
+/* Float some text at some coordinates at a certain speed */
+static int kiavc_lua_method_floattextto(lua_State *s) {
+	/* This method allows the Lua script to move text around */
+	int n = lua_gettop(s), exp = 1;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	luaL_checktype(s, 1, LUA_TTABLE);
+	lua_getfield(s, 1, "id");
+	const char *id = luaL_checkstring(s, 2);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
+		return 0;
+	}
+	lua_getfield(s, 1, "x");
+	int x = luaL_checknumber(s, 3);
+	lua_getfield(s, 1, "y");
+	int y = luaL_checknumber(s, 4);
+	lua_getfield(s, 1, "speed");
+	int speed = luaL_checknumber(s, 5);
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->float_text_to(id, x, y, speed);
 	return 0;
 }
 

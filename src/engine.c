@@ -205,6 +205,7 @@ static void kiavc_engine_set_object_ui_animation(const char *id, const char *can
 static void kiavc_engine_set_object_parent(const char *id, const char *parent);
 static void kiavc_engine_remove_object_parent(const char *id);
 static void kiavc_engine_move_object_to(const char *id, const char *room, int x, int y);
+static void kiavc_engine_float_object_to(const char *id, int x, int y, int speed);
 static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y);
 static void kiavc_engine_show_object(const char *id);
 static void kiavc_engine_hide_object(const char *id);
@@ -215,6 +216,7 @@ static void kiavc_engine_scale_object(const char *id, float scale);
 static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
 static void kiavc_engine_remove_object_from_inventory(const char *id, const char *owner);
 static void kiavc_engine_show_text(const char *id, const char *text, const char *font, SDL_Color *color, SDL_Color *outline, int x, int y, Uint32 ms);
+static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed);
 static void kiavc_engine_remove_text(const char *id);
 static void kiavc_engine_quit(void);
 static kiavc_scripts_callbacks scripts_callbacks =
@@ -301,6 +303,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.set_object_parent = kiavc_engine_set_object_parent,
 		.remove_object_parent = kiavc_engine_remove_object_parent,
 		.move_object_to = kiavc_engine_move_object_to,
+		.float_object_to = kiavc_engine_float_object_to,
 		.set_object_hover = kiavc_engine_set_object_hover,
 		.show_object = kiavc_engine_show_object,
 		.hide_object = kiavc_engine_hide_object,
@@ -311,6 +314,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.add_object_to_inventory = kiavc_engine_add_object_to_inventory,
 		.remove_object_from_inventory = kiavc_engine_remove_object_from_inventory,
 		.show_text = kiavc_engine_show_text,
+		.float_text_to = kiavc_engine_float_text_to,
 		.remove_text = kiavc_engine_remove_text,
 		.quit = kiavc_engine_quit,
 	};
@@ -966,6 +970,27 @@ int kiavc_engine_update_world(void) {
 					object->frame = 0;
 				}
 			}
+			if(object->speed > 0) {
+				/* We're moving this object around */
+				if(object->move_ticks == 0)
+					object->move_ticks = ticks;
+				if(ticks - object->move_ticks >= 100) {
+					object->move_ticks += 100;
+					float d = sqrt(((object->target_x - object->res.x)*(object->target_x - object->res.x)) +
+						((object->target_y - object->res.y)*(object->target_y - object->res.y)));
+					int p = (int)(d/object->speed);
+					if(!p)
+						p = 1;
+					object->res.x += (object->target_x - object->res.x) / p;
+					object->res.y += (object->target_y - object->res.y) / p;
+					if(object->res.x == object->target_x && object->res.y == object->target_y) {
+						/* We're done */
+						object->speed = 0;
+						/* FIXME */
+						kiavc_scripts_run_command("signal('%s')", object->id);
+					}
+				}
+			}
 		} else if(resource->type == KIAVC_FONT_TEXT) {
 			/* This is a font text line (not belonging to an actor) */
 			kiavc_font_text *line = (kiavc_font_text *)resource;
@@ -973,6 +998,27 @@ int kiavc_engine_update_world(void) {
 				/* Only cursor text and dialog lines remain there until we manually remove it */
 				if(line->started == 0)
 					line->started = ticks;
+			}
+			if(line->speed > 0) {
+				/* We're moving this text around */
+				if(line->move_ticks == 0)
+					line->move_ticks = ticks;
+				if(ticks - line->move_ticks >= 100) {
+					line->move_ticks += 100;
+					float d = sqrt(((line->target_x - line->res.x)*(line->target_x - line->res.x)) +
+						((line->target_y - line->res.y)*(line->target_y - line->res.y)));
+					int p = (int)(d/line->speed);
+					if(!p)
+						p = 1;
+					line->res.x += (line->target_x - line->res.x) / p;
+					line->res.y += (line->target_y - line->res.y) / p;
+					if(line->res.x == line->target_x && line->res.y == line->target_y) {
+						/* We're done */
+						line->speed = 0;
+						/* FIXME */
+						kiavc_scripts_run_command("signal('%s')", line->id);
+					}
+				}
 			}
 			if(line->started && line->duration && (ticks - line->started >= line->duration)) {
 				/* We've displayed this text line long enough */
@@ -2869,6 +2915,27 @@ static void kiavc_engine_move_object_to(const char *id, const char *rid, int x, 
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	SDL_Log("Moved object '%s' to room '%s' (%dx%d)\n", object->id, room->id, object->res.x, object->res.y);
 }
+static void kiavc_engine_float_object_to(const char *id, int x, int y, int speed) {
+	if(!id)
+		return;
+	/* Make sure this object ID exists */
+	kiavc_object *object = kiavc_map_lookup(objects, id);
+	if(!object) {
+		/* It does */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot float object, no such object '%s'\n", id);
+		return;
+	}
+	if(speed < 1) {
+		/* Invalid speed */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object speed, invalid value '%d'\n", speed);
+		return;
+	}
+	object->target_x = x;
+	object->target_y = y;
+	object->speed = speed;
+	object->move_ticks = 0;
+	/* Done */
+}
 static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y) {
 	if(!id || from_x < 0 || from_y < 0 || to_x < 0 || to_y < 0)
 		return;
@@ -3077,6 +3144,27 @@ static void kiavc_engine_show_text(const char *id, const char *text, const char 
 		kiavc_map_insert(texts, SDL_strdup(id), line);
 	}
 	engine.render_list = kiavc_list_insert_sorted(engine.render_list, line, (kiavc_list_item_compare)kiavc_engine_sort_resources);
+	/* Done */
+}
+static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed) {
+	if(!id)
+		return;
+	/* Make sure this text ID exists */
+	kiavc_font_text *line = kiavc_map_lookup(texts, id);
+	if(!line) {
+		/* It does */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot float text, no such text '%s'\n", id);
+		return;
+	}
+	if(speed < 1) {
+		/* Invalid speed */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set text speed, invalid value '%d'\n", speed);
+		return;
+	}
+	line->target_x = x;
+	line->target_y = y;
+	line->speed = speed;
+	line->move_ticks = 0;
 	/* Done */
 }
 static void kiavc_engine_remove_text(const char *id) {

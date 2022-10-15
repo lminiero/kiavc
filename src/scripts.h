@@ -102,6 +102,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const set_object_parent)(const char *id, const char *parent);
 	void (* const remove_object_parent)(const char *id);
 	void (* const move_object_to)(const char *id, const char *room, int x, int y);
+	void (* const float_object_to)(const char *id, int x, int y, int speed);
 	void (* const set_object_hover)(const char *id, int from_x, int from_y, int to_x, int to_y);
 	void (* const show_object)(const char *id);
 	void (* const hide_object)(const char *id);
@@ -112,6 +113,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const add_object_to_inventory)(const char *id, const char *owner);
 	void (* const remove_object_from_inventory)(const char *id, const char *owner);
 	void (* const show_text)(const char *id, const char *text, const char *font, SDL_Color *color, SDL_Color *outline, int x, int y, Uint32 ms);
+	void (* const float_text_to)(const char *id, int x, int y, int speed);
 	void (* const remove_text)(const char *id);
 	void (* const quit)(void);
 } kiavc_scripts_callbacks;

@@ -58,6 +58,12 @@ typedef struct kiavc_object {
 	kiavc_animation *ui_animation;
 	/* Object parent, if any (for relative positioning) */
 	struct kiavc_object *parent;
+	/* Target coordinates of the object, when it's moving */
+	int target_x, target_y;
+	/* Moving ticks (to separate them from resource ticks) */
+	int move_ticks;
+	/* Movement speed of the object */
+	int speed;
 } kiavc_object;
 
 /* Cursor constructor */

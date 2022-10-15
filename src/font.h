@@ -49,6 +49,12 @@ typedef struct kiavc_font_text {
 	int owner_type;
 	/* Opaque pointer to the owner resource, if any */
 	void *owner;
+	/* Target coordinates of the text, when it's moving */
+	int target_x, target_y;
+	/* Moving ticks (to separate them from resource ticks) */
+	int move_ticks;
+	/* Movement speed of the text */
+	int speed;
 } kiavc_font_text;
 
 /* Font constructor */
