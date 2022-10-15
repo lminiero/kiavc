@@ -99,6 +99,8 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const set_object_ui)(const char *id, bool ui);
 	void (* const set_object_ui_position)(const char *id, int x, int y);
 	void (* const set_object_ui_animation)(const char *id, const char *anim);
+	void (* const set_object_parent)(const char *id, const char *parent);
+	void (* const remove_object_parent)(const char *id);
 	void (* const move_object_to)(const char *id, const char *room, int x, int y);
 	void (* const set_object_hover)(const char *id, int from_x, int from_y, int to_x, int to_y);
 	void (* const show_object)(const char *id);

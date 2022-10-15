@@ -151,6 +151,42 @@ translations = {
 		en = "city",
 		it = "città"
 	},
+	envelopeName = {
+		en = "envelope",
+		it = "lettera",
+	},
+	envelopeDesc = {
+		en = "Someone sent me this, and told me to meet them here.",
+		it = "Qualcuno mi ha inviato questa lettera, e mi ha scritto di incontrarci qui.",
+	},
+	envelopeUse = {
+		en = "What are you trying to do, exactly?",
+		it = "Cos'è che stai cercando di fare, esattamente?",
+	},
+	envelopeUseFire = {
+		en = "I don't want to burn it!",
+		it = "Non voglio bruciarla!",
+	},
+	envelopeUseSkyline = {
+		en = "While I could make a plane out of it and shoot it away, I won't.",
+		it = "È vero che potrei farci un aeroplanino di carta e mandarlo via, ma non lo farò.",
+	},
+	envelopeUseGirls = {
+		en = "I don't think they sent me this.",
+		it = "Non penso che me l'abbiano inviata loro.",
+	},
+	envelopeUseRestaurant = {
+		en = "This is not a menu.",
+		it = "Non è un menu.",
+	},
+	envelopeUseBoat = {
+		en = "I'd just get it soaking wet.",
+		it = "Non voglio bagnarla.",
+	},
+	envelopeUseSkull = {
+		en = "I doubt he could read it, without eyes.",
+		it = "Non penso possa leggerla, senza occhi.",
+	},
 	skullName = {
 		en = "skull",
 		it = "teschio",
@@ -363,6 +399,18 @@ translations = {
 	npcResp4_1 = {
 		en = "Yeah, whatever.",
 		it = "Sì, vabbeh.",
+	},
+	npcGiveEnvelope1 = {
+		en = "Did you by any chance send me this?",
+		it = "Per caso mi hai inviato tu questa?",
+	},
+	npcGiveEnvelope2 = {
+		en = "Send you a letter? I don't even know you!",
+		it = "Inviarti una lettera? Non ti conosco neanche!",
+	},
+	npcGiveEnvelope3 = {
+		en = "Please don't bother me, I'm very busy.",
+		it = "Ti pregherei di non disturbarmi, sono molto occupato.",
 	},
 	npcGiveSkull1 = {
 		en = "Is this what you're looking for?",

@@ -47,7 +47,7 @@ function hovering(id, on)
 		-- FIXME
 		hoveringOn = id
 		if onHovering then onHovering(target) end
-	else
+	elseif hoveringOn == id then
 		hoveringOn = nil
 		if onHovering then onHovering() end
 	end

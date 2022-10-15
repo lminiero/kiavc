@@ -141,6 +141,24 @@ Object = {
 			-- Tell the engine about the new directional anim
 			setObjectUiAnimation(self.id, animId)
 		end,
+	setParent =
+		function(self, parentId)
+			local parent = nil
+			if parentId ~= nil then
+				parent = objects[parentId]
+				if parent == nil then
+					kiavcError('Invalid parent object ID ' .. parentId)
+					return
+				end
+			end
+			self.parent = parentId
+			-- Tell the engine about where to put the object
+			if parent == nil then
+				removeObjectParent(self.id)
+			else
+				setObjectParent(self.id, parentId)
+			end
+		end,
 	moveTo =
 		function(self, roomId, x, y)
 			if roomId == nil then
@@ -275,6 +293,15 @@ Object = {
 			-- Tell the engine whether this object is part of the UI
 			setObjectUi(self.id, ui)
 		end,
+	setUiPosition =
+		function(self, x, y)
+			if self.ui ~= true then
+				kiavcError('Not an UI object')
+				return
+			end
+			-- Tell the engine where to position this object if part of the UI
+			setObjectUiPosition(self.id, x, y)
+		end,
 	scale =
 		function(self, scale)
 			self.scaleFactor = scale
@@ -331,7 +358,12 @@ Object = {
 				waitMs(200)
 			end
 			if selectedObject ~= nil and self.onAction ~= nil and self.verbs[self.onAction] ~= nil then
-				self.verbs[self.onAction](self, selectedObject)
+				if self.onAction == 'useWith' and objectInteractions[selectedObject] and objectInteractions[selectedObject][self.id] == true then
+					local obj = objects[selectedObject]
+					obj.verbs.useWith(obj, self.id)
+				else
+					self.verbs[self.onAction](self, selectedObject)
+				end
 			elseif self.onLeftClick ~= nil and self.verbs[self.onLeftClick] ~= nil then
 				self.verbs[self.onLeftClick](self, selectedObject)
 			end

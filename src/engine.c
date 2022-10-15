@@ -201,6 +201,8 @@ static void kiavc_engine_set_object_interactable(const char *id, bool interactab
 static void kiavc_engine_set_object_ui(const char *id, bool ui);
 static void kiavc_engine_set_object_ui_position(const char *id, int x, int y);
 static void kiavc_engine_set_object_ui_animation(const char *id, const char *canim);
+static void kiavc_engine_set_object_parent(const char *id, const char *parent);
+static void kiavc_engine_remove_object_parent(const char *id);
 static void kiavc_engine_move_object_to(const char *id, const char *room, int x, int y);
 static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y);
 static void kiavc_engine_show_object(const char *id);
@@ -294,6 +296,8 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.set_object_ui = kiavc_engine_set_object_ui,
 		.set_object_ui_position = kiavc_engine_set_object_ui_position,
 		.set_object_ui_animation = kiavc_engine_set_object_ui_animation,
+		.set_object_parent = kiavc_engine_set_object_parent,
+		.remove_object_parent = kiavc_engine_remove_object_parent,
 		.move_object_to = kiavc_engine_move_object_to,
 		.set_object_hover = kiavc_engine_set_object_hover,
 		.show_object = kiavc_engine_show_object,
@@ -571,7 +575,6 @@ static void kiavc_engine_check_hovering(void) {
 					if(x >= object->hover.from_x && y >= object->hover.from_y &&
 							x <= object->hover.to_x && y <= object->hover.to_y) {
 						hovering = resource;
-						break;
 					}
 				} else if(object->ui || (object->room && object->room == engine.room)) {
 					/* Use the object coordinates and the image size */
@@ -588,16 +591,18 @@ static void kiavc_engine_check_hovering(void) {
 					if(object->ui) {
 						int ui_x = x - engine.room->res.x;
 						int ui_y = y - engine.room->res.y;
-						if(w > 0 && h > 0 && ui_x >= object->res.x && ui_y >= object->res.y &&
-								ui_x <= object->res.x + w && ui_y <= object->res.y + h) {
+						int object_x = object->res.x + (object->parent ? object->parent->res.x : 0);
+						int object_y = object->res.y + (object->parent ? object->parent->res.y : 0);
+						if(w > 0 && h > 0 && ui_x >= object_x && ui_y >= object_y &&
+								ui_x <= object_x + w && ui_y <= object_y + h) {
 							hovering = resource;
-							break;
 						}
 					} else {
-						if(w > 0 && h > 0 && x >= object->res.x - w/2 && y >= object->res.y - h &&
-								x <= object->res.x + w/2 && y <= object->res.y) {
+						int object_x = object->res.x + (object->parent ? object->parent->res.x : 0);
+						int object_y = object->res.y + (object->parent ? object->parent->res.y : 0);
+						if(w > 0 && h > 0 && x >= object_x - w/2 && y >= object_y - h &&
+								x <= object_x + w/2 && y <= object_y) {
 							hovering = resource;
-							break;
 						}
 					}
 				}
@@ -619,7 +624,6 @@ static void kiavc_engine_check_hovering(void) {
 					if(w > 0 && h > 0 && x >= actor->res.x - w/2 && y >= actor->res.y - h &&
 							x <= actor->res.x + w/2 && y <= actor->res.y) {
 						hovering = resource;
-						break;
 					}
 				}
 			}
@@ -636,8 +640,11 @@ static void kiavc_engine_check_hovering(void) {
 					kiavc_actor *actor = (kiavc_actor *)engine.hovering;
 					SDL_Log("Stopped hovering over %s", actor->id);
 					kiavc_scripts_run_command("hovering('%s', false)", actor->id);
+				} else {
+					SDL_Log("Stopped hovering over unknown resource");
 				}
-			} else {
+			}
+			if(hovering) {
 				/* We're now hovering on this resourse */
 				if(hovering->type == KIAVC_OBJECT) {
 					kiavc_object *object = (kiavc_object *)hovering;
@@ -647,6 +654,8 @@ static void kiavc_engine_check_hovering(void) {
 					kiavc_actor *actor = (kiavc_actor *)hovering;
 					SDL_Log("Hovering over %s", actor->id);
 					kiavc_scripts_run_command("hovering('%s', true)", actor->id);
+				} else {
+					SDL_Log("Started hovering over unknown resource");
 				}
 			}
 			engine.hovering = hovering;
@@ -1212,12 +1221,14 @@ int kiavc_engine_render(void) {
 							w *= object->scale;
 							h *= object->scale;
 						}
+						int object_x = object->res.x + (object->parent ? object->parent->res.x : 0);
+						int object_y = object->res.y + (object->parent ? object->parent->res.y : 0);
 						if(object->ui) {
-							rect.x = (object->res.x - room_x) * kiavc_screen_scale;
-							rect.y = (object->res.y - room_y) * kiavc_screen_scale;
+							rect.x = (object_x - room_x) * kiavc_screen_scale;
+							rect.y = (object_y - room_y) * kiavc_screen_scale;
 						} else {
-							rect.x = (object->res.x - w/2 - room_x) * kiavc_screen_scale;
-							rect.y = (object->res.y - h - room_y) * kiavc_screen_scale;
+							rect.x = (object_x - w/2 - room_x) * kiavc_screen_scale;
+							rect.y = (object_y - h - room_y) * kiavc_screen_scale;
 						}
 						rect.w = w * kiavc_screen_scale;
 						rect.h = h * kiavc_screen_scale;
@@ -1350,6 +1361,8 @@ int kiavc_engine_render(void) {
 				else
 					SDL_SetRenderDrawColor(renderer, 255, 0, 255, SDL_ALPHA_OPAQUE);
 				x = y = w = h = 0;
+				int object_x = object->res.x + (object->parent ? object->parent->res.x : 0);
+				int object_y = object->res.y + (object->parent ? object->parent->res.y : 0);
 				if(object->hover.from_x >= 0 || object->hover.from_y >= 0 ||
 						object->hover.to_x >= 0 || object->hover.to_y >= 0) {
 					x = object->hover.from_x;
@@ -1357,13 +1370,13 @@ int kiavc_engine_render(void) {
 					w = object->hover.to_x - x;
 					h = object->hover.to_y - y;
 				} else if(!object->ui && object->animation) {
-					x = object->res.x - object->animation->w/2;
-					y = object->res.y - object->animation->h;
+					x = object_x - object->animation->w/2;
+					y = object_y - object->animation->h;
 					w = object->animation->w;
 					h = object->animation->h;
 				} else if(object->ui && object->ui_animation) {
-					x = object->res.x;
-					y = object->res.y;
+					x = object_x;
+					y = object_y;
 					w = object->ui_animation->w;
 					h = object->ui_animation->h;
 				}
@@ -2780,6 +2793,40 @@ static void kiavc_engine_set_object_ui_animation(const char *id, const char *can
 	/* Done */
 	object->ui_animation = anim;
 	SDL_Log("Set UI animation of object '%s' to '%s'\n", object->id, anim->id);
+}
+static void kiavc_engine_set_object_parent(const char *id, const char *parent) {
+	if(!id || !parent)
+		return;
+	/* Access objects from the map */
+	kiavc_object *object = kiavc_map_lookup(objects, id);
+	if(!object) {
+		/* No such object or not part of the UI */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object parent, no such object '%s'\n", id);
+		return;
+	}
+	kiavc_object *pobj = kiavc_map_lookup(objects, parent);
+	if(!pobj) {
+		/* No such object or not part of the UI */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object parent, no such object '%s'\n", parent);
+		return;
+	}
+	/* Done */
+	object->parent = pobj;
+	SDL_Log("Set UI parent of object '%s' to '%s'\n", object->id, pobj->id);
+}
+static void kiavc_engine_remove_object_parent(const char *id) {
+	if(!id)
+		return;
+	/* Access objects from the map */
+	kiavc_object *object = kiavc_map_lookup(objects, id);
+	if(!object) {
+		/* No such object */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't remove object UI parent, no such object '%s'\n", id);
+		return;
+	}
+	/* Done */
+	object->parent = NULL;
+	SDL_Log("Removed UI parent of object '%s'\n", object->id);
 }
 static void kiavc_engine_move_object_to(const char *id, const char *rid, int x, int y) {
 	if(!id || !rid)

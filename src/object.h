@@ -56,6 +56,8 @@ typedef struct kiavc_object {
 	bool ui;
 	/* UI image or animation, if any */
 	kiavc_animation *ui_animation;
+	/* Object parent, if any (for relative positioning) */
+	struct kiavc_object *parent;
 } kiavc_object;
 
 /* Cursor constructor */

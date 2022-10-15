@@ -26,6 +26,7 @@ kiavcRequire('game/rooms/street')
 kiavcRequire('game/rooms/outskirts')
 
 -- Load objects
+kiavcRequire('game/objects/envelope')
 kiavcRequire('game/objects/skull')
 
 -- Load actors

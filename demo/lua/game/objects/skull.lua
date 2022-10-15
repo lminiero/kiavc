@@ -47,7 +47,6 @@ local skull = Object:new({
 			self:use()
 			waitMs(500)
 			self:addToInventory(activeActor.id)
-			self.onLeftClick = 'select'
 			activeActor:setState('still')
 		end,
 		useWith = function(self, object)

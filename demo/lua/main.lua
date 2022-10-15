@@ -114,7 +114,7 @@ function hideInventory()
 end
 Image:new({ id = 'inventory-bg', path = './assets/images/inventory.png' })
 Object:new({ id = 'inventory', uiAnimation = 'inventory-bg', ui = true, interactable = false, plane = 10 })
-setObjectUiPosition('inventory', 0, 0);
+objects['inventory']:setUiPosition(0, 0);
 
 -- Let's configure what to do when we're hovering on something
 onHovering = function(target)
@@ -141,23 +141,28 @@ onInventoryUpdated = function(actorId, objectId, owned)
 		return
 	end
 	if owned then
-		-- Add to our local inventory
+		-- Add to our local inventory: we also set the object positioning
+		-- as relative to the inventory one, and change the main action
+		-- when left clicking on the object in the UI to "select"
 		inventory[#inventory+1] = objectId
-		showObject(objectId)
-		setObjectPlane(objectId, 11)
+		object:setParent('inventory')
+		object.onLeftClick = 'select'
+		object:show()
+		object:setPlane(11)
 	else
 		-- Remove from our local inventory
 		for index, id in ipairs(inventory) do
 			if id == objectId then
 				table.remove(inventory, index)
-				hideObject(objectId)
+				object:setParent()
+				object:hide()
 				break
 			end
 		end
 	end
 	-- FIXME Update the position of all objects
 	for index, id in ipairs(inventory) do
-		setObjectUiPosition(objectId, index-1, 0);
+		object:setUiPosition((index-1)*32, 0);
 	end
 end
 
@@ -180,7 +185,7 @@ onSelectedObject = function()
 	end
 end
 
--- Let's start now: we start from the Melee harbour, and show an intro
+-- Let's start now: we start from the streets, and show an intro
 setMainCursor('cursor-main')
 setHotspotCursor('cursor-hotspot')
 showCursor()
@@ -188,6 +193,7 @@ setActiveActor('detective')
 activeActor:follow()
 activeActor:moveTo('street', 148, 148)
 activeActor:show()
+objects['envelope']:addToInventory(activeActor.id)
 showInventory()
 rooms['street']:enter()
 

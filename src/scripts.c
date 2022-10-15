@@ -198,6 +198,10 @@ static int kiavc_lua_method_setobjectui(lua_State *s);
 static int kiavc_lua_method_setobjectuiposition(lua_State *s);
 /* Set the current animation for an object, when part of the UI */
 static int kiavc_lua_method_setobjectuianimation(lua_State *s);
+/* Set the parent for an object (start relative positioning), when part of the UI */
+static int kiavc_lua_method_setobjectparent(lua_State *s);
+/* Remove the parent for an object (stop relative positioning), when part of the UI */
+static int kiavc_lua_method_removeobjectparent(lua_State *s);
 /* Move an object to a specific room */
 static int kiavc_lua_method_moveobjectto(lua_State *s);
 /* Specify the hover coordinates for an object */
@@ -369,6 +373,8 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "setObjectUi", kiavc_lua_method_setobjectui);
 	lua_register(lua_state, "setObjectUiPosition", kiavc_lua_method_setobjectuiposition);
 	lua_register(lua_state, "setObjectUiAnimation", kiavc_lua_method_setobjectuianimation);
+	lua_register(lua_state, "setObjectParent", kiavc_lua_method_setobjectparent);
+	lua_register(lua_state, "removeObjectParent", kiavc_lua_method_removeobjectparent);
 	lua_register(lua_state, "moveObjectTo", kiavc_lua_method_moveobjectto);
 	lua_register(lua_state, "setObjectHover", kiavc_lua_method_setobjecthover);
 	lua_register(lua_state, "showObject", kiavc_lua_method_showobject);
@@ -2129,6 +2135,43 @@ static int kiavc_lua_method_setobjectuianimation(lua_State *s) {
 	}
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->set_object_ui_animation(id, anim);
+	return 0;
+}
+
+/* Set the parent for an object (start relative positioning), when part of the UI */
+static int kiavc_lua_method_setobjectparent(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	const char *parent = luaL_checkstring(s, 2);
+	if(id == NULL || parent == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object IDs\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->set_object_parent(id, parent);
+	return 0;
+}
+
+/* Remove the parent for an object (stop relative positioning), when part of the UI */
+static int kiavc_lua_method_removeobjectparent(lua_State *s) {
+	int n = lua_gettop(s), exp = 1;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->remove_object_parent(id);
 	return 0;
 }
 
