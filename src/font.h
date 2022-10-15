@@ -37,6 +37,8 @@ typedef struct kiavc_font {
 typedef struct kiavc_font_text {
 	/* Common resource info */
 	kiavc_resource res;
+	/* Unique ID of the text (optional) */
+	char *id;
 	/* Texture for the rendered text */
 	SDL_Texture *texture;
 	/* Size of the text */

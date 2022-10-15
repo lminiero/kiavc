@@ -73,6 +73,7 @@ static kiavc_map *rooms = NULL;
 static kiavc_map *actors = NULL;
 static kiavc_map *costumes = NULL;
 static kiavc_map *objects = NULL;
+static kiavc_map *texts = NULL;
 static kiavc_map *dialogs = NULL;
 
 /* Engine struct */
@@ -213,7 +214,8 @@ static void kiavc_engine_set_object_plane(const char *id, int zplane);
 static void kiavc_engine_scale_object(const char *id, float scale);
 static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
 static void kiavc_engine_remove_object_from_inventory(const char *id, const char *owner);
-static void kiavc_engine_show_text(const char *text, const char *font, SDL_Color *color, SDL_Color *outline, int x, int y, Uint32 ms);
+static void kiavc_engine_show_text(const char *id, const char *text, const char *font, SDL_Color *color, SDL_Color *outline, int x, int y, Uint32 ms);
+static void kiavc_engine_remove_text(const char *id);
 static void kiavc_engine_quit(void);
 static kiavc_scripts_callbacks scripts_callbacks =
 	{
@@ -309,6 +311,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.add_object_to_inventory = kiavc_engine_add_object_to_inventory,
 		.remove_object_from_inventory = kiavc_engine_remove_object_from_inventory,
 		.show_text = kiavc_engine_show_text,
+		.remove_text = kiavc_engine_remove_text,
 		.quit = kiavc_engine_quit,
 	};
 
@@ -451,6 +454,7 @@ int kiavc_engine_init(const char *bagfile) {
 	actors = kiavc_map_create((kiavc_map_value_destroy)&kiavc_actor_destroy);
 	costumes = kiavc_map_create((kiavc_map_value_destroy)&kiavc_costume_destroy);
 	objects = kiavc_map_create((kiavc_map_value_destroy)&kiavc_object_destroy);
+	texts = kiavc_map_create((kiavc_map_value_destroy)&kiavc_font_text_destroy);
 	dialogs = kiavc_map_create((kiavc_map_value_destroy)&kiavc_dialog_destroy);
 
 	/* Initialize the scripting engine */
@@ -970,7 +974,7 @@ int kiavc_engine_update_world(void) {
 				if(line->started == 0)
 					line->started = ticks;
 			}
-			if(line->started && (ticks - line->started >= line->duration)) {
+			if(line->started && line->duration && (ticks - line->started >= line->duration)) {
 				/* We've displayed this text line long enough */
 				to_remove = kiavc_list_append(to_remove, line);
 				/* If this is owned by an actor, handle it */
@@ -1002,8 +1006,12 @@ int kiavc_engine_update_world(void) {
 			} else if(line->owner_type == KIAVC_CURSOR) {
 				engine.cursor_text = NULL;
 			}
-			if(line->owner_type != KIAVC_DIALOG)
-				kiavc_font_text_destroy(line);
+			if(line->owner_type != KIAVC_DIALOG) {
+				if(line->id)
+					kiavc_map_remove(texts, line->id);
+				else
+					kiavc_font_text_destroy(line);
+			}
 		}
 		to_remove = kiavc_list_remove(to_remove, resource);
 	}
@@ -1501,6 +1509,7 @@ void kiavc_engine_destroy(void) {
 	kiavc_map_destroy(actors);
 	kiavc_map_destroy(costumes);
 	kiavc_map_destroy(objects);
+	kiavc_map_destroy(texts);
 	kiavc_map_destroy(dialogs);
 	kiavc_bag_destroy(bag);
 	SDL_DestroyRenderer(renderer);
@@ -3035,10 +3044,18 @@ static void kiavc_engine_remove_object_from_inventory(const char *id, const char
 	/* Done */
 	SDL_Log("Removed object '%s' from actor '%s' inventory\n", object->id, actor->id);
 }
-
-static void kiavc_engine_show_text(const char *text, const char *fid, SDL_Color *color, SDL_Color *outline, int x, int y, Uint32 ms) {
+static void kiavc_engine_show_text(const char *id, const char *text, const char *fid, SDL_Color *color, SDL_Color *outline, int x, int y, Uint32 ms) {
 	if(!text || !fid || !color)
 		return;
+	if(id) {
+		/* Check if this text ID exists already */
+		kiavc_font_text *line = kiavc_map_lookup(texts, id);
+		if(line) {
+			/* It does */
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot show text with ID '%s', it already exists\n", id);
+			return;
+		}
+	}
 	kiavc_font *font = kiavc_map_lookup(fonts, fid);
 	if(!font) {
 		/* No font */
@@ -3054,8 +3071,28 @@ static void kiavc_engine_show_text(const char *text, const char *fid, SDL_Color 
 	line->res.x = x;
 	line->res.y = y;
 	line->duration = ms;
+	if(id) {
+		SDL_Log("Assigning ID to new text line: '%s'\n", id);
+		line->id = SDL_strdup(id);
+		kiavc_map_insert(texts, SDL_strdup(id), line);
+	}
 	engine.render_list = kiavc_list_insert_sorted(engine.render_list, line, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
+}
+static void kiavc_engine_remove_text(const char *id) {
+	if(!id)
+		return;
+	/* Get the text */
+	kiavc_font_text *line = kiavc_map_lookup(texts, id);
+	if(!line) {
+		/* No such text */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't remove text, no such text '%s'\n", id);
+		return;
+	}
+	engine.render_list = kiavc_list_remove(engine.render_list, line);
+	kiavc_map_remove(texts, id);
+	/* Done */
+	SDL_Log("Removed text '%s'\n", id);
 }
 static void kiavc_engine_quit(void) {
 	SDL_Log("Quitting the engine\n");

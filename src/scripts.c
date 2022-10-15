@@ -224,6 +224,8 @@ static int kiavc_lua_method_addobjecttoinventory(lua_State *s);
 static int kiavc_lua_method_removeobjectfrominventory(lua_State *s);
 /* Show some text at some coordinates for some time */
 static int kiavc_lua_method_showtext(lua_State *s);
+/* Remove rendered text, if an ID had been provided */
+static int kiavc_lua_method_removetext(lua_State *s);
 /* Quit */
 static int kiavc_lua_method_quit(lua_State *s);
 
@@ -386,6 +388,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "addObjectToInventory", kiavc_lua_method_addobjecttoinventory);
 	lua_register(lua_state, "removeObjectFromInventory", kiavc_lua_method_removeobjectfrominventory);
 	lua_register(lua_state, "showText", kiavc_lua_method_showtext);
+	lua_register(lua_state, "removeText", kiavc_lua_method_removetext);
 	lua_register(lua_state, "quit", kiavc_lua_method_quit);
 	/* Set the scripts folder */
 	lua_getglobal(lua_state, "package");
@@ -2406,9 +2409,8 @@ static int kiavc_lua_method_showtext(lua_State *s) {
 	color.g = luaL_checknumber(s, 9);
 	lua_getfield(s, 7, "b");
 	color.b = luaL_checknumber(s, 10);
-	int or = -1, og = -1, ob = -1, idx = 10;
+	int or = -1, og = -1, ob = -1, tidx = 11, idx = tidx;
 	if(lua_getfield(s, 1, "outline") != LUA_TNIL) {
-		int tidx = ++idx;
 		luaL_checktype(s, tidx, LUA_TTABLE);
 		lua_getfield(s, tidx, "r");
 		or = luaL_checknumber(s, ++idx);
@@ -2418,9 +2420,31 @@ static int kiavc_lua_method_showtext(lua_State *s) {
 		ob = luaL_checknumber(s, ++idx);
 	}
 	SDL_Color outline = { .r = or, .g = og, .b = ob };
+	const char *id = NULL;
+	idx++;
+	if(lua_getfield(s, 1, "id") != LUA_TNIL)
+		id = luaL_checkstring(s, idx);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->show_text(text, font, &color,
+	kiavc_cb->show_text(id, text, font, &color,
 		(or != -1 && og != -1 && ob != -1 ? &outline : NULL), x, y, ms);
+	return 0;
+}
+
+/* Remove rendered text, if an ID had been provided */
+static int kiavc_lua_method_removetext(lua_State *s) {
+	int n = lua_gettop(s), exp = 1;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->remove_text(id);
 	return 0;
 }
 

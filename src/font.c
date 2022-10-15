@@ -223,6 +223,8 @@ void kiavc_font_destroy(kiavc_font *font) {
 
 /* Font text destructor */
 void kiavc_font_text_destroy(kiavc_font_text *text) {
+	if(text && text->id)
+		SDL_free(text->id);
 	if(text && text->texture) {
 		SDL_DestroyTexture(text->texture);
 		SDL_free(text);
