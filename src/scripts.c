@@ -2456,9 +2456,13 @@ static int kiavc_lua_method_showtext(lua_State *s) {
 	idx++;
 	if(lua_getfield(s, 1, "id") != LUA_TNIL)
 		id = luaL_checkstring(s, idx);
+	bool absolute = false;
+	idx++;
+	if(lua_getfield(s, 1, "absolute") != LUA_TNIL)
+		absolute = lua_toboolean(s, idx);
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->show_text(id, text, font, &color,
-		(or != -1 && og != -1 && ob != -1 ? &outline : NULL), x, y, ms);
+		(or != -1 && og != -1 && ob != -1 ? &outline : NULL), x, y, absolute, ms);
 	return 0;
 }
 

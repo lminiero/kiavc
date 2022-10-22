@@ -27,9 +27,9 @@ kiavc_actor *kiavc_actor_create(const char *id) {
 	actor->id = SDL_strdup(id);
 	actor->direction = KIAVC_DOWN;
 	actor->scale = 1.0;
-	actor->speed = 1;
-	actor->target_x = -1;
-	actor->target_y = -1;
+	actor->res.speed = 1;
+	actor->res.target_x = -1;
+	actor->res.target_y = -1;
 	return actor;
 }
 

@@ -24,8 +24,8 @@
 typedef struct kiavc_resource {
 	/* Resource type */
 	Uint8 type;
-	/* Current position */
-	int x, y;
+	/* Current position (in float to account for movement) */
+	float x, y;
 	/* Z-plane */
 	int zplane;
 	/* Ticks timer */
@@ -36,6 +36,12 @@ typedef struct kiavc_resource {
 	Uint8 fade_alpha, fade_start, fade_range;
 	/* Fade in/out ticks */
 	uint32_t fade_ticks;
+	/* Target coordinates of the resource, when it's moving */
+	int target_x, target_y;
+	/* Movement speed of the resource (pixels per second) */
+	int speed;
+	/* Movement ticks */
+	uint32_t move_ticks;
 } kiavc_resource;
 
 #endif

@@ -14,6 +14,8 @@
 #ifndef __KIAVC_FONT_H
 #define __KIAVC_FONT_H
 
+#include <stdbool.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
@@ -41,6 +43,8 @@ typedef struct kiavc_font_text {
 	char *id;
 	/* Texture for the rendered text */
 	SDL_Texture *texture;
+	/* Whether the coordinates should be absolute, and not relative to the room */
+	bool absolute;
 	/* Size of the text */
 	int w, h;
 	/* Timers */
@@ -49,12 +53,6 @@ typedef struct kiavc_font_text {
 	int owner_type;
 	/* Opaque pointer to the owner resource, if any */
 	void *owner;
-	/* Target coordinates of the text, when it's moving */
-	int target_x, target_y;
-	/* Moving ticks (to separate them from resource ticks) */
-	int move_ticks;
-	/* Movement speed of the text */
-	int speed;
 } kiavc_font_text;
 
 /* Font constructor */

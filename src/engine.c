@@ -215,7 +215,8 @@ static void kiavc_engine_set_object_plane(const char *id, int zplane);
 static void kiavc_engine_scale_object(const char *id, float scale);
 static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
 static void kiavc_engine_remove_object_from_inventory(const char *id, const char *owner);
-static void kiavc_engine_show_text(const char *id, const char *text, const char *font, SDL_Color *color, SDL_Color *outline, int x, int y, Uint32 ms);
+static void kiavc_engine_show_text(const char *id, const char *text, const char *font,
+	SDL_Color *color, SDL_Color *outline, int x, int y, bool absolute, Uint32 ms);
 static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed);
 static void kiavc_engine_remove_text(const char *id);
 static void kiavc_engine_quit(void);
@@ -564,8 +565,8 @@ static void kiavc_engine_check_hovering(void) {
 	}
 	/* FIXME Check if we're hovering on an object */
 	if(engine.room && !engine.cutscene && !engine.input_disabled && !engine.dialog) {
-		int x = engine.mouse_x/kiavc_screen_scale + engine.room->res.x;
-		int y = engine.mouse_y/kiavc_screen_scale + engine.room->res.y;
+		int x = engine.mouse_x/kiavc_screen_scale + (int)engine.room->res.x;
+		int y = engine.mouse_y/kiavc_screen_scale + (int)engine.room->res.y;
 		kiavc_resource *resource, *hovering = NULL;
 		kiavc_list *item = engine.render_list;
 		while(item) {
@@ -597,17 +598,17 @@ static void kiavc_engine_check_hovering(void) {
 						h *= object->scale;
 					}
 					if(object->ui) {
-						int ui_x = x - engine.room->res.x;
-						int ui_y = y - engine.room->res.y;
-						int object_x = object->res.x + (object->parent ? object->parent->res.x : 0);
-						int object_y = object->res.y + (object->parent ? object->parent->res.y : 0);
+						int ui_x = x - (int)engine.room->res.x;
+						int ui_y = y - (int)engine.room->res.y;
+						int object_x = (int)object->res.x + (object->parent ? (int)object->parent->res.x : 0);
+						int object_y = (int)object->res.y + (object->parent ? (int)object->parent->res.y : 0);
 						if(w > 0 && h > 0 && ui_x >= object_x && ui_y >= object_y &&
 								ui_x <= object_x + w && ui_y <= object_y + h) {
 							hovering = resource;
 						}
 					} else {
-						int object_x = object->res.x + (object->parent ? object->parent->res.x : 0);
-						int object_y = object->res.y + (object->parent ? object->parent->res.y : 0);
+						int object_x = (int)object->res.x + (object->parent ? (int)object->parent->res.x : 0);
+						int object_y = (int)object->res.y + (object->parent ? (int)object->parent->res.y : 0);
 						if(w > 0 && h > 0 && x >= object_x - w/2 && y >= object_y - h &&
 								x <= object_x + w/2 && y <= object_y) {
 							hovering = resource;
@@ -629,8 +630,8 @@ static void kiavc_engine_check_hovering(void) {
 						w *= (actor->scale * ws);
 						h *= (actor->scale * ws);
 					}
-					if(w > 0 && h > 0 && x >= actor->res.x - w/2 && y >= actor->res.y - h &&
-							x <= actor->res.x + w/2 && y <= actor->res.y) {
+					if(w > 0 && h > 0 && x >= (int)actor->res.x - w/2 && y >= (int)actor->res.y - h &&
+							x <= (int)actor->res.x + w/2 && y <= (int)actor->res.y) {
 						hovering = resource;
 					}
 				}
@@ -729,8 +730,8 @@ int kiavc_engine_handle_input(void) {
 			x = x/kiavc_screen_scale;
 			y = y/kiavc_screen_scale;
 			if(engine.room) {
-				x += engine.room->res.x;
-				y += engine.room->res.y;
+				x += (int)engine.room->res.x;
+				y += (int)engine.room->res.y;
 			}
 			if(engine.dialog) {
 				if(engine.dialog->active && engine.dialog->selected) {
@@ -856,11 +857,11 @@ int kiavc_engine_update_world(void) {
 			kiavc_actor *actor = (kiavc_actor *)resource;
 			if(actor->line && actor->line->started == 0)
 				actor->line->started = ticks;
-			if(actor->walk_ticks == 0)
-				actor->walk_ticks = ticks;
-			if(ticks - actor->walk_ticks >= 100) {
-				actor->walk_ticks += 100;
-				if(actor->target_x != -1 && actor->target_y != -1) {
+			if(actor->res.move_ticks == 0)
+				actor->res.move_ticks = ticks;
+			if(ticks - actor->res.move_ticks >= 100) {
+				actor->res.move_ticks += 100;
+				if(actor->res.target_x != -1 && actor->res.target_y != -1) {
 					if(actor->state != KIAVC_ACTOR_WALKING)
 						actor->frame = 0;
 					actor->state = KIAVC_ACTOR_WALKING;
@@ -868,8 +869,8 @@ int kiavc_engine_update_world(void) {
 						to_remove = kiavc_list_append(to_remove, actor->line);
 						actor->line = NULL;
 					}
-					int diff_x = actor->res.x - actor->target_x;
-					int diff_y = actor->res.y - actor->target_y;
+					int diff_x = (int)actor->res.x - actor->res.target_x;
+					int diff_y = (int)actor->res.y - actor->res.target_y;
 					if(abs(diff_x) > abs(diff_y)) {
 						/* Left/right */
 						if(diff_x > 0)
@@ -883,23 +884,23 @@ int kiavc_engine_update_world(void) {
 						else if(diff_y < 0)
 							actor->direction = KIAVC_DOWN;
 					}
-					float d = sqrt(((actor->target_x - actor->res.x)*(actor->target_x - actor->res.x)) +
-						((actor->target_y - actor->res.y)*(actor->target_y - actor->res.y)));
-					int p = (int)(d/actor->speed);
+					float d = sqrt(((actor->res.target_x - actor->res.x)*(actor->res.target_x - actor->res.x)) +
+						((actor->res.target_y - actor->res.y)*(actor->res.target_y - actor->res.y)));
+					int p = (int)(d/actor->res.speed);
 					if(!p)
 						p = 1;
-					actor->res.x += (actor->target_x - actor->res.x) / p;
-					int prev_y = actor->res.y;
-					actor->res.y += (actor->target_y - actor->res.y) / p;
-					if(prev_y != actor->res.y)
+					actor->res.x += (actor->res.target_x - actor->res.x) / p;
+					int prev_y = (int)actor->res.y;
+					actor->res.y += (actor->res.target_y - actor->res.y) / p;
+					if(prev_y != (int)actor->res.y)
 						sort = true;
-					if(actor->res.x == actor->target_x && actor->res.y == actor->target_y) {
+					if((int)actor->res.x == actor->res.target_x && (int)actor->res.y == actor->res.target_y) {
 						/* Arrived, is it over? */
 						if(actor->step) {
 							/* We have to walk more */
 							kiavc_pathfinding_point *p = (kiavc_pathfinding_point *)actor->step->data;
-							actor->target_x = p->x;
-							actor->target_y = p->y;
+							actor->res.target_x = p->x;
+							actor->res.target_y = p->y;
 							actor->step = actor->step->next;
 						} else {
 							/* We're done */
@@ -907,16 +908,16 @@ int kiavc_engine_update_world(void) {
 							actor->path = NULL;
 							actor->step = NULL;
 							actor->state = KIAVC_ACTOR_STILL;
-							actor->target_x = -1;
-							actor->target_y = -1;
+							actor->res.target_x = -1;
+							actor->res.target_y = -1;
 							/* FIXME */
 							kiavc_scripts_run_command("signal('%s')", actor->id);
 						}
 					}
 					/* FIXME Check which walkbox we're in */
 					if(engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes) {
-						int x = actor->res.x;
-						int y = actor->res.y;
+						int x = (int)actor->res.x;
+						int y = (int)actor->res.y;
 						kiavc_pathfinding_point point = { .x = x, .y = y };
 						kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_context_find_walkbox(engine.room->pathfinding, &point);
 						if(walkbox != actor->walkbox) {
@@ -939,14 +940,14 @@ int kiavc_engine_update_world(void) {
 					if(engine.room_direction == 0) {
 						/* FIXME */
 						int portion = width/3;
-						if(actor->res.x - engine.room->res.x < portion)
+						if((int)actor->res.x - (int)engine.room->res.x < portion)
 							engine.room_direction = -1;
-						else if(actor->res.x - engine.room->res.x > (width - portion))
+						else if((int)actor->res.x - (int)engine.room->res.x > (width - portion))
 							engine.room_direction = 1;
 					} else {
 						/* FIXME */
 						int portion = width/2;
-						if(actor->res.x - engine.room->res.x > (portion-5) && actor->res.x - engine.room->res.x < (portion+5)) {
+						if((int)actor->res.x - (int)engine.room->res.x > (portion-5) && (int)actor->res.x - (int)engine.room->res.x < (portion+5)) {
 							engine.room_direction = 0;
 						}
 					}
@@ -970,23 +971,30 @@ int kiavc_engine_update_world(void) {
 					object->frame = 0;
 				}
 			}
-			if(object->speed > 0) {
+			if(object->res.speed > 0) {
 				/* We're moving this object around */
-				if(object->move_ticks == 0)
-					object->move_ticks = ticks;
-				if(ticks - object->move_ticks >= 100) {
-					object->move_ticks += 100;
-					float d = sqrt(((object->target_x - object->res.x)*(object->target_x - object->res.x)) +
-						((object->target_y - object->res.y)*(object->target_y - object->res.y)));
-					int p = (int)(d/object->speed);
-					if(!p)
-						p = 1;
-					object->res.x += (object->target_x - object->res.x) / p;
-					object->res.y += (object->target_y - object->res.y) / p;
-					if(object->res.x == object->target_x && object->res.y == object->target_y) {
+				if(object->res.move_ticks == 0)
+					object->res.move_ticks = ticks;
+				if(ticks - object->res.move_ticks >= (1000/kiavc_screen_fps)) {
+					object->res.move_ticks += (1000/kiavc_screen_fps);
+					float movement = (float)(object->res.speed)/(kiavc_screen_fps);
+					float d = sqrt(((object->res.target_x - object->res.x)*(object->res.target_x - object->res.x)) +
+						((object->res.target_y - object->res.y)*(object->res.target_y - object->res.y)));
+					float p = d/movement;
+					float mx = object->res.x + ((float)object->res.target_x - object->res.x) / p;
+					float my = object->res.y + ((float)object->res.target_y - object->res.y) / p;
+					if((object->res.x > (float)object->res.target_x && mx < (float)object->res.target_x)
+							|| (object->res.x > (float)object->res.target_x && mx < (float)object->res.target_x))
+						mx = (float)object->res.target_x;
+					if((object->res.y > (float)object->res.target_y && my < (float)object->res.target_y)
+							|| (object->res.y > (float)object->res.target_y && my < (float)object->res.target_y))
+						my = (float)object->res.target_y;
+					object->res.x = mx;
+					object->res.y = my;
+					if((int)object->res.x == object->res.target_x && (int)object->res.y == object->res.target_y) {
 						/* We're done */
-						object->speed = 0;
-						/* FIXME */
+						object->res.speed = 0;
+						/* Signal the script that the object has finished moving */
 						kiavc_scripts_run_command("signal('%s')", object->id);
 					}
 				}
@@ -999,23 +1007,30 @@ int kiavc_engine_update_world(void) {
 				if(line->started == 0)
 					line->started = ticks;
 			}
-			if(line->speed > 0) {
+			if(line->res.speed > 0) {
 				/* We're moving this text around */
-				if(line->move_ticks == 0)
-					line->move_ticks = ticks;
-				if(ticks - line->move_ticks >= 100) {
-					line->move_ticks += 100;
-					float d = sqrt(((line->target_x - line->res.x)*(line->target_x - line->res.x)) +
-						((line->target_y - line->res.y)*(line->target_y - line->res.y)));
-					int p = (int)(d/line->speed);
-					if(!p)
-						p = 1;
-					line->res.x += (line->target_x - line->res.x) / p;
-					line->res.y += (line->target_y - line->res.y) / p;
-					if(line->res.x == line->target_x && line->res.y == line->target_y) {
+				if(line->res.move_ticks == 0)
+					line->res.move_ticks = ticks;
+				if(ticks - line->res.move_ticks >= (1000/kiavc_screen_fps)) {
+					line->res.move_ticks += (1000/kiavc_screen_fps);
+					float movement = (float)(line->res.speed)/(kiavc_screen_fps);
+					float d = sqrt(((line->res.target_x - line->res.x)*(line->res.target_x - line->res.x)) +
+						((line->res.target_y - line->res.y)*(line->res.target_y - line->res.y)));
+					float p = d/movement;
+					float mx = line->res.x + ((float)line->res.target_x - line->res.x) / p;
+					float my = line->res.y + ((float)line->res.target_y - line->res.y) / p;
+					if((line->res.x > (float)line->res.target_x && mx < (float)line->res.target_x)
+							|| (line->res.x > (float)line->res.target_x && mx < (float)line->res.target_x))
+						mx = (float)line->res.target_x;
+					if((line->res.y > (float)line->res.target_y && my < (float)line->res.target_y)
+							|| (line->res.y > (float)line->res.target_y && my < (float)line->res.target_y))
+						my = (float)line->res.target_y;
+					line->res.x = mx;
+					line->res.y = my;
+					if((int)line->res.x == line->res.target_x && (int)line->res.y == line->res.target_y) {
 						/* We're done */
-						line->speed = 0;
-						/* FIXME */
+						line->res.speed = 0;
+						/* Signal the script that the text has finished moving */
 						kiavc_scripts_run_command("signal('%s')", line->id);
 					}
 				}
@@ -1067,7 +1082,7 @@ int kiavc_engine_update_world(void) {
 		engine.room_ticks += 15;
 		if(engine.room && engine.room->background && engine.room->background->w) {
 			engine.room->res.x += engine.room_direction;
-			if(engine.room->res.x > engine.room->background->w - kiavc_screen_width/kiavc_screen_scale) {
+			if((int)engine.room->res.x > engine.room->background->w - kiavc_screen_width/kiavc_screen_scale) {
 				engine.room->res.x = engine.room->background->w - kiavc_screen_width/kiavc_screen_scale;
 				engine.room_direction = 0;
 			} else if(engine.room->res.x < 0) {
@@ -1185,8 +1200,8 @@ int kiavc_engine_render(void) {
 				/* This is the room background */
 				kiavc_animation_load(engine.room->background, renderer);
 				if(engine.room->background) {
-					clip.x = engine.room->res.x;
-					clip.y = engine.room->res.y;
+					clip.x = (int)engine.room->res.x;
+					clip.y = (int)engine.room->res.y;
 					clip.w = kiavc_screen_width/kiavc_screen_scale;
 					clip.h = engine.room->background->h;
 					rect.x = 0;
@@ -1207,9 +1222,9 @@ int kiavc_engine_render(void) {
 					int screen_w = kiavc_screen_width/kiavc_screen_scale;
 					int room_range_w = engine.room->background->w - screen_w;
 					int layer_range_w = layer->background->w - screen_w;
-					float layer_x = ((float)engine.room->res.x / (float)room_range_w) * (float)layer_range_w;
+					float layer_x = (engine.room->res.x / (float)room_range_w) * (float)layer_range_w;
 					clip.x = (int)layer_x;
-					clip.y = engine.room->res.y;
+					clip.y = (int)engine.room->res.y;
 					clip.w = screen_w;
 					clip.h = layer->background->h;
 					rect.x = 0;
@@ -1225,8 +1240,8 @@ int kiavc_engine_render(void) {
 				/* This is an actor */
 				kiavc_actor *actor = (kiavc_actor *)resource;
 				if(actor && actor->room == engine.room && actor->visible && actor->costume) {
-					int room_x = engine.room ? engine.room->res.x : 0;
-					int room_y = engine.room ? engine.room->res.y : 0;
+					int room_x = engine.room ? (int)engine.room->res.x : 0;
+					int room_y = engine.room ? (int)engine.room->res.y : 0;
 					kiavc_costume_set *set = kiavc_costume_get_set(actor->costume, kiavc_actor_state_str(actor->state));
 					if(set && set->animations[actor->direction]) {
 						kiavc_costume_load_set(set, renderer);
@@ -1243,8 +1258,8 @@ int kiavc_engine_render(void) {
 							w *= (actor->scale * ws);
 							h *= (actor->scale * ws);
 						}
-						rect.x = (actor->res.x - w/2 - room_x) * kiavc_screen_scale;
-						rect.y = (actor->res.y - h - room_y) * kiavc_screen_scale;
+						rect.x = ((int)actor->res.x - w/2 - room_x) * kiavc_screen_scale;
+						rect.y = ((int)actor->res.y - h - room_y) * kiavc_screen_scale;
 						rect.w = w * kiavc_screen_scale;
 						rect.h = h * kiavc_screen_scale;
 						if(rect.x < kiavc_screen_width && rect.y < kiavc_screen_height &&
@@ -1258,8 +1273,8 @@ int kiavc_engine_render(void) {
 				/* This is an object */
 				kiavc_object *object = (kiavc_object *)resource;
 				if(object && ((object->ui && !engine.cutscene && !engine.dialog) || object->room == engine.room)) {
-					int room_x = !object->ui && engine.room ? engine.room->res.x : 0;
-					int room_y = !object->ui && engine.room ? engine.room->res.y : 0;
+					int room_x = !object->ui && engine.room ? (int)engine.room->res.x : 0;
+					int room_y = !object->ui && engine.room ? (int)engine.room->res.y : 0;
 					kiavc_animation *animation = object->ui ? object->ui_animation : object->animation;
 					if(animation) {
 						kiavc_animation_load(animation, renderer);
@@ -1275,8 +1290,8 @@ int kiavc_engine_render(void) {
 							w *= object->scale;
 							h *= object->scale;
 						}
-						int object_x = object->res.x + (object->parent ? object->parent->res.x : 0);
-						int object_y = object->res.y + (object->parent ? object->parent->res.y : 0);
+						int object_x = (int)object->res.x + (object->parent ? (int)object->parent->res.x : 0);
+						int object_y = (int)object->res.y + (object->parent ? (int)object->parent->res.y : 0);
 						if(object->ui) {
 							rect.x = (object_x - room_x) * kiavc_screen_scale;
 							rect.y = (object_y - room_y) * kiavc_screen_scale;
@@ -1297,20 +1312,15 @@ int kiavc_engine_render(void) {
 				/* This is a text line */
 				bool draw = false;
 				kiavc_font_text *line = (kiavc_font_text *)resource;
-				int room_x = engine.room ? engine.room->res.x : 0;
-				int room_y = engine.room ? engine.room->res.y : 0;
+				int room_x = (!line->absolute && engine.room) ? (int)engine.room->res.x : 0;
+				int room_y = (!line->absolute && engine.room) ? (int)engine.room->res.y : 0;
 				rect.w = line->w * kiavc_screen_scale;
 				rect.h = line->h * kiavc_screen_scale;
-				if(line->owner_type != KIAVC_DIALOG && line->res.x > -1 && line->res.y > -1) {
+				if(line->owner_type == 0) {
+					/* Unowned text */
 					draw = true;
-					rect.x = (line->res.x - line->w/2 - room_x) * kiavc_screen_scale;
-					if(rect.x < 0)
-						rect.x = 0;
-					else if(rect.x + (line->w * kiavc_screen_scale) > (kiavc_screen_width * kiavc_screen_scale))
-						rect.x = kiavc_screen_width * kiavc_screen_scale - line->w * kiavc_screen_scale;
-					rect.y = (line->res.y - room_y) * kiavc_screen_scale - (30 * kiavc_screen_scale);
-					if(rect.y < 0)
-						rect.y = 0;
+					rect.x = ((int)line->res.x - line->w/2 - room_x) * kiavc_screen_scale;
+					rect.y = ((int)line->res.y - line->h/2 - room_y) * kiavc_screen_scale;
 				} else {
 					/* Check who the owner is */
 					if(line->owner_type == KIAVC_ACTOR) {
@@ -1323,14 +1333,14 @@ int kiavc_engine_render(void) {
 								set->animations[actor->direction]->w : 0;
 							int h = (set && set->animations[actor->direction]) ?
 								set->animations[actor->direction]->h : 0;
-							int ax = (actor->res.x - w/2 - room_x) * kiavc_screen_scale;
-							int ay = (actor->res.y - h - room_y) * kiavc_screen_scale;
+							int ax = ((int)actor->res.x - w/2 - room_x) * kiavc_screen_scale;
+							int ay = ((int)actor->res.y - h - room_y) * kiavc_screen_scale;
 							int aw = w * kiavc_screen_scale;
 							int ah = h * kiavc_screen_scale;
 							if(w == 0 || h == 0 || ax >= kiavc_screen_width || ay >= kiavc_screen_height ||
 									ax + aw <= 0 || ay + ah <= 0)
 								draw = false;
-							rect.x = (actor->res.x - room_x) * kiavc_screen_scale - (line->w/2) * kiavc_screen_scale;
+							rect.x = ((int)actor->res.x - room_x) * kiavc_screen_scale - (line->w/2) * kiavc_screen_scale;
 							if(rect.x < 0)
 								rect.x = 0;
 							else if(rect.x + line->w * kiavc_screen_scale > kiavc_screen_width * kiavc_screen_scale)
@@ -1342,9 +1352,9 @@ int kiavc_engine_render(void) {
 									float ws = actor->walkbox ? actor->walkbox->scale : 1.0;
 									h *= (actor->scale * ws);
 								}
-								rect.y = (actor->res.y - h - room_y - line->h) * kiavc_screen_scale - diff_y;
+								rect.y = ((int)actor->res.y - h - room_y - line->h) * kiavc_screen_scale - diff_y;
 							} else {
-								rect.y = (actor->res.y - room_y - line->h) * kiavc_screen_scale - diff_y;
+								rect.y = ((int)actor->res.y - room_y - line->h) * kiavc_screen_scale - diff_y;
 							}
 							if(rect.y < 0)
 								rect.y = 0;
@@ -1378,10 +1388,10 @@ int kiavc_engine_render(void) {
 								SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 							}
 							/* Draw the text */
-							rect.x = line->res.x * kiavc_screen_scale;
+							rect.x = (int)line->res.x * kiavc_screen_scale;
 							if(rect.x < 0)
 								rect.x = 0;
-							rect.y = line->res.y * kiavc_screen_scale;
+							rect.y = (int)line->res.y * kiavc_screen_scale;
 							if(rect.y < 0)
 								rect.y = 0;
 							SDL_RenderCopy(renderer, line->texture, NULL, &rect);
@@ -1415,8 +1425,8 @@ int kiavc_engine_render(void) {
 				else
 					SDL_SetRenderDrawColor(renderer, 255, 0, 255, SDL_ALPHA_OPAQUE);
 				x = y = w = h = 0;
-				int object_x = object->res.x + (object->parent ? object->parent->res.x : 0);
-				int object_y = object->res.y + (object->parent ? object->parent->res.y : 0);
+				int object_x = (int)object->res.x + (object->parent ? (int)object->parent->res.x : 0);
+				int object_y = (int)object->res.y + (object->parent ? (int)object->parent->res.y : 0);
 				if(object->hover.from_x >= 0 || object->hover.from_y >= 0 ||
 						object->hover.to_x >= 0 || object->hover.to_y >= 0) {
 					x = object->hover.from_x;
@@ -1434,10 +1444,10 @@ int kiavc_engine_render(void) {
 					w = object->ui_animation->w;
 					h = object->ui_animation->h;
 				}
-				x1 = (x - (object->ui ? 0 : engine.room->res.x)) * kiavc_screen_scale;
-				y1 = (y - (object->ui ? 0 : engine.room->res.y)) * kiavc_screen_scale;
-				x2 = (x + w - (object->ui ? 0 : engine.room->res.x)) * kiavc_screen_scale;
-				y2 = (y + h - (object->ui ? 0 : engine.room->res.y)) * kiavc_screen_scale;
+				x1 = (x - (object->ui ? 0 : (int)engine.room->res.x)) * kiavc_screen_scale;
+				y1 = (y - (object->ui ? 0 : (int)engine.room->res.y)) * kiavc_screen_scale;
+				x2 = (x + w - (object->ui ? 0 : (int)engine.room->res.x)) * kiavc_screen_scale;
+				y2 = (y + h - (object->ui ? 0 : (int)engine.room->res.y)) * kiavc_screen_scale;
 				SDL_RenderDrawLine(renderer, x1, y1, x2, y1);
 				SDL_RenderDrawLine(renderer, x2, y1, x2, y2);
 				SDL_RenderDrawLine(renderer, x2, y2, x1, y2);
@@ -1457,10 +1467,10 @@ int kiavc_engine_render(void) {
 					temp = temp->next;
 					continue;
 				}
-				x1 = (w->p1.x - engine.room->res.x) * kiavc_screen_scale;
-				y1 = (w->p1.y - engine.room->res.y) * kiavc_screen_scale;
-				x2 = (w->p2.x - engine.room->res.x) * kiavc_screen_scale;
-				y2 = (w->p2.y - engine.room->res.y) * kiavc_screen_scale;
+				x1 = (w->p1.x - (int)engine.room->res.x) * kiavc_screen_scale;
+				y1 = (w->p1.y - (int)engine.room->res.y) * kiavc_screen_scale;
+				x2 = (w->p2.x - (int)engine.room->res.x) * kiavc_screen_scale;
+				y2 = (w->p2.y - (int)engine.room->res.y) * kiavc_screen_scale;
 				SDL_RenderDrawLine(renderer, x1, y1, x2, y1);
 				SDL_RenderDrawLine(renderer, x2, y1, x2, y2);
 				SDL_RenderDrawLine(renderer, x2, y2, x1, y2);
@@ -1475,10 +1485,10 @@ int kiavc_engine_render(void) {
 					p1 = (kiavc_pathfinding_point *)temp->data;
 					p2 = (kiavc_pathfinding_point *)(temp->next ? temp->next->data : NULL);
 					if(p2) {
-						x1 = (p1->x - engine.room->res.x) * kiavc_screen_scale;
-						y1 = (p1->y - engine.room->res.y) * kiavc_screen_scale;
-						x2 = (p2->x - engine.room->res.x) * kiavc_screen_scale;
-						y2 = (p2->y - engine.room->res.y) * kiavc_screen_scale;
+						x1 = (p1->x - (int)engine.room->res.x) * kiavc_screen_scale;
+						y1 = (p1->y - (int)engine.room->res.y) * kiavc_screen_scale;
+						x2 = (p2->x - (int)engine.room->res.x) * kiavc_screen_scale;
+						y2 = (p2->y - (int)engine.room->res.y) * kiavc_screen_scale;
 						SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
 					}
 					temp = temp->next;
@@ -1525,8 +1535,8 @@ int kiavc_engine_render(void) {
 			clip.h = cursor->animation->h;
 			clip.x = cursor->frame*(clip.w);
 			clip.y = 0;
-			rect.x = cursor->res.x;
-			rect.y = cursor->res.y;
+			rect.x = (int)cursor->res.x;
+			rect.y = (int)cursor->res.y;
 			rect.w = cursor->animation->w * kiavc_screen_scale;
 			rect.h = cursor->animation->h * kiavc_screen_scale;
 			if(cursor->animation->texture)
@@ -2321,7 +2331,7 @@ static void kiavc_engine_show_room(const char *id) {
 		item = item->next;
 	}
 	if(engine.following && engine.following->room == room)
-		engine.room->res.x = engine.following->res.x - kiavc_screen_width/(2*kiavc_screen_scale);
+		engine.room->res.x = (int)engine.following->res.x - kiavc_screen_width/(2*kiavc_screen_scale);
 	/* Done */
 	SDL_Log("Shown room '%s'\n", room->id);
 }
@@ -2390,16 +2400,16 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 	if(actor->visible)
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	if(engine.room && engine.following == actor && engine.following->room == room)
-		engine.room->res.x = engine.following->res.x - kiavc_screen_width/(2*kiavc_screen_scale);
+		engine.room->res.x = (int)engine.following->res.x - kiavc_screen_width/(2*kiavc_screen_scale);
 	g_list_free_full(actor->path, (GDestroyNotify)kiavc_pathfinding_point_destroy);
 	actor->path = NULL;
 	actor->step = NULL;
-	actor->target_x = -1;
-	actor->target_y = -1;
+	actor->res.target_x = -1;
+	actor->res.target_y = -1;
 	/* FIXME Check which walkbox we're in */
 	if(engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes) {
-		int x = actor->res.x;
-		int y = actor->res.y;
+		int x = (int)actor->res.x;
+		int y = (int)actor->res.y;
 		kiavc_pathfinding_point point = { .x = x, .y = y };
 		kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_context_find_walkbox(engine.room->pathfinding, &point);
 		if(walkbox != actor->walkbox) {
@@ -2416,7 +2426,7 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 			actor->walkbox = walkbox;
 		}
 	}
-	SDL_Log("Moved actor '%s' to room '%s' (%dx%d)\n", actor->id, room->id, actor->res.x, actor->res.y);
+	SDL_Log("Moved actor '%s' to room '%s' (%dx%d)\n", actor->id, room->id, (int)actor->res.x, (int)actor->res.y);
 }
 static void kiavc_engine_show_actor(const char *id) {
 	if(!id)
@@ -2539,7 +2549,7 @@ static void kiavc_engine_set_actor_speed(const char *id, int speed) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor speed, invalid value '%d'\n", speed);
 		return;
 	}
-	actor->speed = speed;
+	actor->res.speed = speed;
 	/* Done */
 	SDL_Log("Set actor '%s' speed to '%d'\n", actor->id, speed);
 }
@@ -2568,7 +2578,7 @@ static void kiavc_engine_walk_actor_to(const char *id, int x, int y) {
 		return;
 	}
 	/* Find a path to the destination */
-	kiavc_pathfinding_point from = { .x = actor->res.x, .y = actor->res.y };
+	kiavc_pathfinding_point from = { .x = (int)actor->res.x, .y = (int)actor->res.y };
 	kiavc_pathfinding_point to = { .x = x, .y = y };
 	actor->path = kiavc_pathfinding_context_find_path(engine.room->pathfinding, &from, &to);
 	if(!actor->path) {
@@ -2578,8 +2588,8 @@ static void kiavc_engine_walk_actor_to(const char *id, int x, int y) {
 	}
 	/* Set the first target */
 	kiavc_pathfinding_point *p = (kiavc_pathfinding_point *)actor->path->data;
-	actor->target_x = p->x;
-	actor->target_y = p->y;
+	actor->res.target_x = p->x;
+	actor->res.target_y = p->y;
 	actor->step = actor->path->next;
 	/* Done */
 	SDL_Log("Walking actor '%s' to %dx%d\n", actor->id, to.x, to.y);
@@ -2613,8 +2623,8 @@ static void kiavc_engine_say_actor(const char *id, const char *text, const char 
 		return;
 	actor->line->owner_type = KIAVC_ACTOR;
 	actor->line->owner = actor;
-	actor->target_x = -1;
-	actor->target_y = -1;
+	actor->res.target_x = -1;
+	actor->res.target_y = -1;
 	actor->state = KIAVC_ACTOR_TALKING;
 	engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor->line, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
@@ -2913,7 +2923,7 @@ static void kiavc_engine_move_object_to(const char *id, const char *rid, int x, 
 	object->res.y = y;
 	if(object->visible)
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
-	SDL_Log("Moved object '%s' to room '%s' (%dx%d)\n", object->id, room->id, object->res.x, object->res.y);
+	SDL_Log("Moved object '%s' to room '%s' (%dx%d)\n", object->id, room->id, (int)object->res.x, (int)object->res.y);
 }
 static void kiavc_engine_float_object_to(const char *id, int x, int y, int speed) {
 	if(!id)
@@ -2930,10 +2940,10 @@ static void kiavc_engine_float_object_to(const char *id, int x, int y, int speed
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object speed, invalid value '%d'\n", speed);
 		return;
 	}
-	object->target_x = x;
-	object->target_y = y;
-	object->speed = speed;
-	object->move_ticks = 0;
+	object->res.target_x = x;
+	object->res.target_y = y;
+	object->res.speed = speed;
+	object->res.move_ticks = 0;
 	/* Done */
 }
 static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y) {
@@ -3111,7 +3121,8 @@ static void kiavc_engine_remove_object_from_inventory(const char *id, const char
 	/* Done */
 	SDL_Log("Removed object '%s' from actor '%s' inventory\n", object->id, actor->id);
 }
-static void kiavc_engine_show_text(const char *id, const char *text, const char *fid, SDL_Color *color, SDL_Color *outline, int x, int y, Uint32 ms) {
+static void kiavc_engine_show_text(const char *id, const char *text, const char *fid,
+		SDL_Color *color, SDL_Color *outline, int x, int y, bool absolute, Uint32 ms) {
 	if(!text || !fid || !color)
 		return;
 	if(id) {
@@ -3137,6 +3148,7 @@ static void kiavc_engine_show_text(const char *id, const char *text, const char 
 		return;
 	line->res.x = x;
 	line->res.y = y;
+	line->absolute = absolute;
 	line->duration = ms;
 	if(id) {
 		SDL_Log("Assigning ID to new text line: '%s'\n", id);
@@ -3161,10 +3173,10 @@ static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed) 
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set text speed, invalid value '%d'\n", speed);
 		return;
 	}
-	line->target_x = x;
-	line->target_y = y;
-	line->speed = speed;
-	line->move_ticks = 0;
+	line->res.target_x = x;
+	line->res.target_y = y;
+	line->res.speed = speed;
+	line->res.move_ticks = 0;
 	/* Done */
 }
 static void kiavc_engine_remove_text(const char *id) {
