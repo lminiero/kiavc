@@ -187,13 +187,13 @@ function noisesScript()
 	local color = green
 	local outline = black
 	while(true) do
-		showText({ text = '*Crash*', font = 'dialogues', color = color, outline = outline, x = 320, y = 150, duration = 500 })
+		showText({ text = '*Crash*', font = 'dialogues', color = color, outline = outline, x = 320, y = 127, duration = 500 })
 		waitMs(600)
-		showText({ text = '*Bang*', font = 'dialogues', color = color, outline = outline, x = 340, y = 130, duration = 500 })
+		showText({ text = '*Bang*', font = 'dialogues', color = color, outline = outline, x = 340, y = 120, duration = 500 })
 		waitMs(600)
-		showText({ text = '*Pow*', font = 'dialogues', color = color, outline = outline, x = 310, y = 140, duration = 500 })
+		showText({ text = '*Pow*', font = 'dialogues', color = color, outline = outline, x = 320, y = 124, duration = 500 })
 		waitMs(600)
-		showText({ text = '*Boom*', font = 'dialogues', color = color, outline = outline, x = 340, y = 160, duration = 500 })
+		showText({ text = '*Boom*', font = 'dialogues', color = color, outline = outline, x = 340, y = 130, duration = 500 })
 		waitMs(600)
 	end
 end
