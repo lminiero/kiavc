@@ -25,6 +25,8 @@ typedef struct kiavc_pathfinding_walkbox {
 	kiavc_pathfinding_point p1, p2;
 	/* Scale factor to apply to actors, if needed */
 	float scale;
+	/* Speed modifier factor to apply to actors, if needed */
+	float speed;
 	/* Whether the walkbox is disabled or not */
 	bool disabled;
 } kiavc_pathfinding_walkbox;
@@ -56,7 +58,7 @@ void kiavc_pathfinding_point_destroy(kiavc_pathfinding_point *point);
 
 /* Helper to create a new walkbox */
 kiavc_pathfinding_walkbox *kiavc_pathfinding_walkbox_create(const char *name,
-	int x1, int y1, int x2, int y2, float scale, bool disabled);
+	int x1, int y1, int x2, int y2, float scale, float speed, bool disabled);
 /* Helper to check if two walkboxes overlap */
 bool kiavc_pathfinding_walkboxes_overlap(kiavc_pathfinding_walkbox *w1, kiavc_pathfinding_walkbox *w2);
 /* Helper to get the rectangle intersection of two walkboxes */

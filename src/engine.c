@@ -172,7 +172,7 @@ static void kiavc_engine_register_room(const char *id);
 static void kiavc_engine_set_room_background(const char *id, const char *bg);
 static void kiavc_engine_add_room_layer(const char *id, const char *name, const char *bg, int zplane);
 static void kiavc_engine_remove_room_layer(const char *id, const char *name);
-static void kiavc_engine_add_room_walkbox(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, bool disabled);
+static void kiavc_engine_add_room_walkbox(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, float speed, bool disabled);
 static void kiavc_engine_enable_room_walkbox(const char *id, const char *name);
 static void kiavc_engine_disable_room_walkbox(const char *id, const char *name);
 static void kiavc_engine_recalculate_room_walkboxes(const char *id);
@@ -859,8 +859,8 @@ int kiavc_engine_update_world(void) {
 				actor->line->started = ticks;
 			if(actor->res.move_ticks == 0)
 				actor->res.move_ticks = ticks;
-			if(ticks - actor->res.move_ticks >= 100) {
-				actor->res.move_ticks += 100;
+			if(ticks - actor->res.move_ticks >= (1000/kiavc_screen_fps)) {
+				actor->res.move_ticks += (1000/kiavc_screen_fps);
 				if(actor->res.target_x != -1 && actor->res.target_y != -1) {
 					if(actor->state != KIAVC_ACTOR_WALKING)
 						actor->frame = 0;
@@ -884,16 +884,30 @@ int kiavc_engine_update_world(void) {
 						else if(diff_y < 0)
 							actor->direction = KIAVC_DOWN;
 					}
-					float d = sqrt(((actor->res.target_x - actor->res.x)*(actor->res.target_x - actor->res.x)) +
-						((actor->res.target_y - actor->res.y)*(actor->res.target_y - actor->res.y)));
-					int p = (int)(d/actor->res.speed);
-					if(!p)
-						p = 1;
-					actor->res.x += (actor->res.target_x - actor->res.x) / p;
-					int prev_y = (int)actor->res.y;
-					actor->res.y += (actor->res.target_y - actor->res.y) / p;
-					if(prev_y != (int)actor->res.y)
-						sort = true;
+					float speed = (float)actor->res.speed;
+					if(actor->walkbox && actor->walkbox->speed != 1.0) {
+						speed = (float)(speed) * actor->walkbox->speed;
+						if(speed < 1.0)
+							speed = 1.0;
+					}
+					if((int)actor->res.x != actor->res.target_x || (int)actor->res.y != actor->res.target_y) {
+						float movement = speed/kiavc_screen_fps;
+						float d = sqrt(((actor->res.target_x - actor->res.x)*(actor->res.target_x - actor->res.x)) +
+							((actor->res.target_y - actor->res.y)*(actor->res.target_y - actor->res.y)));
+						float p = d/movement;
+						float mx = actor->res.x + ((float)actor->res.target_x - actor->res.x) / p;
+						float my = actor->res.y + ((float)actor->res.target_y - actor->res.y) / p;
+						if((actor->res.x > (float)actor->res.target_x && mx < (float)actor->res.target_x)
+								|| (actor->res.x > (float)actor->res.target_x && mx < (float)actor->res.target_x))
+							mx = (float)actor->res.target_x;
+						if((actor->res.y > (float)actor->res.target_y && my < (float)actor->res.target_y)
+								|| (actor->res.y > (float)actor->res.target_y && my < (float)actor->res.target_y))
+							my = (float)actor->res.target_y;
+						if((int)my != (int)actor->res.y)
+							sort = true;
+						actor->res.x = mx;
+						actor->res.y = my;
+					}
 					if((int)actor->res.x == actor->res.target_x && (int)actor->res.y == actor->res.target_y) {
 						/* Arrived, is it over? */
 						if(actor->step) {
@@ -975,7 +989,8 @@ int kiavc_engine_update_world(void) {
 				/* We're moving this object around */
 				if(object->res.move_ticks == 0)
 					object->res.move_ticks = ticks;
-				if(ticks - object->res.move_ticks >= (1000/kiavc_screen_fps)) {
+				if(((int)object->res.x != object->res.target_x || (int)object->res.y != object->res.target_y) &&
+						ticks - object->res.move_ticks >= (1000/kiavc_screen_fps)) {
 					object->res.move_ticks += (1000/kiavc_screen_fps);
 					float movement = (float)(object->res.speed)/(kiavc_screen_fps);
 					float d = sqrt(((object->res.target_x - object->res.x)*(object->res.target_x - object->res.x)) +
@@ -989,14 +1004,16 @@ int kiavc_engine_update_world(void) {
 					if((object->res.y > (float)object->res.target_y && my < (float)object->res.target_y)
 							|| (object->res.y > (float)object->res.target_y && my < (float)object->res.target_y))
 						my = (float)object->res.target_y;
+					if((int)my != (int)object->res.y)
+						sort = true;
 					object->res.x = mx;
 					object->res.y = my;
-					if((int)object->res.x == object->res.target_x && (int)object->res.y == object->res.target_y) {
-						/* We're done */
-						object->res.speed = 0;
-						/* Signal the script that the object has finished moving */
-						kiavc_scripts_run_command("signal('%s')", object->id);
-					}
+				}
+				if((int)object->res.x == object->res.target_x && (int)object->res.y == object->res.target_y) {
+					/* We're done */
+					object->res.speed = 0;
+					/* Signal the script that the object has finished moving */
+					kiavc_scripts_run_command("signal('%s')", object->id);
 				}
 			}
 		} else if(resource->type == KIAVC_FONT_TEXT) {
@@ -1011,7 +1028,8 @@ int kiavc_engine_update_world(void) {
 				/* We're moving this text around */
 				if(line->res.move_ticks == 0)
 					line->res.move_ticks = ticks;
-				if(ticks - line->res.move_ticks >= (1000/kiavc_screen_fps)) {
+				if(((int)line->res.x != line->res.target_x || (int)line->res.y != line->res.target_y) &&
+						ticks - line->res.move_ticks >= (1000/kiavc_screen_fps)) {
 					line->res.move_ticks += (1000/kiavc_screen_fps);
 					float movement = (float)(line->res.speed)/(kiavc_screen_fps);
 					float d = sqrt(((line->res.target_x - line->res.x)*(line->res.target_x - line->res.x)) +
@@ -1027,12 +1045,12 @@ int kiavc_engine_update_world(void) {
 						my = (float)line->res.target_y;
 					line->res.x = mx;
 					line->res.y = my;
-					if((int)line->res.x == line->res.target_x && (int)line->res.y == line->res.target_y) {
-						/* We're done */
-						line->res.speed = 0;
-						/* Signal the script that the text has finished moving */
-						kiavc_scripts_run_command("signal('%s')", line->id);
-					}
+				}
+				if((int)line->res.x == line->res.target_x && (int)line->res.y == line->res.target_y) {
+					/* We're done */
+					line->res.speed = 0;
+					/* Signal the script that the text has finished moving */
+					kiavc_scripts_run_command("signal('%s')", line->id);
 				}
 			}
 			if(line->started && line->duration && (ticks - line->started >= line->duration)) {
@@ -2207,7 +2225,7 @@ static void kiavc_engine_remove_room_layer(const char *id, const char *name) {
 	/* Done */
 	SDL_Log("Removed layer '%s' from room '%s'\n", name, room->id);
 }
-static void kiavc_engine_add_room_walkbox(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, bool disabled) {
+static void kiavc_engine_add_room_walkbox(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, float speed, bool disabled) {
 	if(!id)
 		return;
 	/* Access room from the map */
@@ -2218,7 +2236,7 @@ static void kiavc_engine_add_room_walkbox(const char *id, const char *name, int 
 		return;
 	}
 	/* Create a new walkbox instance */
-	kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_walkbox_create(name, x1, y1, x2, y2, scale, disabled);
+	kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_walkbox_create(name, x1, y1, x2, y2, scale, speed, disabled);
 	if(kiavc_room_add_walkbox(room, walkbox) < 0) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't add walkbox to room '%s'\n", id);

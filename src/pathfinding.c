@@ -37,7 +37,7 @@ void kiavc_pathfinding_point_destroy(kiavc_pathfinding_point *point) {
 
 /* Helper to create a new walkbox */
 kiavc_pathfinding_walkbox *kiavc_pathfinding_walkbox_create(const char *name,
-		int x1, int y1, int x2, int y2, float scale, bool disabled) {
+		int x1, int y1, int x2, int y2, float scale, float speed, bool disabled) {
 	kiavc_pathfinding_walkbox *walkbox = SDL_malloc(sizeof(kiavc_pathfinding_walkbox));
 	walkbox->name = name ? SDL_strdup(name) : NULL;
 	walkbox->p1.x = x1;
@@ -45,6 +45,7 @@ kiavc_pathfinding_walkbox *kiavc_pathfinding_walkbox_create(const char *name,
 	walkbox->p2.x = x2;
 	walkbox->p2.y = y2;
 	walkbox->scale = scale;
+	walkbox->speed = speed;
 	walkbox->disabled = disabled;
 	return walkbox;
 }

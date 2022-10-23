@@ -1554,7 +1554,7 @@ static int kiavc_lua_method_addroomwalkbox(lua_State *s) {
 	/* name and disabled are both optional */
 	const char *name = NULL;
 	bool disabled = false;
-	float scale = 1.0;
+	float scale = 1.0, speed = 1.0;
 	int idx = 7;
 	if(lua_getfield(s, 2, "name") != LUA_TNIL)
 		name = luaL_checkstring(s, idx);
@@ -1564,8 +1564,11 @@ static int kiavc_lua_method_addroomwalkbox(lua_State *s) {
 	idx++;
 	if(lua_getfield(s, 2, "scale") != LUA_TNIL)
 		scale = luaL_checknumber(s, idx);
+	idx++;
+	if(lua_getfield(s, 2, "speed") != LUA_TNIL)
+		speed = luaL_checknumber(s, idx);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->add_room_walkbox(id, name, from_x, from_y, to_x, to_y, scale, disabled);
+	kiavc_cb->add_room_walkbox(id, name, from_x, from_y, to_x, to_y, scale, speed, disabled);
 	return 0;
 }
 

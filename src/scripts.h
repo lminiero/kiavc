@@ -69,7 +69,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const set_room_background)(const char *id, const char *bg);
 	void (* const add_room_layer)(const char *id, const char *name, const char *bg, int zplane);
 	void (* const remove_room_layer)(const char *id, const char *name);
-	void (* const add_room_walkbox)(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, bool disabled);
+	void (* const add_room_walkbox)(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, float speed, bool disabled);
 	void (* const enable_room_walkbox)(const char *id, const char *name);
 	void (* const disable_room_walkbox)(const char *id, const char *name);
 	void (* const recalculate_room_walkboxes)(const char *id);
