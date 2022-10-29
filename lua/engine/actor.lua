@@ -170,6 +170,12 @@ Actor = {
 			-- Tell the engine to use the provided z-plane for the actor
 			scaleActor(self.id, scale)
 		end,
+	setAlpha =
+		function(self, alpha)
+			self.alpha = alpha
+			-- Tell the engine to use the provided alpha for the actor
+			setActorAlpha(self.id, alpha)
+		end,
 	setPlane =
 		function(self, zplane)
 			self.plane = zplane
@@ -320,6 +326,10 @@ function Actor:new(actor)
 	-- If a scale was provided, set it now
 	if actor.scaleFactor ~= nil then
 		actor:scale(actor.scaleFactor)
+	end
+	-- If an alpha was provided, set it now
+	if actor.alpha ~= nil then
+		actor:setAlpha(actor.alpha)
 	end
 	-- If a z-plane was provided, set it now
 	if actor.plane ~= nil then

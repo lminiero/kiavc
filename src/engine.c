@@ -185,6 +185,7 @@ static void kiavc_engine_follow_actor(const char *id);
 static void kiavc_engine_hide_actor(const char *id);
 static void kiavc_engine_fade_actor_in(const char *id, int ms);
 static void kiavc_engine_fade_actor_out(const char *id, int ms);
+static void kiavc_engine_set_actor_alpha(const char *id, int alpha);
 static void kiavc_engine_set_actor_plane(const char *id, int zplane);
 static void kiavc_engine_set_actor_speed(const char *id, int speed);
 static void kiavc_engine_scale_actor(const char *id, float scale);
@@ -211,13 +212,17 @@ static void kiavc_engine_show_object(const char *id);
 static void kiavc_engine_hide_object(const char *id);
 static void kiavc_engine_fade_object_in(const char *id, int ms);
 static void kiavc_engine_fade_object_out(const char *id, int ms);
+static void kiavc_engine_set_object_alpha(const char *id, int alpha);
 static void kiavc_engine_set_object_plane(const char *id, int zplane);
 static void kiavc_engine_scale_object(const char *id, float scale);
 static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
 static void kiavc_engine_remove_object_from_inventory(const char *id, const char *owner);
 static void kiavc_engine_show_text(const char *id, const char *text, const char *font,
-	SDL_Color *color, SDL_Color *outline, int x, int y, bool absolute, Uint32 ms);
+	SDL_Color *color, SDL_Color *outline, int x, int y, int alpha, bool absolute, Uint32 ms);
 static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed);
+static void kiavc_engine_fade_text_in(const char *id, int ms);
+static void kiavc_engine_fade_text_out(const char *id, int ms);
+static void kiavc_engine_set_text_alpha(const char *id, int alpha);
 static void kiavc_engine_remove_text(const char *id);
 static void kiavc_engine_quit(void);
 static kiavc_scripts_callbacks scripts_callbacks =
@@ -284,6 +289,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.hide_actor = kiavc_engine_hide_actor,
 		.fade_actor_in = kiavc_engine_fade_actor_in,
 		.fade_actor_out = kiavc_engine_fade_actor_out,
+		.set_actor_alpha = kiavc_engine_set_actor_alpha,
 		.set_actor_plane = kiavc_engine_set_actor_plane,
 		.set_actor_speed = kiavc_engine_set_actor_speed,
 		.scale_actor = kiavc_engine_scale_actor,
@@ -310,12 +316,16 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.hide_object = kiavc_engine_hide_object,
 		.fade_object_in = kiavc_engine_fade_object_in,
 		.fade_object_out = kiavc_engine_fade_object_out,
+		.set_object_alpha = kiavc_engine_set_object_alpha,
 		.set_object_plane = kiavc_engine_set_object_plane,
 		.scale_object = kiavc_engine_scale_object,
 		.add_object_to_inventory = kiavc_engine_add_object_to_inventory,
 		.remove_object_from_inventory = kiavc_engine_remove_object_from_inventory,
 		.show_text = kiavc_engine_show_text,
 		.float_text_to = kiavc_engine_float_text_to,
+		.fade_text_in = kiavc_engine_fade_text_in,
+		.fade_text_out = kiavc_engine_fade_text_out,
+		.set_text_alpha = kiavc_engine_set_text_alpha,
 		.remove_text = kiavc_engine_remove_text,
 		.quit = kiavc_engine_quit,
 	};
@@ -1175,6 +1185,10 @@ int kiavc_engine_update_world(void) {
 			} else if(resource->type == KIAVC_ACTOR) {
 				kiavc_actor *actor = (kiavc_actor *)resource;
 				kiavc_scripts_run_command("signal('fade-%s')", actor->id);
+			} else if(resource->type == KIAVC_FONT_TEXT) {
+				kiavc_font_text *line = (kiavc_font_text *)resource;
+				if(line->id)
+					kiavc_scripts_run_command("signal('fade-%s')", line->id);
 			}
 		} else {
 			/* Calculate the alpha to use for the black texture */
@@ -1418,8 +1432,10 @@ int kiavc_engine_render(void) {
 					}
 				}
 				if(draw && rect.x < kiavc_screen_width && rect.y < kiavc_screen_height &&
-						rect.x + rect.w > 0 && rect.y + rect.h > 0)
+						rect.x + rect.w > 0 && rect.y + rect.h > 0) {
+					SDL_SetTextureAlphaMod(line->texture, line->res.fade_alpha);
 					SDL_RenderCopy(renderer, line->texture, NULL, &rect);
+				}
 			}
 			item = item->next;
 		}
@@ -2534,6 +2550,24 @@ static void kiavc_engine_fade_actor_out(const char *id, int ms) {
 	/* Done */
 	SDL_Log("Fading actor '%s' out\n", actor->id);
 }
+static void kiavc_engine_set_actor_alpha(const char *id, int alpha) {
+	if(!id)
+		return;
+	/* Get the actor */
+	kiavc_actor *actor = kiavc_map_lookup(actors, id);
+	if(!actor) {
+		/* No such actor */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor alpha, no such actor '%s'\n", id);
+		return;
+	}
+	if(alpha > 255)
+		alpha = 255;
+	else if(alpha < 0)
+		alpha = 0;
+	actor->res.fade_alpha = alpha;
+	/* Done */
+	SDL_Log("Set actor '%s' alpha to '%d'\n", actor->id, alpha);
+}
 static void kiavc_engine_set_actor_plane(const char *id, int zplane) {
 	if(!id)
 		return;
@@ -2545,10 +2579,7 @@ static void kiavc_engine_set_actor_plane(const char *id, int zplane) {
 		return;
 	}
 	actor->res.zplane = zplane;
-	if(kiavc_list_find(engine.render_list, actor)) {
-		engine.render_list = kiavc_list_remove(engine.render_list, actor);
-		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
-	}
+	engine.render_list = kiavc_list_sort(engine.render_list, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
 	SDL_Log("Set actor '%s' plane to '%d'\n", actor->id, zplane);
 }
@@ -3056,6 +3087,24 @@ static void kiavc_engine_fade_object_out(const char *id, int ms) {
 	/* Done */
 	SDL_Log("Fading object '%s' out\n", object->id);
 }
+static void kiavc_engine_set_object_alpha(const char *id, int alpha) {
+	if(!id)
+		return;
+	/* Get the object */
+	kiavc_object *object = kiavc_map_lookup(objects, id);
+	if(!object) {
+		/* No such object */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object alpha, no such object '%s'\n", id);
+		return;
+	}
+	if(alpha > 255)
+		alpha = 255;
+	else if(alpha < 0)
+		alpha = 0;
+	object->res.fade_alpha = alpha;
+	/* Done */
+	SDL_Log("Set object '%s' alpha to '%d'\n", object->id, alpha);
+}
 static void kiavc_engine_set_object_plane(const char *id, int zplane) {
 	if(!id)
 		return;
@@ -3067,10 +3116,7 @@ static void kiavc_engine_set_object_plane(const char *id, int zplane) {
 		return;
 	}
 	object->res.zplane = zplane;
-	if(kiavc_list_find(engine.render_list, object)) {
-		engine.render_list = kiavc_list_remove(engine.render_list, object);
-		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
-	}
+	engine.render_list = kiavc_list_sort(engine.render_list, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
 	SDL_Log("Set object '%s' plane to '%d'\n", object->id, zplane);
 }
@@ -3140,7 +3186,7 @@ static void kiavc_engine_remove_object_from_inventory(const char *id, const char
 	SDL_Log("Removed object '%s' from actor '%s' inventory\n", object->id, actor->id);
 }
 static void kiavc_engine_show_text(const char *id, const char *text, const char *fid,
-		SDL_Color *color, SDL_Color *outline, int x, int y, bool absolute, Uint32 ms) {
+		SDL_Color *color, SDL_Color *outline, int x, int y, int alpha, bool absolute, Uint32 ms) {
 	if(!text || !fid || !color)
 		return;
 	if(id) {
@@ -3166,6 +3212,11 @@ static void kiavc_engine_show_text(const char *id, const char *text, const char 
 		return;
 	line->res.x = x;
 	line->res.y = y;
+	if(alpha > 255)
+		alpha = 255;
+	else if(alpha < 0)
+		alpha = 0;
+	line->res.fade_alpha = alpha;
 	line->absolute = absolute;
 	line->duration = ms;
 	if(id) {
@@ -3182,7 +3233,7 @@ static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed) 
 	/* Make sure this text ID exists */
 	kiavc_font_text *line = kiavc_map_lookup(texts, id);
 	if(!line) {
-		/* It does */
+		/* It doesn't */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot float text, no such text '%s'\n", id);
 		return;
 	}
@@ -3196,6 +3247,65 @@ static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed) 
 	line->res.speed = speed;
 	line->res.move_ticks = 0;
 	/* Done */
+	SDL_Log("Floating text '%s' to %dx%d at speed %d\n", line->id, x, y, speed);
+}
+static void kiavc_engine_fade_text_in(const char *id, int ms) {
+	if(!id || ms < 1)
+		return;
+	/* Make sure this text ID exists */
+	kiavc_font_text *line = kiavc_map_lookup(texts, id);
+	if(!line) {
+		/* It doesn't */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't fade text in, no such text '%s'\n", id);
+		return;
+	}
+	line->res.fade_in = ms;
+	line->res.fade_out = 0;
+	line->res.fade_start = line->res.fade_alpha;
+	line->res.fade_range = 255 - line->res.fade_alpha;
+	line->res.fade_ticks = 0;
+	if(!kiavc_list_find(engine.fading, line))
+		engine.fading = kiavc_list_append(engine.fading, line);
+	/* Done */
+	SDL_Log("Fading text '%s' in\n", line->id);
+}
+static void kiavc_engine_fade_text_out(const char *id, int ms) {
+	if(!id || ms < 1)
+		return;
+	/* Make sure this text ID exists */
+	kiavc_font_text *line = kiavc_map_lookup(texts, id);
+	if(!line) {
+		/* It doesn't */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't fade text out, no such text '%s'\n", id);
+		return;
+	}
+	line->res.fade_out = ms;
+	line->res.fade_in = 0;
+	line->res.fade_start = line->res.fade_alpha;
+	line->res.fade_range = line->res.fade_alpha;
+	line->res.fade_ticks = 0;
+	if(!kiavc_list_find(engine.fading, line))
+		engine.fading = kiavc_list_append(engine.fading, line);
+	/* Done */
+	SDL_Log("Fading text '%s' out\n", line->id);
+}
+static void kiavc_engine_set_text_alpha(const char *id, int alpha) {
+	if(!id)
+		return;
+	/* Make sure this text ID exists */
+	kiavc_font_text *line = kiavc_map_lookup(texts, id);
+	if(!line) {
+		/* It doesn't */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set the text alpha, no such text '%s'\n", id);
+		return;
+	}
+	if(alpha > 255)
+		alpha = 255;
+	else if(alpha < 0)
+		alpha = 0;
+	line->res.fade_alpha = alpha;
+	/* Done */
+	SDL_Log("Set text '%s' alpha to '%d'\n", line->id, alpha);
 }
 static void kiavc_engine_remove_text(const char *id) {
 	if(!id)
@@ -3208,6 +3318,7 @@ static void kiavc_engine_remove_text(const char *id) {
 		return;
 	}
 	engine.render_list = kiavc_list_remove(engine.render_list, line);
+	engine.fading = kiavc_list_remove(engine.fading, line);
 	kiavc_map_remove(texts, id);
 	/* Done */
 	SDL_Log("Removed text '%s'\n", id);

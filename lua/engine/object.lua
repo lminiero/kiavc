@@ -308,6 +308,12 @@ Object = {
 			-- Tell the engine to use the provided z-plane for the object
 			scaleObject(self.id, scale)
 		end,
+	setAlpha =
+		function(self, alpha)
+			self.alpha = alpha
+			-- Tell the engine to use the provided alpha for the object
+			setObjectAlpha(self.id, alpha)
+		end,
 	setPlane =
 		function(self, zplane)
 			self.plane = zplane
@@ -445,6 +451,10 @@ function Object:new(object)
 	-- If a scale was provided, set it now
 	if object.scaleFactor ~= nil then
 		object:scale(object.scaleFactor)
+	end
+	-- If an alpha was provided, set it now
+	if object.alpha ~= nil then
+		object:setAlpha(object.alpha)
 	end
 	-- If a z-plane was provided, set it now
 	if object.plane ~= nil then
