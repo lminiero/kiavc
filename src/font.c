@@ -195,6 +195,7 @@ kiavc_font_text *kiavc_font_render_text(kiavc_font *font, SDL_Renderer *renderer
 	ft->res.type = KIAVC_FONT_TEXT;
 	ft->res.x = -1;
 	ft->res.y = -1;
+	ft->res.fade_alpha = 255;
 	ft->res.zplane = 50;	/* By default text is written on top of most things */
 	ft->texture = SDL_CreateTextureFromSurface(renderer, s_text);
 	ft->w = s_text->w;
