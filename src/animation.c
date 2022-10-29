@@ -43,9 +43,11 @@ kiavc_animation *kiavc_animation_create(const char *id, const char *path,
 }
 
 /* Animation image initialization */
-int kiavc_animation_load(kiavc_animation *anim, SDL_Renderer *renderer) {
+int kiavc_animation_load(kiavc_animation *anim, void *resource, SDL_Renderer *renderer) {
 	if(!anim || !renderer)
 		return -1;
+	if(resource && !kiavc_list_find(anim->resources, resource))
+		anim->resources = kiavc_list_append(anim->resources, resource);
 	/* If we have a texture already, do nothing */
 	if(anim->texture)
 		return 0;
@@ -53,6 +55,7 @@ int kiavc_animation_load(kiavc_animation *anim, SDL_Renderer *renderer) {
 	SDL_Surface *loaded = IMG_Load_RW(kiavc_engine_open_file(anim->path), 1);
 	if(!loaded) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error loading image: %s\n", IMG_GetError());
+		kiavc_animation_unload(anim, resource);
 		return -2;
 	}
 	if(anim->transparency)
@@ -63,18 +66,27 @@ int kiavc_animation_load(kiavc_animation *anim, SDL_Renderer *renderer) {
 	SDL_FreeSurface(loaded);
 	if(!anim->texture) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error creating texture: %s\n", SDL_GetError());
-		kiavc_animation_unload(anim);
+		kiavc_animation_unload(anim, resource);
 		return -3;
 	}
+	SDL_Log("Loaded image: %s\n", anim->path);
 	return 0;
 }
 
 /* Animation image de-initialization */
-void kiavc_animation_unload(kiavc_animation *anim) {
+void kiavc_animation_unload(kiavc_animation *anim, void *resource) {
 	if(!anim)
 		return;
-	if(anim->texture)
+	if(resource)
+		anim->resources = kiavc_list_remove(anim->resources, resource);
+	if(resource && anim->resources) {
+		/* This animation is still needed */
+		return;
+	}
+	if(anim->texture) {
 		SDL_DestroyTexture(anim->texture);
+		SDL_Log("Unloaded image: %s\n", anim->path);
+	}
 	anim->texture = NULL;
 	anim->w = 0;
 	anim->h = 0;
@@ -83,9 +95,10 @@ void kiavc_animation_unload(kiavc_animation *anim) {
 /* Animation destructor */
 void kiavc_animation_destroy(kiavc_animation *anim) {
 	if(anim) {
+		kiavc_animation_unload(anim, NULL);
 		SDL_free(anim->id);
 		SDL_free(anim->path);
-		kiavc_animation_unload(anim);
+		kiavc_list_destroy(anim->resources);
 		free(anim);
 	}
 }

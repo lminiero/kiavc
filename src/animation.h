@@ -23,6 +23,8 @@
 
 #include <SDL2/SDL.h>
 
+#include "map.h"
+
 /* Abstraction of an animation in the KIAVC engine */
 typedef struct kiavc_animation {
 	/* Unique ID of the animation */
@@ -39,15 +41,17 @@ typedef struct kiavc_animation {
 	int frames;
 	/* How long each frame should appear */
 	int ms;
+	/* Resources using this animation */
+	kiavc_list *resources;
 } kiavc_animation;
 
 /* Animation constructor */
 kiavc_animation *kiavc_animation_create(const char *id, const char *path,
 	int frames, int ms, SDL_Color *transparency);
 /* Animation image initialization */
-int kiavc_animation_load(kiavc_animation *anim, SDL_Renderer *renderer);
+int kiavc_animation_load(kiavc_animation *anim, void *resource, SDL_Renderer *renderer);
 /* Animation image de-initialization */
-void kiavc_animation_unload(kiavc_animation *anim);
+void kiavc_animation_unload(kiavc_animation *anim, void *resource);
 /* Animation destructor */
 void kiavc_animation_destroy(kiavc_animation *anim);
 

@@ -16,13 +16,21 @@
 
 #include "costume.h"
 
+/* Private method to destroy a set */
+static void kiavc_costume_set_destroy(kiavc_costume_set *set) {
+	if(set) {
+		kiavc_costume_unload_set(set, NULL);
+		SDL_free(set);
+	}
+}
+
 /* Costume constructor */
 kiavc_costume *kiavc_costume_create(const char *id) {
 	if(!id)
 		return NULL;
 	kiavc_costume *costume = SDL_calloc(1, sizeof(kiavc_costume));
 	costume->id = SDL_strdup(id);
-	costume->sets = kiavc_map_create(SDL_free);
+	costume->sets = kiavc_map_create((kiavc_map_value_destroy)kiavc_costume_set_destroy);
 	return costume;
 }
 
@@ -39,14 +47,44 @@ kiavc_costume_set *kiavc_costume_get_set(kiavc_costume *costume, const char *nam
 }
 
 /* Helper to load textures for a specific set */
-void kiavc_costume_load_set(kiavc_costume_set *set, SDL_Renderer *renderer) {
+void kiavc_costume_load_set(kiavc_costume_set *set, void *resource, SDL_Renderer *renderer) {
 	if(!set)
 		return;
 	int i = 0, loaded = 0;
 	for(i = KIAVC_UP; i<= KIAVC_RIGHT; i++) {
-		if(set && set->animations[i] && kiavc_animation_load(set->animations[i], renderer) == 0)
+		if(set && set->animations[i] && kiavc_animation_load(set->animations[i], resource, renderer) == 0)
 			loaded++;
 	}
+}
+
+/* Helper to unload textures for a specific set */
+void kiavc_costume_unload_set(kiavc_costume_set *set, void *resource) {
+	if(!set)
+		return;
+	int i = 0;
+	for(i = KIAVC_UP; i<= KIAVC_RIGHT; i++) {
+		if(set && set->animations[i])
+			kiavc_animation_unload(set->animations[i], resource);
+	}
+}
+
+/* Helper to unload textures for all sets */
+void kiavc_costume_unload_sets(kiavc_costume *costume, void *resource) {
+	if(!costume)
+		return;
+	kiavc_list *sets = kiavc_map_get_values(costume->sets), *tmp = sets;
+	kiavc_costume_set *set = NULL;
+	int i = 0;
+	while(tmp) {
+		set = (kiavc_costume_set *)tmp->data;
+		i = 0;
+		for(i = KIAVC_UP; i<= KIAVC_RIGHT; i++) {
+			if(set && set->animations[i])
+				kiavc_animation_unload(set->animations[i], resource);
+		}
+		tmp = tmp->next;
+	}
+	kiavc_list_destroy(sets);
 }
 
 /* Costume destructor */

@@ -47,7 +47,11 @@ kiavc_costume *kiavc_costume_create(const char *id);
 /* Get or add a costume set */
 kiavc_costume_set *kiavc_costume_get_set(kiavc_costume *costume, const char *name);
 /* Helper to load textures for a specific set */
-void kiavc_costume_load_set(kiavc_costume_set *set, SDL_Renderer *renderer);
+void kiavc_costume_load_set(kiavc_costume_set *set, void *resource, SDL_Renderer *renderer);
+/* Helper to unload textures for a specific set */
+void kiavc_costume_unload_set(kiavc_costume_set *set, void *resource);
+/* Helper to unload textures for all sets */
+void kiavc_costume_unload_sets(kiavc_costume *costume, void *resource);
 /* Costume destructor */
 void kiavc_costume_destroy(kiavc_costume *costume);
 

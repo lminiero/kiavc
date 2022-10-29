@@ -1074,11 +1074,7 @@ int kiavc_engine_update_world(void) {
 	}
 	while(to_remove) {
 		resource = (kiavc_resource *)to_remove->data;
-		if(resource->type == KIAVC_ACTOR) {
-			/* This is an actor */
-			kiavc_actor *actor = (kiavc_actor *)resource;
-			engine.render_list = kiavc_list_remove(engine.render_list, actor);
-		} else if(resource->type == KIAVC_FONT_TEXT) {
+		if(resource->type == KIAVC_FONT_TEXT) {
 			/* This is a font text line */
 			kiavc_font_text *line = (kiavc_font_text *)resource;
 			engine.render_list = kiavc_list_remove(engine.render_list, line);
@@ -1221,7 +1217,7 @@ int kiavc_engine_render(void) {
 			resource = (kiavc_resource *)item->data;
 			if(resource->type == KIAVC_ROOM) {
 				/* This is the room background */
-				kiavc_animation_load(engine.room->background, renderer);
+				kiavc_animation_load(engine.room->background, engine.room, renderer);
 				if(engine.room->background) {
 					clip.x = (int)engine.room->res.x;
 					clip.y = (int)engine.room->res.y;
@@ -1237,7 +1233,7 @@ int kiavc_engine_render(void) {
 			} else if(resource->type == KIAVC_ROOM_LAYER) {
 				/* This is a room layer */
 				kiavc_room_layer *layer = (kiavc_room_layer *)resource;
-				kiavc_animation_load(layer->background, renderer);
+				kiavc_animation_load(layer->background, layer, renderer);
 				/* FIXME */
 				if(layer && layer->background && engine.room && engine.room->background) {
 					/* Since parallax may be involved, check how much
@@ -1267,7 +1263,7 @@ int kiavc_engine_render(void) {
 					int room_y = engine.room ? (int)engine.room->res.y : 0;
 					kiavc_costume_set *set = kiavc_costume_get_set(actor->costume, kiavc_actor_state_str(actor->state));
 					if(set && set->animations[actor->direction]) {
-						kiavc_costume_load_set(set, renderer);
+						kiavc_costume_load_set(set, actor, renderer);
 						clip.w = set->animations[actor->direction]->w;
 						clip.h = set->animations[actor->direction]->h;
 						if(actor->frame < 0 || actor->frame >= set->animations[actor->direction]->frames)
@@ -1300,7 +1296,7 @@ int kiavc_engine_render(void) {
 					int room_y = !object->ui && engine.room ? (int)engine.room->res.y : 0;
 					kiavc_animation *animation = object->ui ? object->ui_animation : object->animation;
 					if(animation) {
-						kiavc_animation_load(animation, renderer);
+						kiavc_animation_load(animation, object, renderer);
 						clip.w = animation->w;
 						clip.h = animation->h;
 						if(object->frame < 0 || object->frame >= animation->frames)
@@ -1553,7 +1549,7 @@ int kiavc_engine_render(void) {
 		kiavc_cursor *cursor = (engine.hovering && engine.hotspot_cursor && engine.hotspot_cursor->animation) ?
 			engine.hotspot_cursor : engine.main_cursor;
 		if(engine.cursor_visible && cursor && cursor->animation && cursor->animation && (!engine.cutscene || engine.dialog)) {
-			kiavc_animation_load(cursor->animation, renderer);
+			kiavc_animation_load(cursor->animation, cursor, renderer);
 			if(cursor->frame < 0 || cursor->frame >= cursor->animation->frames)
 				cursor->frame = 0;
 			clip.w = cursor->animation->w;
@@ -1582,16 +1578,16 @@ int kiavc_engine_render(void) {
 void kiavc_engine_destroy(void) {
 	/* Destroy all resources */
 	kiavc_scripts_unload();
-	kiavc_map_destroy(animations);
-	kiavc_map_destroy(fonts);
 	kiavc_map_destroy(cursors);
-	kiavc_map_destroy(audios);
 	kiavc_map_destroy(rooms);
 	kiavc_map_destroy(actors);
 	kiavc_map_destroy(costumes);
 	kiavc_map_destroy(objects);
-	kiavc_map_destroy(texts);
 	kiavc_map_destroy(dialogs);
+	kiavc_map_destroy(texts);
+	kiavc_map_destroy(fonts);
+	kiavc_map_destroy(audios);
+	kiavc_map_destroy(animations);
 	kiavc_bag_destroy(bag);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
@@ -2173,6 +2169,8 @@ static void kiavc_engine_set_room_background(const char *id, const char *bg) {
 		return;
 	}
 	/* Done */
+	if(room->background)
+		kiavc_animation_unload(room->background, room);
 	room->background = img;
 	room->res.x = 0;
 	room->res.y = 0;
@@ -2220,6 +2218,7 @@ static void kiavc_engine_remove_room_layer(const char *id, const char *name) {
 		kiavc_room_layer *layer = (kiavc_room_layer *)list->data;
 		if(layer->id && !SDL_strcasecmp(layer->id, id)) {
 			/* Found */
+			kiavc_animation_unload(layer->background, layer);
 			engine.render_list = kiavc_list_remove(engine.render_list, layer);
 			break;
 		}
@@ -2312,10 +2311,31 @@ static void kiavc_engine_show_room(const char *id) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set show room, no such room '%s'\n", id);
 		return;
 	}
-	/* TODO Cleanup previous room, and make background position configurable */
-	engine.room = room;
+	/* Cleanup previous room and render list */
+	kiavc_resource *resource = NULL;
+	kiavc_list *tmp = engine.render_list;
+	while(tmp) {
+		resource = (kiavc_resource *)tmp->data;
+		if(resource->type == KIAVC_ACTOR) {
+			kiavc_actor *actor = (kiavc_actor *)resource;
+			kiavc_costume_unload_sets(actor->costume, actor);
+		} else if(resource->type == KIAVC_OBJECT) {
+			kiavc_object *object = (kiavc_object *)resource;
+			if(!object->ui)
+				kiavc_animation_unload(object->animation, object);
+		} else if(resource->type == KIAVC_ROOM_LAYER) {
+			kiavc_room_layer *layer = (kiavc_room_layer *)resource;
+			kiavc_animation_unload(layer->background, layer);
+		} else if(resource->type == KIAVC_ROOM) {
+			kiavc_room *room = (kiavc_room *)resource;
+			kiavc_animation_unload(room->background, room);
+		}
+		tmp = tmp->next;
+	}
 	kiavc_list_destroy(engine.render_list);
 	engine.render_list = NULL;
+	/* Setup new room */
+	engine.room = room;
 	engine.render_list = kiavc_list_insert_sorted(engine.render_list, room, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	kiavc_actor *actor = NULL;
 	kiavc_list *item = room->actors;
@@ -2393,6 +2413,8 @@ static void kiavc_engine_set_actor_costume(const char *id, const char *cost) {
 		return;
 	}
 	/* Done */
+	if(actor->costume)
+		kiavc_costume_unload_sets(actor->costume, actor);
 	actor->costume = costume;
 	SDL_Log("Set costume of actor '%s' to '%s'\n", actor->id, costume->id);
 }
@@ -2417,12 +2439,13 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 		actor->room->actors = kiavc_list_remove(actor->room->actors, actor);
 	if(!kiavc_list_find(room->actors, actor))
 		room->actors = kiavc_list_append(room->actors, actor);
+	kiavc_costume_unload_sets(actor->costume, actor);
 	engine.render_list = kiavc_list_remove(engine.render_list, actor);
 	actor->room = room;
 	actor->state = KIAVC_ACTOR_STILL;
 	actor->res.x = x;
 	actor->res.y = y;
-	if(actor->visible)
+	if(actor->visible && engine.room && engine.room == room)
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	if(engine.room && engine.following == actor && engine.following->room == room)
 		engine.room->res.x = (int)engine.following->res.x - kiavc_screen_width/(2*kiavc_screen_scale);
@@ -2494,6 +2517,8 @@ static void kiavc_engine_hide_actor(const char *id) {
 		return;
 	}
 	actor->visible = false;
+	actor->res.ticks = 0;
+	kiavc_costume_unload_sets(actor->costume, actor);
 	engine.render_list = kiavc_list_remove(engine.render_list, actor);
 	/* Done */
 	SDL_Log("Hidden actor '%s'\n", actor->id);
@@ -2939,12 +2964,13 @@ static void kiavc_engine_move_object_to(const char *id, const char *rid, int x, 
 		object->owner = NULL;
 	if(!kiavc_list_find(room->objects, object))
 		room->objects = kiavc_list_append(room->objects, object);
+	kiavc_animation_unload(object->animation, object);
 	engine.render_list = kiavc_list_remove(engine.render_list, object);
 	object->room = room;
 	object->ui = 0;
 	object->res.x = x;
 	object->res.y = y;
-	if(object->visible)
+	if(object->visible && engine.room && engine.room == room)
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	SDL_Log("Moved object '%s' to room '%s' (%dx%d)\n", object->id, room->id, (int)object->res.x, (int)object->res.y);
 }
@@ -3014,6 +3040,9 @@ static void kiavc_engine_hide_object(const char *id) {
 		return;
 	}
 	object->visible = false;
+	object->res.ticks = 0;
+	kiavc_animation_unload(object->animation, object);
+	kiavc_animation_unload(object->ui_animation, object);
 	engine.render_list = kiavc_list_remove(engine.render_list, object);
 	/* Done */
 	SDL_Log("Hidden object '%s'\n", object->id);
