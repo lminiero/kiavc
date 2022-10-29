@@ -18,14 +18,14 @@ Room:new({
 		{ id = 'street-far', image = 'street-bg-far', plane = -200 }
 	},
 	walkboxes = {
-		{ x1 = 127, y1 = 146, x2 = 172, y2 = 150, scale = 0.5, speed = 0.5 },
-		{ x1 = 118, y1 = 150, x2 = 180, y2 = 154, scale = 0.6, speed = 0.6 },
-		{ x1 = 106, y1 = 154, x2 = 190, y2 = 158, scale = 0.7, speed = 0.7 },
-		{ x1 = 80, y1 = 158, x2 = 200, y2 = 162, scale = 0.8, speed = 0.8 },
-		{ x1 = 60, y1 = 162, x2 = 216, y2 = 168, scale = 0.9, speed = 0.9 },
-		{ x1 = 0, y1 = 166, x2 = 14, y2 = 180, name = 'barrier1' },
-		{ x1 = 14, y1 = 166, x2 = 580, y2 = 180 },
-		{ x1 = 580, y1 = 166, x2 = 608, y2 = 180 },
+		{ x1 = 127, y1 = 148, x2 = 172, y2 = 150, scale = 0.38, speed = 0.5 },
+		{ x1 = 118, y1 = 150, x2 = 180, y2 = 154, scale = 0.45, speed = 0.6 },
+		{ x1 = 106, y1 = 154, x2 = 190, y2 = 158, scale = 0.5, speed = 0.7 },
+		{ x1 = 80, y1 = 158, x2 = 200, y2 = 162, scale = 0.6, speed = 0.8 },
+		{ x1 = 60, y1 = 162, x2 = 216, y2 = 168, scale = 0.7, speed = 0.9 },
+		{ x1 = 0, y1 = 166, x2 = 14, y2 = 180, scale = 0.76, name = 'barrier1' },
+		{ x1 = 14, y1 = 166, x2 = 580, y2 = 180, scale = 0.76 },
+		{ x1 = 580, y1 = 166, x2 = 608, y2 = 180, scale = 0.76 },
 	},
 	triggers = {
 		barrier1 = function(actor)
@@ -55,10 +55,9 @@ Room:new({
 		if previousRoom ~= nil and previousRoom.id == 'outskirts' then
 			-- If we're coming from the 'outskirts' room, we place the main
 			-- actor on the right side, not on the left as in the intro
-			activeActor:moveTo('street', 570, 170)
+			activeActor:moveTo('street', 570, 174)
 			activeActor:look('left')
 		end
-		activeActor:scale(0.76)
 		-- We automatically start a script to show noises out of the girls bar
 		self:startScript('noises', noisesScript)
 		-- We also start a script to make the NPC do something

@@ -14,7 +14,6 @@ local npc = Actor:new({
 	textColor = cyan,
 	interaction = { direction = 'right', x = 420, y = 172 },
 	plane = 0,
-	scaleFactor = 0.76,
 	verbs = {
 		talkTo = function(self)
 			if state.npcSaidHi and state.npcAskedWhat and state.npcAskedWhere then

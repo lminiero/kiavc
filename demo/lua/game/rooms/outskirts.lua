@@ -12,10 +12,10 @@ Room:new({
 	id = 'outskirts',
 	background = 'outskirts-bg',
 	walkboxes = {
-		{ x1 = 28, y1 = 122, x2 = 66, y2 = 134 },
-		{ x1 = 40, y1 = 134, x2 = 194, y2 = 176 },
-		{ x1 = 140, y1 = 124, x2 = 186, y2 = 134 },
-		{ x1 = 194, y1 = 155, x2 = 226, y2 = 180 },
+		{ x1 = 28, y1 = 122, x2 = 66, y2 = 134, speed = 1.5 },
+		{ x1 = 40, y1 = 134, x2 = 194, y2 = 176, speed = 1.5 },
+		{ x1 = 140, y1 = 124, x2 = 186, y2 = 134, speed = 1.5 },
+		{ x1 = 194, y1 = 155, x2 = 226, y2 = 180, speed = 1.5 },
 	},
 	onenter = function(self)
 		-- When we enter the room, we fade in the local music track
@@ -26,7 +26,6 @@ Room:new({
 			activeActor:moveTo('outskirts', 30, 126)
 			activeActor:look('down')
 		end
-		activeActor:scale(1)
 	end,
 	onleave = function(self)
 		-- When we leave the room, we fade out the local music track
