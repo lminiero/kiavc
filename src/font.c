@@ -217,6 +217,7 @@ kiavc_font_text *kiavc_font_render_text(kiavc_font *font, SDL_Renderer *renderer
 void kiavc_font_destroy(kiavc_font *font) {
 	if(font) {
 		SDL_free(font->id);
+		SDL_free(font->path);
 		kiavc_font_unload(font);
 		SDL_free(font);
 	}

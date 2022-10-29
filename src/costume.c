@@ -34,7 +34,7 @@ kiavc_costume_set *kiavc_costume_get_set(kiavc_costume *costume, const char *nam
 	if(set)
 		return set;
 	set = SDL_calloc(1, sizeof(kiavc_costume_set));
-	kiavc_map_insert(costume->sets, SDL_strdup(name), set);
+	kiavc_map_insert(costume->sets, name, set);
 	return set;
 }
 
