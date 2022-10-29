@@ -2454,14 +2454,14 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 	actor->step = NULL;
 	actor->res.target_x = -1;
 	actor->res.target_y = -1;
-	/* FIXME Check which walkbox we're in */
-	if(engine.room && engine.room->pathfinding && engine.room->pathfinding->walkboxes) {
+	/* Check which walkbox we're in */
+	if(actor->room && actor->room->pathfinding && actor->room->pathfinding->walkboxes) {
 		int x = (int)actor->res.x;
 		int y = (int)actor->res.y;
 		kiavc_pathfinding_point point = { .x = x, .y = y };
-		kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_context_find_walkbox(engine.room->pathfinding, &point);
+		kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_context_find_walkbox(actor->room->pathfinding, &point);
 		if(walkbox != actor->walkbox) {
-			if(walkbox) {
+			if(walkbox && actor->room == engine.room) {
 				SDL_Log("Actor '%s' now in walkbox (%dx%d -> %dx%d)", actor->id,
 					walkbox->p1.x, walkbox->p1.y, walkbox->p2.x, walkbox->p2.y);
 				if(walkbox->name) {
