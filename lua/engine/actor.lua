@@ -227,6 +227,11 @@ Actor = {
 			-- Tell the engine to fade the actor out
 			fadeActorOut(self.id, ms)
 		end,
+	fadeTo =
+		function(self, alpha, ms)
+			-- Tell the engine to fade the actor to a specific alpha
+			fadeActorTo(self.id, alpha, ms)
+		end,
 	walkTo =
 		function(self, x, y)
 			-- Tell the engine the actor to make the actor walk

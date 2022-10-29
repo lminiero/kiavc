@@ -335,6 +335,11 @@ Object = {
 			-- Tell the engine to fade the object in
 			fadeObjectIn(self.id, ms)
 		end,
+	fadeTo =
+		function(self, alpha, ms)
+			-- Tell the engine to fade the object to a specific alpha
+			fadeActorTo(self.id, alpha, ms)
+		end,
 	fadeOut =
 		function(self, ms)
 			-- Tell the engine to fade the object out

@@ -80,8 +80,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const show_actor)(const char *id);
 	void (* const follow_actor)(const char *id);
 	void (* const hide_actor)(const char *id);
-	void (* const fade_actor_in)(const char *id, int ms);
-	void (* const fade_actor_out)(const char *id, int ms);
+	void (* const fade_actor_to)(const char *id, int alpha, int ms);
 	void (* const set_actor_alpha)(const char *id, int alpha);
 	void (* const set_actor_plane)(const char *id, int zplane);
 	void (* const set_actor_speed)(const char *id, int speed);
@@ -107,8 +106,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const set_object_hover)(const char *id, int from_x, int from_y, int to_x, int to_y);
 	void (* const show_object)(const char *id);
 	void (* const hide_object)(const char *id);
-	void (* const fade_object_in)(const char *id, int ms);
-	void (* const fade_object_out)(const char *id, int ms);
+	void (* const fade_object_to)(const char *id, int alpha, int ms);
 	void (* const set_object_alpha)(const char *id, int alpha);
 	void (* const set_object_plane)(const char *id, int zplane);
 	void (* const scale_object)(const char *id, float scale);
@@ -117,8 +115,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const show_text)(const char *id, const char *text, const char *font, SDL_Color *color, SDL_Color *outline,
 		int x, int y, int alpha, bool absolute, Uint32 ms);
 	void (* const float_text_to)(const char *id, int x, int y, int speed);
-	void (* const fade_text_in)(const char *id, int ms);
-	void (* const fade_text_out)(const char *id, int ms);
+	void (* const fade_text_to)(const char *id, int alpha, int ms);
 	void (* const set_text_alpha)(const char *id, int alpha);
 	void (* const remove_text)(const char *id);
 	void (* const quit)(void);

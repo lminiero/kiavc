@@ -31,9 +31,9 @@ typedef struct kiavc_resource {
 	/* Ticks timer */
 	uint32_t ticks;
 	/* Whether we're fading the object in or out, and how long that should be */
-	int fade_in, fade_out;
+	int fade_ms;
 	/* Fade alpha to apply */
-	Uint8 fade_alpha, fade_start, fade_range;
+	Uint8 fade_alpha, fade_start, fade_target;
 	/* Fade in/out ticks */
 	uint32_t fade_ticks;
 	/* Target coordinates of the resource, when it's moving */

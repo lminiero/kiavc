@@ -164,6 +164,8 @@ static int kiavc_lua_method_hideactor(lua_State *s);
 static int kiavc_lua_method_fadeactorin(lua_State *s);
 /* Fade an actor out */
 static int kiavc_lua_method_fadeactorout(lua_State *s);
+/* Fade an actor to a specific alpha */
+static int kiavc_lua_method_fadeactorto(lua_State *s);
 /* Set the alpha for the actor */
 static int kiavc_lua_method_setactoralpha(lua_State *s);
 /* Set the z-plane for the actor */
@@ -218,6 +220,8 @@ static int kiavc_lua_method_hideobject(lua_State *s);
 static int kiavc_lua_method_fadeobjectin(lua_State *s);
 /* Fade an object out */
 static int kiavc_lua_method_fadeobjectout(lua_State *s);
+/* Fade an object to a specific alpha */
+static int kiavc_lua_method_fadeobjectto(lua_State *s);
 /* Set the alpha for the object */
 static int kiavc_lua_method_setobjectalpha(lua_State *s);
 /* Set the z-plane for the object */
@@ -236,6 +240,8 @@ static int kiavc_lua_method_floattextto(lua_State *s);
 static int kiavc_lua_method_fadetextin(lua_State *s);
 /* Fade rendered text out */
 static int kiavc_lua_method_fadetextout(lua_State *s);
+/* Fade rendered text to a specific alpha */
+static int kiavc_lua_method_fadetextto(lua_State *s);
 /* Set the alpha for the rendered text */
 static int kiavc_lua_method_settextalpha(lua_State *s);
 /* Remove rendered text, if an ID had been provided */
@@ -372,6 +378,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "hideActor", kiavc_lua_method_hideactor);
 	lua_register(lua_state, "fadeActorIn", kiavc_lua_method_fadeactorin);
 	lua_register(lua_state, "fadeActorOut", kiavc_lua_method_fadeactorout);
+	lua_register(lua_state, "fadeActorTo", kiavc_lua_method_fadeactorto);
 	lua_register(lua_state, "setActorAlpha", kiavc_lua_method_setactoralpha);
 	lua_register(lua_state, "setActorPlane", kiavc_lua_method_setactorplane);
 	lua_register(lua_state, "setActorSpeed", kiavc_lua_method_setactorspeed);
@@ -399,6 +406,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "hideObject", kiavc_lua_method_hideobject);
 	lua_register(lua_state, "fadeObjectIn", kiavc_lua_method_fadeobjectin);
 	lua_register(lua_state, "fadeObjectOut", kiavc_lua_method_fadeobjectout);
+	lua_register(lua_state, "fadeObjectTo", kiavc_lua_method_fadeobjectto);
 	lua_register(lua_state, "setObjectAlpha", kiavc_lua_method_setobjectalpha);
 	lua_register(lua_state, "setObjectPlane", kiavc_lua_method_setobjectplane);
 	lua_register(lua_state, "scaleObject", kiavc_lua_method_scaleobject);
@@ -408,6 +416,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "floatTextTo", kiavc_lua_method_floattextto);
 	lua_register(lua_state, "fadeTextIn", kiavc_lua_method_fadetextin);
 	lua_register(lua_state, "fadeTextOut", kiavc_lua_method_fadetextout);
+	lua_register(lua_state, "fadeTextTo", kiavc_lua_method_fadetextto);
 	lua_register(lua_state, "setTextAlpha", kiavc_lua_method_settextalpha);
 	lua_register(lua_state, "removeText", kiavc_lua_method_removetext);
 	lua_register(lua_state, "quit", kiavc_lua_method_quit);
@@ -1786,7 +1795,7 @@ static int kiavc_lua_method_fadeactorin(lua_State *s) {
 		return 0;
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_actor_in(id, ms);
+	kiavc_cb->fade_actor_to(id, 255, ms);
 	return 0;
 }
 
@@ -1805,7 +1814,27 @@ static int kiavc_lua_method_fadeactorout(lua_State *s) {
 		return 0;
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_actor_out(id, ms);
+	kiavc_cb->fade_actor_to(id, 0, ms);
+	return 0;
+}
+
+/* Fade an actor to a specific alpha */
+static int kiavc_lua_method_fadeactorto(lua_State *s) {
+	int n = lua_gettop(s), exp = 3;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	int alpha = luaL_checknumber(s, 2);
+	int ms = luaL_checknumber(s, 3);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->fade_actor_to(id, alpha, ms);
 	return 0;
 }
 
@@ -2347,7 +2376,7 @@ static int kiavc_lua_method_fadeobjectin(lua_State *s) {
 		return 0;
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_object_in(id, ms);
+	kiavc_cb->fade_object_to(id, 255, ms);
 	return 0;
 }
 
@@ -2366,7 +2395,27 @@ static int kiavc_lua_method_fadeobjectout(lua_State *s) {
 		return 0;
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_object_out(id, ms);
+	kiavc_cb->fade_object_to(id, 0, ms);
+	return 0;
+}
+
+/* Fade an object to a specific alpha */
+static int kiavc_lua_method_fadeobjectto(lua_State *s) {
+	int n = lua_gettop(s), exp = 3;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	int alpha = luaL_checknumber(s, 2);
+	int ms = luaL_checknumber(s, 3);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->fade_object_to(id, alpha, ms);
 	return 0;
 }
 
@@ -2568,7 +2617,7 @@ static int kiavc_lua_method_fadetextin(lua_State *s) {
 		return 0;
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_text_in(id, ms);
+	kiavc_cb->fade_text_to(id, 255, ms);
 	return 0;
 }
 
@@ -2587,7 +2636,27 @@ static int kiavc_lua_method_fadetextout(lua_State *s) {
 		return 0;
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_text_out(id, ms);
+	kiavc_cb->fade_text_to(id, 0, ms);
+	return 0;
+}
+
+/* Fade rendered text to a specific alpha */
+static int kiavc_lua_method_fadetextto(lua_State *s) {
+	int n = lua_gettop(s), exp = 3;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	int alpha = luaL_checknumber(s, 2);
+	int ms = luaL_checknumber(s, 3);
+	if(id == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->fade_text_to(id, alpha, ms);
 	return 0;
 }
 
