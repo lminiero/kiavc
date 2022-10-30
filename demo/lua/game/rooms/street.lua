@@ -181,7 +181,7 @@ gateway:show()
 -- of scripts that start when the room is entered, and that are closed
 -- automatically when leaving the room.
 
--- This is the script we use for showing noises on the SCUMM bar
+-- This is the script we use for showing noises on the bar
 function noisesScript()
 	local color = green
 	local outline = black
