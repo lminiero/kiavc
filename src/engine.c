@@ -562,16 +562,13 @@ SDL_RWops *kiavc_engine_open_file(const char *path) {
 
 /* Helper method to check if we're hovering on something */
 static void kiavc_engine_check_hovering(void) {
-	if(engine.hovering && engine.hotspot_cursor && engine.hotspot_cursor->animation) {
-		if(engine.hotspot_cursor && engine.hotspot_cursor->animation) {
-			engine.hotspot_cursor->res.x = engine.mouse_x - (engine.hotspot_cursor->animation->w/2)*kiavc_screen_scale;
-			engine.hotspot_cursor->res.y = engine.mouse_y - (engine.hotspot_cursor->animation->h/2)*kiavc_screen_scale;
-		}
-	} else {
-		if(engine.main_cursor && engine.main_cursor->animation) {
-			engine.main_cursor->res.x = engine.mouse_x - (engine.main_cursor->animation->w/2)*kiavc_screen_scale;
-			engine.main_cursor->res.y = engine.mouse_y - (engine.main_cursor->animation->h/2)*kiavc_screen_scale;
-		}
+	if(engine.main_cursor && engine.main_cursor->animation) {
+		engine.main_cursor->res.x = engine.mouse_x - (engine.main_cursor->animation->w/2)*kiavc_screen_scale;
+		engine.main_cursor->res.y = engine.mouse_y - (engine.main_cursor->animation->h/2)*kiavc_screen_scale;
+	}
+	if(engine.hotspot_cursor && engine.hotspot_cursor->animation) {
+		engine.hotspot_cursor->res.x = engine.mouse_x - (engine.hotspot_cursor->animation->w/2)*kiavc_screen_scale;
+		engine.hotspot_cursor->res.y = engine.mouse_y - (engine.hotspot_cursor->animation->h/2)*kiavc_screen_scale;
 	}
 	/* FIXME Check if we're hovering on an object */
 	if(engine.room && !engine.cutscene && !engine.input_disabled && !engine.dialog) {
@@ -1128,7 +1125,7 @@ int kiavc_engine_update_world(void) {
 			}
 		}
 	}
-	if(engine.hotspot_cursor) {
+	if(engine.hotspot_cursor && engine.hotspot_cursor != engine.main_cursor) {
 		if(engine.hotspot_cursor->res.ticks == 0)
 			engine.hotspot_cursor->res.ticks = ticks;
 		int ms = engine.hotspot_cursor->animation ? engine.hotspot_cursor->animation->ms : 100;
@@ -2013,7 +2010,10 @@ static void kiavc_engine_set_main_cursor(const char *id) {
 		cursor->res.x = engine.mouse_x - (cursor->animation->w/2)*kiavc_screen_scale;
 		cursor->res.y = engine.mouse_y - (cursor->animation->h/2)*kiavc_screen_scale;
 	}
+	if(engine.main_cursor)
+		engine.main_cursor->res.ticks = 0;
 	engine.main_cursor = cursor;
+	engine.main_cursor->res.ticks = 0;
 	/* Done */
 	SDL_Log("Set main cursor '%s'\n", cursor->id);
 }
@@ -2032,7 +2032,10 @@ static void kiavc_engine_set_hotspot_cursor(const char *id) {
 		cursor->res.x = engine.mouse_x - (cursor->animation->w/2)*kiavc_screen_scale;
 		cursor->res.y = engine.mouse_y - (cursor->animation->h/2)*kiavc_screen_scale;
 	}
+	if(engine.hotspot_cursor)
+		engine.hotspot_cursor->res.ticks = 0;
 	engine.hotspot_cursor = cursor;
+	engine.hotspot_cursor->res.ticks = 0;
 	/* Done */
 	SDL_Log("Set hotspot cursor '%s'\n", cursor->id);
 }
