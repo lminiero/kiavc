@@ -155,9 +155,73 @@ translations = {
 		en = "envelope",
 		it = "lettera",
 	},
-	envelopeDesc = {
+	envelopeTutorial1 = {
 		en = "Someone sent me this, and told me to meet them here.",
 		it = "Qualcuno mi ha inviato questa lettera, e mi ha scritto di incontrarci qui.",
+	},
+	envelopeTutorial2 = {
+		en = "It reads...",
+		it = "C'è scritto...",
+	},
+	envelopeTutorial3 = {
+		en = '"Dear player,"',
+		it = '"Caro giocatore,"',
+	},
+	envelopeTutorial4 = {
+		en = "I guess that's me?",
+		it = "Immagino che stia parlando con me?",
+	},
+	envelopeTutorial5 = {
+		en = '"Welcome to the KIAVC demo!"',
+		it = '"Benvenuto alla demo di KIAVC!"',
+	},
+	envelopeTutorial6 = {
+		en = '"Click around and have fun: use right clicks to look at things, and left clicks to interact."',
+		it = '"Clicca cose e divertiti: usa il tasto destro del mouse per esaminare, e quello sinistro per interagire."',
+	},
+	envelopeTutorial7 = {
+		en = '"The inventory is on top (but it looks like you found it already!)."',
+		it = '"L\'inventario è in alto (ma a quanto pare l\'hai già trovato!)."',
+	},
+	envelopeTutorial8 = {
+		en = '"Some keys on the keyboard are also wired to do things."',
+		it = '"Anche alcuni tasti della tastiera possono essere utilizzati per fare delle cose."',
+	},
+	envelopeTutorial9 = {
+		en = '"Keys 1 to 6 will change the screen resolution, for instance."',
+		it = '"I tasti da 1 a 6 cambiano la risoluzione, ad esempio."',
+	},
+	envelopeTutorial10 = {
+		en = '"With F you can get in and out of fullscreen."',
+		it = '"Con F puoi abilitare o disabilitare il fullscreen."',
+	},
+	envelopeTutorial10 = {
+		en = '"F10 enables and disables scanlines (I know, they could be prettier)."',
+		it = '"F10 abilita e disabilita le scanline (lo so, potrebbero essere fatte meglio)."',
+	},
+	envelopeTutorial11 = {
+		en = '"F9 and F11 toggle debugging for object areas and walkboxes."',
+		it = '"F9 ed F11 sono interruttori per il debugging delle aree di oggetti e le walkbox."',
+	},
+	envelopeTutorial12 = {
+		en = '"With F12 you can save a nice screenshot (it will be in the app data folder)."',
+		it = '"Con F12 puoi salvare un bel screenshot (verrà creato nella cartella dei dati dell\'applicazione)."',
+	},
+	envelopeTutorial13 = {
+		en = '"Lastly, if you\'re feeling brave, F8 enables the interactive console: use it to type KIAVC commands in Lua."',
+		it = '"Infine, se ti senti coraggioso, F8 abilita la console interattiva: usala per scrivere comandi a KIAVC in Lua."',
+	},
+	envelopeTutorial14 = {
+		en = '"Even though it\'s not a complete game, I hope you\'ll have fun!"',
+		it = '"Anche se non è un gioco completo, spero che ti divertirai!"',
+	},
+	envelopeTutorial15 = {
+		en = '"Sincerely, the KIAVC developer."',
+		it = '"In fede, lo sviluppatore di KIAVC."',
+	},
+	envelopeTutorial16 = {
+		en = "Uff, that was a LONG letter. I hope I won't have to read it again!",
+		it = "Uff, è una lettera PARECCHIO lunga. Spero di non doverla rileggere di nuovo!",
 	},
 	envelopeUse = {
 		en = "What are you trying to do, exactly?",

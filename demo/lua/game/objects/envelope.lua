@@ -14,7 +14,15 @@ local envelope = Object:new({
 	plane = 0,
 	verbs = {
 		lookAt = function(self)
-			activeActor:say(text('envelopeDesc'))
+			-- We use looking at the envelope as a crude and silly way
+			-- to explain the player what they can do in the demo
+			activeActor:look('down')
+			-- The tutorial is made of 16 sentences, we just display them in sequence
+			for i = 1,16,1
+			do
+				activeActor:say(text('envelopeTutorial' .. i))
+				waitFor(activeActor.id)
+			end
 		end,
 		useWith = function(self, object)
 			if self.owner == nil then
