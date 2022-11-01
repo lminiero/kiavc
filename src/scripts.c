@@ -1101,9 +1101,13 @@ static int kiavc_lua_method_startdialog(lua_State *s) {
 	area.w = luaL_checknumber(s, ++idx) - area.x;
 	lua_getfield(s, tidx, "y2");
 	area.h = luaL_checknumber(s, ++idx) - area.y;
+	idx++;
+	bool autohide = false;
+	if(lua_getfield(s, 1, "autohide") != LUA_TNIL)
+		autohide = lua_toboolean(s, idx);
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->start_dialog(id, font, &color, (or != -1 && og != -1 && ob != -1 ? &outline : NULL),
-		&s_color, (sor != -1 && sog != -1 && sob != -1 ? &s_outline : NULL), &background, &area);
+		&s_color, (sor != -1 && sog != -1 && sob != -1 ? &s_outline : NULL), &background, &area, autohide);
 	return 0;
 }
 

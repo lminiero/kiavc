@@ -151,7 +151,7 @@ static void kiavc_engine_stop_cutscene(void);
 static void kiavc_engine_fade_in(int ms);
 static void kiavc_engine_fade_out(int ms);
 static void kiavc_engine_start_dialog(const char *id, const char *font, SDL_Color *color, SDL_Color *outline,
-	SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area);
+	SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area, bool autohide);
 static void kiavc_engine_add_dialog_line(const char *id, const char *name, const char *text);
 static void kiavc_engine_stop_dialog(const char *id);
 static void kiavc_engine_register_animation(const char *id, const char *path, int ms, int frames, SDL_Color *transparency);
@@ -1523,7 +1523,7 @@ int kiavc_engine_render(void) {
 			}
 		}
 		/* If we haven't drawn the background yet, do it now */
-		if(engine.dialog && !background_drawn) {
+		if(engine.dialog && !background_drawn && (engine.dialog->lines || !engine.dialog->autohide)) {
 			background_drawn = true;
 			/* FIXME We draw in a viewport */
 			clip.x = engine.dialog->area.x * kiavc_screen_scale;
@@ -1833,7 +1833,7 @@ static void kiavc_engine_fade_out(int ms) {
 	SDL_Log("Fading out (%d ms)", ms);
 }
 static void kiavc_engine_start_dialog(const char *id, const char *fid, SDL_Color *color, SDL_Color *outline,
-		SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area) {
+		SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area, bool autohide) {
 	if(!id || !fid || !color || !s_color || !area || !background)
 		return;
 	/* Get the dialog */
@@ -1870,6 +1870,7 @@ static void kiavc_engine_start_dialog(const char *id, const char *fid, SDL_Color
 	}
 	dialog->max_width = kiavc_screen_width / kiavc_screen_scale;
 	dialog->area = *area;
+	dialog->autohide = autohide;
 	kiavc_engine_check_hovering();
 	/* Done */
 	engine.dialog = dialog;

@@ -62,11 +62,14 @@ npc:show()
 -- dialog tree, starting with the settings and the point of entry (main),
 -- and then we define all the blocks the dialogue may go through. At the
 -- end, we pass this object to the enterDialog() function to run it.
+local lightgrey = { r = 192, g = 192, b = 192 }
 local npcDialog = {
 	-- All dialogue objects need settings: this is the object that is
 	-- automatically passed to the startDialog() core engine function
-	settings = { id = 'test', font = 'dialogues', color = blue, selected = cyan,
-		background = { r = 0, g = 0, b = 0, a = 128 },
+	settings = { id = 'test', font = 'dialogues',
+		color = lightgrey, selected = yellow,
+		outline = black, selectedOutline = black,
+		background = { r = 0, g = 0, b = 0, a = 96 }, autohide = true,
 		area = { x1 = 0, y1 = 144, x2 = 320, y2 = 180 } },
 	-- All dialogue objects also need a "main" block, which acts as an
 	-- entry point for the dialogue: it could present some options that

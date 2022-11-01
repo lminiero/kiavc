@@ -47,6 +47,8 @@ typedef struct kiavc_dialog {
 	SDL_Color background;
 	/* Area of the window where we should draw the dialog */
 	SDL_Rect area;
+	/* Whether the background should be hidden when a line has been selected */
+	bool autohide;
 	/* List of lines to display */
 	kiavc_list *lines;
 	/* Currently selected line */

@@ -46,7 +46,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const fade_in)(int ms);
 	void (* const fade_out)(int ms);
 	void (* const start_dialog)(const char *id, const char *font, SDL_Color *color, SDL_Color *outline,
-		SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area);
+		SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area, bool autohide);
 	void (* const add_dialog_line)(const char *id, const char *name, const char *text);
 	void (* const stop_dialog)(const char *id);
 	void (* const register_image)(const char *id, const char *path, SDL_Color *transparency);
