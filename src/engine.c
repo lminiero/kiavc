@@ -37,6 +37,7 @@
 /* Global SDL resources */
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
+static char *app_path = NULL;
 static bool quit = false;
 
 /* Window properties */
@@ -465,6 +466,11 @@ int kiavc_engine_init(const char *bagfile) {
 	objects = kiavc_map_create((kiavc_map_value_destroy)&kiavc_object_destroy);
 	texts = kiavc_map_create((kiavc_map_value_destroy)&kiavc_font_text_destroy);
 	dialogs = kiavc_map_create((kiavc_map_value_destroy)&kiavc_dialog_destroy);
+
+	/* FIXME As in the logger, we get the path where we can save files, which
+	 * we'll used for saved screenshots. And as in the logger, we're currently
+	 * hardcoding "KIAVC" as both org and app, which needs to be changed. */
+	app_path = SDL_GetPrefPath("KIAVC", "KIAVC");
 
 	/* Initialize the scripting engine */
 	if(kiavc_scripts_load("./lua/main.lua", &scripts_callbacks) < 0) {
@@ -1597,6 +1603,7 @@ void kiavc_engine_destroy(void) {
 		SDL_free(kiavc_screen_icon);
 	if(kiavc_screen_scanlines_texture)
 		SDL_DestroyTexture(kiavc_screen_scanlines_texture);
+	SDL_free(app_path);
 }
 
 /* Scripting callbacks */
@@ -1713,9 +1720,14 @@ static void kiavc_engine_save_screenshot(const char *filename) {
 		SDL_FreeSurface(screenshot);
 		return;
 	}
-	IMG_SavePNG(screenshot, filename);
+	char fullpath[1024];
+	g_snprintf(fullpath, sizeof(fullpath)-1, "%s%s", app_path, filename);
+	if(IMG_SavePNG(screenshot, fullpath) < 0) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error saving screenshot: %s\n", IMG_GetError());
+	} else {
+		SDL_Log("Saved screenshot to '%s'\n", fullpath);
+	}
 	SDL_FreeSurface(screenshot);
-	SDL_Log("Saved screenshot to '%s'\n", filename);
 }
 static void kiavc_engine_enable_console(const char *font) {
 	if(!font)

@@ -75,7 +75,7 @@ onUserInput('F11', function()
 end)
 -- Pressing F12 saves a screenshot
 onUserInput('F12', function()
-	saveScreenshot('./screenshot-' .. currentTicks .. '.png')
+	saveScreenshot('screenshot-' .. currentTicks .. '.png')
 end)
 -- Pressing Esc exits a cutscene (if one is playing) or leaves the game
 onUserInput('Escape', function ()
