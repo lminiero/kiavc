@@ -113,7 +113,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const add_object_to_inventory)(const char *id, const char *owner);
 	void (* const remove_object_from_inventory)(const char *id, const char *owner);
 	void (* const show_text)(const char *id, const char *text, const char *font, SDL_Color *color, SDL_Color *outline,
-		int x, int y, int alpha, bool absolute, Uint32 ms);
+		int x, int y, int alpha, bool absolute, int zplane, Uint32 ms);
 	void (* const float_text_to)(const char *id, int x, int y, int speed);
 	void (* const fade_text_to)(const char *id, int alpha, int ms);
 	void (* const set_text_alpha)(const char *id, int alpha);

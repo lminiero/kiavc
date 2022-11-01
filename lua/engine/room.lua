@@ -11,9 +11,11 @@ Room = {
 	enter =
 		function(self)
 			-- If there was a previous room, tell it to leave
+			nextRoom = self
 			if activeRoom ~= nil then
 				activeRoom:leave()
 			end
+			nextRoom = nil
 			-- Invoke the onenter callback, if configured
 			if self.onenter ~= nil then
 				self:onenter()

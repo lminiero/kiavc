@@ -53,6 +53,7 @@ I'm not an artist, so I relied on the kindness of strangers for the fonts, image
 * https://cainos.itch.io/pixel-art-icon-pack-rpg
 * https://managore.itch.io/m5x7
 * https://managore.itch.io/m3x6
+* https://fontenddev.com/fonts/notepen/
 
 In case I'm using anything in the demo improperly, please let me know and I'll fix it right away. This is simply meant as a demonstration of the engine, and I most definitely don't want to end up using resources I'm not allowed to.
 

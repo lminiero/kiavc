@@ -50,8 +50,20 @@ Room:new({
 		end
 	},
 	onenter = function(self)
-		-- When we enter the room, we fade in the local music track
-		luke9:play(1000)
+		if previousRoom ~= nil and previousRoom.id == 'letter' then
+			-- If we're coming from the letter closeup, check the state
+			if state.readLetter == 2 then
+				-- Have the actor say one final line
+				state.readLetter = 3
+				startScript(function()
+					waitMs(1)
+					activeActor:say(text('envelopeTutorial16'))
+				end)
+			end
+		else
+			-- When we enter the room, we fade in the local music track
+			luke9:play(1000)
+		end
 		if previousRoom ~= nil and previousRoom.id == 'outskirts' then
 			-- If we're coming from the 'outskirts' room, we place the main
 			-- actor on the right side, not on the left as in the intro
@@ -66,7 +78,10 @@ Room:new({
 	onleave = function(self)
 		-- When we leave the room, we fade out the local music track
 		-- and then fade in/out for a little while
-		luke9:stop(1000)
+		if nextRoom.id ~= 'letter' then
+			-- We only stop the track if we're not going to show the letter, though
+			luke9:stop(1000)
+		end
 		fadeOut(250)
 		waitFor('fade')
 		fadeIn(250)

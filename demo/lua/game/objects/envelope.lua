@@ -17,12 +17,17 @@ local envelope = Object:new({
 			-- We use looking at the envelope as a crude and silly way
 			-- to explain the player what they can do in the demo
 			activeActor:look('down')
-			-- The tutorial is made of 16 sentences, we just display them in sequence
-			for i = 1,16,1
-			do
-				activeActor:say(text('envelopeTutorial' .. i))
+			-- The tutorial is made of 16 sentences: we read the first one
+			-- here, then show the letter (moving to a different "room")
+			-- and read the others only the first time (otherwise we
+			-- just print the content of the letters and do nothing else)
+			if not state.readLetter then
+				activeActor:say(text('envelopeTutorial1'))
+				waitFor(activeActor.id)
+				activeActor:say(text('envelopeTutorial2'))
 				waitFor(activeActor.id)
 			end
+			rooms['letter']:enter()
 		end,
 		useWith = function(self, object)
 			if self.owner == nil then

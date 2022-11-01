@@ -217,7 +217,7 @@ static void kiavc_engine_scale_object(const char *id, float scale);
 static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
 static void kiavc_engine_remove_object_from_inventory(const char *id, const char *owner);
 static void kiavc_engine_show_text(const char *id, const char *text, const char *font,
-	SDL_Color *color, SDL_Color *outline, int x, int y, int alpha, bool absolute, Uint32 ms);
+	SDL_Color *color, SDL_Color *outline, int x, int y, int alpha, bool absolute, int zplane, Uint32 ms);
 static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed);
 static void kiavc_engine_fade_text_to(const char *id, int alpha, int ms);
 static void kiavc_engine_set_text_alpha(const char *id, int alpha);
@@ -585,14 +585,18 @@ static void kiavc_engine_check_hovering(void) {
 					item = item->next;
 					continue;
 				}
-				if(object->room && object->room == engine.room && (object->hover.from_x >= 0 ||
-						object->hover.from_y >= 0 || object->hover.to_x >= 0 || object->hover.to_y >= 0)) {
+				if(!object->ui && object->room != engine.room) {
+					item = item->next;
+					continue;
+				}
+				if(object->hover.from_x >= 0 || object->hover.from_y >= 0 ||
+						object->hover.to_x >= 0 || object->hover.to_y >= 0) {
 					/* Use the provided hover coordinates to detect where the object is */
 					if(x >= object->hover.from_x && y >= object->hover.from_y &&
 							x <= object->hover.to_x && y <= object->hover.to_y) {
 						hovering = resource;
 					}
-				} else if(object->ui || (object->room && object->room == engine.room)) {
+				} else {
 					/* Use the object coordinates and the image size */
 					kiavc_animation *animation = object->ui ? object->ui_animation : object->animation;
 					int w = 0, h = 0;
@@ -1347,7 +1351,15 @@ int kiavc_engine_render(void) {
 					/* Check who the owner is */
 					if(line->owner_type == KIAVC_ACTOR) {
 						kiavc_actor *actor = (kiavc_actor *)line->owner;
-						if(actor && actor->state == KIAVC_ACTOR_TALKING) {
+						if(actor && actor->room != engine.room) {
+							/* FIXME Since the actor isn't in the room, we render the text at the center */
+							draw = true;
+							line->absolute = true;
+							line->res.x = kiavc_screen_width/(2*kiavc_screen_scale);
+							line->res.y = kiavc_screen_height/(2*kiavc_screen_scale);
+							rect.x = ((int)line->res.x - line->w/2 - room_x) * kiavc_screen_scale;
+							rect.y = ((int)line->res.y - line->h/2 - room_y) * kiavc_screen_scale;
+						} else if(actor && actor->state == KIAVC_ACTOR_TALKING) {
 							kiavc_costume_set *set = kiavc_costume_get_set(actor->costume, "talking");
 							draw = true;
 							/* Don't draw the text if the actor isn't visible */
@@ -2668,8 +2680,6 @@ static void kiavc_engine_say_actor(const char *id, const char *text, const char 
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't have actor talk, no such actor '%s'\n", id);
 		return;
 	}
-	if(engine.room == NULL || actor->room != engine.room)
-		return;
 	kiavc_font *font = kiavc_map_lookup(fonts, fid);
 	if(!font) {
 		/* No font */
@@ -3188,7 +3198,7 @@ static void kiavc_engine_remove_object_from_inventory(const char *id, const char
 	SDL_Log("Removed object '%s' from actor '%s' inventory\n", object->id, actor->id);
 }
 static void kiavc_engine_show_text(const char *id, const char *text, const char *fid,
-		SDL_Color *color, SDL_Color *outline, int x, int y, int alpha, bool absolute, Uint32 ms) {
+		SDL_Color *color, SDL_Color *outline, int x, int y, int alpha, bool absolute, int zplane, Uint32 ms) {
 	if(!text || !fid || !color)
 		return;
 	if(id) {
@@ -3214,6 +3224,7 @@ static void kiavc_engine_show_text(const char *id, const char *text, const char 
 		return;
 	line->res.x = x;
 	line->res.y = y;
+	line->res.zplane = zplane;
 	if(alpha > 255)
 		alpha = 255;
 	else if(alpha < 0)

@@ -2573,9 +2573,13 @@ static int kiavc_lua_method_showtext(lua_State *s) {
 	idx++;
 	if(lua_getfield(s, 1, "absolute") != LUA_TNIL)
 		absolute = lua_toboolean(s, idx);
+	int plane = 50;
+	idx++;
+	if(lua_getfield(s, 1, "plane") != LUA_TNIL)
+		plane = luaL_checknumber(s, idx);
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->show_text(id, text, font, &color,
-		(or != -1 && og != -1 && ob != -1 ? &outline : NULL), x, y, alpha, absolute, ms);
+		(or != -1 && og != -1 && ob != -1 ? &outline : NULL), x, y, alpha, absolute, plane, ms);
 	return 0;
 }
 

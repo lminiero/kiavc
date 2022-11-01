@@ -24,6 +24,7 @@ SoundFX:new({ id = 'locked-fx', path = './assets/soundfx/locked.ogg' })
 -- Load rooms
 kiavcRequire('game/rooms/street')
 kiavcRequire('game/rooms/outskirts')
+kiavcRequire('game/rooms/letter')
 
 -- Load objects
 kiavcRequire('game/objects/envelope')
