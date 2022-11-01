@@ -9,7 +9,7 @@ GDB = -g -ggdb
 K_OBJS = src/kiavc.o src/engine.o src/map.o src/list.o src/scripts.o \
 	src/cursor.o src/font.o src/room.o src/actor.o src/costume.o \
 	src/object.o src/animation.o src/audio.o src/bag.o \
-	src/pathfinding.o src/dialog.o src/utils.o
+	src/pathfinding.o src/dialog.o src/utils.o src/logger.o
 KB_OBJS = src/tools/kiavc-bag.o src/bag.o src/map.o src/list.o
 KUB_OBJS = src/tools/kiavc-unbag.o src/bag.o src/map.o src/list.o
 
@@ -41,7 +41,7 @@ W32_K_OBJS = src/kiavc.obj src/engine.obj src/map.obj src/list.obj \
 	src/scripts.obj src/cursor.obj src/font.obj src/room.obj \
 	src/actor.obj src/costume.obj src/object.obj src/animation.obj \
 	src/audio.obj src/bag.obj src/pathfinding.obj src/dialog.obj \
-	src/utils.obj
+	src/utils.obj src/logger.obj
 W32_KB_OBJS = src/tools/kiavc-bag.obj src/bag.obj src/map.obj src/list.obj
 W32_KUB_OBJS = src/tools/kiavc-unbag.obj src/bag.obj src/map.obj src/list.obj
 

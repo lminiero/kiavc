@@ -16,10 +16,12 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "engine.h"
+#include "logger.h"
 #include "version.h"
 
 /* Main application */
 int main(int argc, char *argv[]) {
+	kiavc_logger_init();
 	SDL_Log("KIAVC Is an Adventure Videogame Creator (KIAVC) v%s\n", KIAVC_VERSION_STRING);
 
 	/* Initialize SDL backends */
@@ -71,6 +73,7 @@ int main(int argc, char *argv[]) {
 	IMG_Quit();
 	SDL_Quit();
 	SDL_Log("Bye!\n");
+	kiavc_logger_destroy();
 	exit(0);
 
 	/* If we got here, something went wrong */
@@ -80,5 +83,6 @@ error:
 	Mix_Quit();
 	IMG_Quit();
 	SDL_Quit();
+	kiavc_logger_destroy();
 	exit(1);
 }
