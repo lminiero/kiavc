@@ -142,7 +142,10 @@ local waiting = {}
 -- Helper function to wait a specified amount of milliseconds
 function waitMs(ms)
 	local co = coroutine.running()
-	if co == nil then return end
+	if co == nil then
+		kiavcWarn('Cannot wait on timer when not in a coroutine')
+		return
+	end
 	local wakeUp = currentTicks + ms
 	scheduled[co] = wakeUp
 	return coroutine.yield(co)
@@ -159,10 +162,13 @@ function checkScheduled()
 	-- Awaken the coroutines that have waited long enough
 	for _, co in ipairs(toWake) do
 		scheduled[co] = nil
-		if coroutine.status(co) == "dead" then return end
-		local res = { coroutine.resume(co) }
-		if coroutine.status(co) == "dead" and res[1] ~= true then
-			kiavcError(res[2])
+		if coroutine.status(co) == "dead" then
+			kiavcLog('Coroutine waiting on timer is dead')
+		else
+			local res = { coroutine.resume(co) }
+			if coroutine.status(co) == "dead" and res[1] ~= true then
+				kiavcError(res[2])
+			end
 		end
 	end
 end
@@ -170,7 +176,10 @@ end
 -- Helper function to wait for a specific event
 function waitFor(event)
 	local co = coroutine.running()
-	if co == nil then return end
+	if co == nil then
+		kiavcWarn('Cannot wait for a signal when not in a coroutine')
+		return
+	end
 	if waiting[event] == nil then
 		waiting[event] = { co }
 	else
@@ -184,14 +193,18 @@ function signal(event)
 	kiavcLog("Got '" .. event .. "' event")
 	local toWake = waiting[event]
 	if toWake == nil then
+		kiavcLog('No coroutine waiting for "' .. event .. '" event')
 		return
 	end
 	waiting[event] = nil
 	for _, co in ipairs(toWake) do
-		if coroutine.status(co) == "dead" then return end
-		local res = { coroutine.resume(co) }
-		if coroutine.status(co) == "dead" and res[1] ~= true then
-			kiavcError(res[2])
+		if coroutine.status(co) == "dead" then
+			kiavcLog('Coroutine waiting for "' .. event .. '" event is dead')
+		else
+			local res = { coroutine.resume(co) }
+			if coroutine.status(co) == "dead" and res[1] ~= true then
+				kiavcError(res[2])
+			end
 		end
 	end
 end
@@ -253,7 +266,10 @@ waitingDialog = {}
 selectedDialog = {}
 function waitDialog(id)
 	local co = coroutine.running()
-	if co == nil then return end
+	if co == nil then
+		kiavcWarn('Cannot wait for a dialog choice when not in a coroutine')
+		return
+	end
 	if waitingDialog[id] == nil then
 		waitingDialog[id] = { co }
 	else
@@ -268,15 +284,19 @@ function dialogSelected(id, name)
 	kiavcLog("Line '" .. name .. "' has been selected in dialog '" .. id .. "'")
 	local toWake = waitingDialog[id]
 	if toWake == nil then
+		kiavcLog('No coroutine waiting for dialog "' .. id .. '" choice')
 		return
 	end
 	selectedDialog[id] = name
 	waitingDialog[id] = nil
 	for _, co in ipairs(toWake) do
-		if coroutine.status(co) == "dead" then return end
-		local res = { coroutine.resume(co) }
-		if coroutine.status(co) == "dead" and res[1] ~= true then
-			kiavcError(res[2])
+		if coroutine.status(co) == "dead" then
+			kiavcLog('Coroutine waiting for dialog "' .. id .. '" choice is dead')
+		else
+			local res = { coroutine.resume(co) }
+			if coroutine.status(co) == "dead" and res[1] ~= true then
+				kiavcError(res[2])
+			end
 		end
 	end
 end
