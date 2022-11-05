@@ -378,6 +378,7 @@ int kiavc_bag_export(kiavc_bag *bag, const char *filename) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error accessing asset file '%s': %s\n",
 				asset->path ? asset->path : asset->key, strerror(errno));
 			fclose(file);
+			return -1;
 		}
 		/* Read the bytes and copy them to the BAG archive */
 		size_t read = 0, added = 0;
@@ -387,6 +388,7 @@ int kiavc_bag_export(kiavc_bag *bag, const char *filename) {
 				written = fwrite(buffer+read-tot, sizeof(char), tot, file);
 				if(written == 0) {
 					SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error writing to file: %s\n", strerror(errno));
+					fclose(assetfile);
 					fclose(file);
 					return -1;
 				}
@@ -394,6 +396,7 @@ int kiavc_bag_export(kiavc_bag *bag, const char *filename) {
 				added += written;
 			}
 		}
+		fclose(assetfile);
 		asset->size = added;
 		offset += asset->size;
 		list = list->next;
@@ -449,7 +452,12 @@ int kiavc_bag_export(kiavc_bag *bag, const char *filename) {
 		list = list->next;
 	}
 	/* Now let's seek back to the places we left empty */
-	fseek(file, header_size_offset, SEEK_SET);
+	if(fseek(file, header_size_offset, SEEK_SET) < 0) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't seek to header placeholder: %s\n",
+			strerror(errno));
+		fclose(file);
+		return -1;
+	}
 	uint32_t header_size = htonl(asset_header_sizes);
 	res = fwrite(&header_size, sizeof(uint32_t), 1, file);
 	if(res != 1) {
@@ -458,7 +466,12 @@ int kiavc_bag_export(kiavc_bag *bag, const char *filename) {
 		fclose(file);
 		return -1;
 	}
-	fseek(file, header_offset, SEEK_SET);
+	if(fseek(file, header_offset, SEEK_SET) < 0) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't seek to header offset placeholder: %s\n",
+			strerror(errno));
+		fclose(file);
+		return -1;
+	}
 	header_size_offset = htonl(header_size_offset);
 	res = fwrite(&header_size_offset, sizeof(uint32_t), 1, file);
 	if(res != 1) {
@@ -583,7 +596,7 @@ static Sint64 kiavc_bag_rwops_seek(SDL_RWops *rwops, Sint64 offset, int whence) 
 		default:
 			return SDL_SetError("Unknown value for 'whence'");
 	}
-	fseek(bag->file, newpos, SEEK_SET);
+	(void)fseek(bag->file, newpos, SEEK_SET);
 	rwops->hidden.mem.stop = GUINT_TO_POINTER(newpos - asset->offset);
 
 	/* Done */

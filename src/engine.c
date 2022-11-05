@@ -861,7 +861,7 @@ int kiavc_engine_update_world(void) {
 	bool sort = false;
 	while(item) {
 		resource = (kiavc_resource *)item->data;
-		if(resource && resource->ticks == 0)
+		if(resource->ticks == 0)
 			resource->ticks = ticks;
 		if(resource->type == KIAVC_ACTOR) {
 			/* This is an actor */
@@ -909,10 +909,10 @@ int kiavc_engine_update_world(void) {
 						float mx = actor->res.x + ((float)actor->res.target_x - actor->res.x) / p;
 						float my = actor->res.y + ((float)actor->res.target_y - actor->res.y) / p;
 						if((actor->res.x > (float)actor->res.target_x && mx < (float)actor->res.target_x)
-								|| (actor->res.x > (float)actor->res.target_x && mx < (float)actor->res.target_x))
+								|| (actor->res.x < (float)actor->res.target_x && mx > (float)actor->res.target_x))
 							mx = (float)actor->res.target_x;
 						if((actor->res.y > (float)actor->res.target_y && my < (float)actor->res.target_y)
-								|| (actor->res.y > (float)actor->res.target_y && my < (float)actor->res.target_y))
+								|| (actor->res.y < (float)actor->res.target_y && my > (float)actor->res.target_y))
 							my = (float)actor->res.target_y;
 						if((int)my != (int)actor->res.y)
 							sort = true;
@@ -1010,10 +1010,10 @@ int kiavc_engine_update_world(void) {
 					float mx = object->res.x + ((float)object->res.target_x - object->res.x) / p;
 					float my = object->res.y + ((float)object->res.target_y - object->res.y) / p;
 					if((object->res.x > (float)object->res.target_x && mx < (float)object->res.target_x)
-							|| (object->res.x > (float)object->res.target_x && mx < (float)object->res.target_x))
+							|| (object->res.x < (float)object->res.target_x && mx > (float)object->res.target_x))
 						mx = (float)object->res.target_x;
 					if((object->res.y > (float)object->res.target_y && my < (float)object->res.target_y)
-							|| (object->res.y > (float)object->res.target_y && my < (float)object->res.target_y))
+							|| (object->res.y < (float)object->res.target_y && my > (float)object->res.target_y))
 						my = (float)object->res.target_y;
 					if((int)my != (int)object->res.y)
 						sort = true;
@@ -1049,10 +1049,10 @@ int kiavc_engine_update_world(void) {
 					float mx = line->res.x + ((float)line->res.target_x - line->res.x) / p;
 					float my = line->res.y + ((float)line->res.target_y - line->res.y) / p;
 					if((line->res.x > (float)line->res.target_x && mx < (float)line->res.target_x)
-							|| (line->res.x > (float)line->res.target_x && mx < (float)line->res.target_x))
+							|| (line->res.x < (float)line->res.target_x && mx > (float)line->res.target_x))
 						mx = (float)line->res.target_x;
 					if((line->res.y > (float)line->res.target_y && my < (float)line->res.target_y)
-							|| (line->res.y > (float)line->res.target_y && my < (float)line->res.target_y))
+							|| (line->res.y < (float)line->res.target_y && my > (float)line->res.target_y))
 						my = (float)line->res.target_y;
 					line->res.x = mx;
 					line->res.y = my;
