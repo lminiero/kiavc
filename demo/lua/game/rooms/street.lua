@@ -94,7 +94,7 @@ Room:new({
 -- them here, rather than creating a separate object file which makes
 -- more sense for object that you can carry around.
 
--- The file is is animated, so let's register the animation file first
+-- The fire is animated, so let's register the animation file first
 Animation:new({ id = 'fire-loop', path = './assets/images/fire.png', frames = 8 });
 -- Now let's create the object for the fire
 local fire = Object:new({
