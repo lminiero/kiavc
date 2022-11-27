@@ -18,6 +18,14 @@ To compile KIAVC, you'll need the following dependencies (development versions):
 * [GLib](https://docs.gtk.org/glib/)
 * [Lua](https://www.lua.org/download.html)
 
+### Installing dependencies on Ubuntu
+
+```
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglib2.0-dev liblua5.4-dev
+```
+
+It's possible only the newest Lua dev library (currently 5.4) will be found at compilation.
+
 ## Compiling KIAVC
 
 Once you have installed all the dependencies, get the code:
