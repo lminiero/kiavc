@@ -22,8 +22,8 @@ As for the content of the `main.lua` file, that's entirely up to the game develo
 
 * register all resources (i.e., images, animations, audio files, fonts, etc.)
 * initialize engine concepts like rooms, actors, objects, etc.
-* initializing the game resolution, scaling, and framerate
-* optionally setting window title and/or icon (the engine will use some defaults, if missing)
+* initialize the game resolution, scaling, and frame rate
+* optionally set window title and/or icon (the engine will use some defaults, if missing)
 * implement some relevant callbacks (e.g., for when the engine tells us about hovering on an object, or a dialog line that has been selected)
 * set some defaults (e.g., room to start from, active actor, position, etc.)
 

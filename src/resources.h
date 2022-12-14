@@ -1,6 +1,6 @@
 /*
  *
- * Definition of globan an inheritable resources.
+ * Definition of global and inheritable resources.
  *
  * Author: Lorenzo Miniero (lorenzo@gmail.com)
  *
