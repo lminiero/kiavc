@@ -48,37 +48,34 @@ local skull = Object:new({
 			waitMs(500)
 			self:addToInventory(activeActor.id)
 			activeActor:setState('still')
-		end,
-		useWith = function(self, object)
-			if self.owner == nil then
-				activeActor:say(text('skullUse'))
-				return
-			end
-			if object == "fire" then
-				activeActor:say(text('skullUseFire'))
-			elseif object == "skyline" then
-				activeActor:say(text('skullUseSkyline'))
-			elseif object == "restaurant" then
-				activeActor:look("down")
-				activeActor:say(text('skullUseRestaurant'))
-			elseif object == "girls" then
-				activeActor:look("down")
-				activeActor:say(text('skullUseGirls'))
-			elseif object == "boat" then
-				activeActor:look("down")
-				activeActor:say(text('skullUseBoat'))
-			elseif object == "props" then
-				activeActor:say(text('defaultUseWith'))
-			end
 		end
 	},
+	objectInteractionNotOwned = function()
+        activeActor:say(text('skullUse'))
+    end,
+    objectInteractions = {
+        fire = function()
+            activeActor:say(text('skullUseFire'))
+        end,
+        skyline = function()
+            activeActor:say(text('skullUseSkyline'))
+        end,
+        restaurant = function()
+            activeActor:look("down")
+            activeActor:say(text('skullUseRestaurant'))
+        end,
+        girls = function()
+            activeActor:look("down")
+            activeActor:say(text('skullUseGirls'))
+        end,
+        boat = function()
+            activeActor:look("down")
+            activeActor:say(text('skullUseBoat'))
+        end
+    },
 	onRightClick = 'lookAt',
 	onLeftClick = 'pickUp'
 })
-
--- Let's define the map of possible object interactions for this object
-objectInteractions.skull =
-	{ skyline = true, restaurant = true, girls = true, fire = true, boat = true, props = true }
 
 -- By default, we put the skull in the Melee harbour room
 skull:moveTo('outskirts', 178, 166)

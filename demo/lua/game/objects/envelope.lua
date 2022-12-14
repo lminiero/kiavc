@@ -28,39 +28,37 @@ local envelope = Object:new({
 				waitFor(activeActor.id)
 			end
 			rooms['letter']:enter()
-		end,
-		useWith = function(self, object)
-			if self.owner == nil then
-				activeActor:say(text('envelopeUse'))
-				return
-			end
-			if object == "fire" then
-				activeActor:say(text('envelopeUseFire'))
-			elseif object == "skyline" then
-				activeActor:say(text('envelopeUseSkyline'))
-			elseif object == "restaurant" then
-				activeActor:look("down")
-				activeActor:say(text('envelopeUseRestaurant'))
-			elseif object == "girls" then
-				activeActor:look("down")
-				activeActor:say(text('envelopeUseGirls'))
-			elseif object == "boat" then
-				activeActor:look("down")
-				activeActor:say(text('envelopeUseBoat'))
-			elseif object == "skull" then
-				activeActor:look("down")
-				activeActor:say(text('envelopeUseSkull'))
-			elseif object == "props" then
-				activeActor:say(text('defaultUseWith'))
-			end
 		end
+	},
+	objectInteractionNotOwned = function()
+        activeActor:say(text('envelopeUse'))
+    end,
+	objectInteractions = {
+	    fire = function()
+            activeActor:say(text('envelopeUseFire'))
+        end,
+        skyline = function()
+            activeActor:say(text('envelopeUseSkyline'))
+        end,
+        restaurant = function()
+            activeActor:look("down")
+            activeActor:say(text('envelopeUseRestaurant'))
+        end,
+        girls = function()
+            activeActor:look("down")
+            activeActor:say(text('envelopeUseGirls'))
+        end,
+        boat = function()
+            activeActor:look("down")
+            activeActor:say(text('envelopeUseBoat'))
+        end,
+        skull = function()
+            activeActor:look("down")
+            activeActor:say(text('envelopeUseSkull'))
+        end
 	},
 	onRightClick = 'lookAt',
 	onLeftClick = 'select'
 })
-
--- Let's define the map of possible object interactions for this object
-objectInteractions.envelope =
-	{ skyline = true, restaurant = true, girls = true, fire = true, boat = true, skull = true, props = true }
 
 -- By default, we put the envelope in the inventory, which we'll do later
