@@ -570,22 +570,22 @@ static int kiavc_lua_method_requireversion(lua_State *s) {
 	}
 	int major = luaL_checknumber(s, 1);
 	if(major != KIAVC_VERSION_MAJOR) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC major version number incompatible: %d (expected %d)\n", KIAVC_VERSION_MAJOR, major);
-        kiavc_cb->quit();
-        return 0;
-    }
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC major version number incompatible: %d (expected %d)\n", KIAVC_VERSION_MAJOR, major);
+		kiavc_cb->quit();
+		return 0;
+	}
 	int minor = luaL_checknumber(s, 2);
 	if(minor > KIAVC_VERSION_MINOR) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC minor version number too low: %d (expected %d)\n", KIAVC_VERSION_MINOR, minor);
-        kiavc_cb->quit();
-        return 0;
-    }
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC minor version number too low: %d (expected %d)\n", KIAVC_VERSION_MINOR, minor);
+		kiavc_cb->quit();
+		return 0;
+	}
 	int patch = luaL_checknumber(s, 3);
 	if(patch > KIAVC_VERSION_PATCH) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC patch version number too low: %d (expected %d)\n", KIAVC_VERSION_PATCH, patch);
-        kiavc_cb->quit();
-        return 0;
-    }
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC patch version number too low: %d (expected %d)\n", KIAVC_VERSION_PATCH, patch);
+		kiavc_cb->quit();
+		return 0;
+	}
 	return 0;
 }
 
