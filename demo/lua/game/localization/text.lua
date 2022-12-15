@@ -1,5 +1,5 @@
 -- This is the file where we keep the localized text strings. The format
--- is quite dumb, as it"s basically a big table where the key is the
+-- is quite dumb, as it's basically a big table where the key is the
 -- string we want to load, and the content are different strings indexed
 -- by the language each string is in.
 

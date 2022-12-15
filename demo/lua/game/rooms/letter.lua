@@ -1,5 +1,5 @@
 -- This is a fake room, which is actually a closeup of the letter we
--- have in the inventory when we read it. We have a paper-y cannvas as
+-- have in the inventory when we read it. We have a paper-y canvas as
 -- background, and then render text on top of it as if it were written.
 -- A UI button in the top right corner allows us to go back.
 
