@@ -31,31 +31,31 @@ local envelope = Object:new({
 		end
 	},
 	objectInteractionNotOwned = function()
-        activeActor:say(text('envelopeUse'))
-    end,
+		activeActor:say(text('envelopeUse'))
+	end,
 	objectInteractions = {
-	    fire = function()
-            activeActor:say(text('envelopeUseFire'))
-        end,
-        skyline = function()
-            activeActor:say(text('envelopeUseSkyline'))
-        end,
-        restaurant = function()
-            activeActor:look("down")
-            activeActor:say(text('envelopeUseRestaurant'))
-        end,
-        girls = function()
-            activeActor:look("down")
-            activeActor:say(text('envelopeUseGirls'))
-        end,
-        boat = function()
-            activeActor:look("down")
-            activeActor:say(text('envelopeUseBoat'))
-        end,
-        skull = function()
-            activeActor:look("down")
-            activeActor:say(text('envelopeUseSkull'))
-        end
+		fire = function()
+			activeActor:say(text('envelopeUseFire'))
+		end,
+		skyline = function()
+			activeActor:say(text('envelopeUseSkyline'))
+		end,
+		restaurant = function()
+			activeActor:look("down")
+			activeActor:say(text('envelopeUseRestaurant'))
+		end,
+		girls = function()
+			activeActor:look("down")
+			activeActor:say(text('envelopeUseGirls'))
+		end,
+		boat = function()
+			activeActor:look("down")
+			activeActor:say(text('envelopeUseBoat'))
+		end,
+		skull = function()
+			activeActor:look("down")
+			activeActor:say(text('envelopeUseSkull'))
+		end
 	},
 	onRightClick = 'lookAt',
 	onLeftClick = 'select'

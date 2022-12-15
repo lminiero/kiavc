@@ -9,8 +9,8 @@ Object = {
 	interactable = true,
 	objectInteractions = {},
 	objectInteractionNotOwned = function()
-	    return
-    end,
+		return
+	end,
 	onAction = 'useWith',
 	defaultVerbs = {
 		lookAt = function(self)
@@ -77,15 +77,15 @@ Object = {
 			end
 			local obj = objects[objectId]
 			if obj.owner == nil then
-                obj.objectInteractionNotOwned()
+				obj.objectInteractionNotOwned()
 			elseif obj.objectInteractions[self.id] ~= nil then
 				obj.objectInteractions[self.id]()
 			else
-                if translations == nil then
-                    activeActor:say("I can't use them together.")
-                else
-                    activeActor:say(text('defaultUseWith'))
-                end
+				if translations == nil then
+					activeActor:say("I can't use them together.")
+				else
+					activeActor:say(text('defaultUseWith'))
+				end
 			end
 		end,
 		giveTo = function(self, object)

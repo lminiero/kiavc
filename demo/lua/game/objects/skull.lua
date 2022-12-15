@@ -51,28 +51,28 @@ local skull = Object:new({
 		end
 	},
 	objectInteractionNotOwned = function()
-        activeActor:say(text('skullUse'))
-    end,
-    objectInteractions = {
-        fire = function()
-            activeActor:say(text('skullUseFire'))
-        end,
-        skyline = function()
-            activeActor:say(text('skullUseSkyline'))
-        end,
-        restaurant = function()
-            activeActor:look("down")
-            activeActor:say(text('skullUseRestaurant'))
-        end,
-        girls = function()
-            activeActor:look("down")
-            activeActor:say(text('skullUseGirls'))
-        end,
-        boat = function()
-            activeActor:look("down")
-            activeActor:say(text('skullUseBoat'))
-        end
-    },
+		activeActor:say(text('skullUse'))
+	end,
+	objectInteractions = {
+		fire = function()
+			activeActor:say(text('skullUseFire'))
+		end,
+		skyline = function()
+			activeActor:say(text('skullUseSkyline'))
+		end,
+		restaurant = function()
+			activeActor:look("down")
+			activeActor:say(text('skullUseRestaurant'))
+		end,
+		girls = function()
+			activeActor:look("down")
+			activeActor:say(text('skullUseGirls'))
+		end,
+		boat = function()
+			activeActor:look("down")
+			activeActor:say(text('skullUseBoat'))
+		end
+	},
 	onRightClick = 'lookAt',
 	onLeftClick = 'pickUp'
 })
