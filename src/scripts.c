@@ -584,7 +584,7 @@ static int kiavc_lua_method_requireenginecompatible(lua_State *s) {
 		return 0;
 	}
 	int patch = luaL_checknumber(s, 3);
-	if(patch > KIAVC_VERSION_PATCH) {
+	if(minor == KIAVC_VERSION_MINOR && patch > KIAVC_VERSION_PATCH) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC patch version number too low: %d (expected %d)\n", KIAVC_VERSION_PATCH, patch);
 		kiavc_cb->quit();
 		return 0;
