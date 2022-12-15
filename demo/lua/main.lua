@@ -1,5 +1,8 @@
 -- We may want to make sure we're using a specific version of the engine
-requireVersion(0, 1, 0)
+requireEngineVersion(0, 1, 0)
+-- Or we may just require the same major version with a minimum minor and patch
+requireEngineCompatible(0, 1, 0)
+
 
 -- Let's load all the resources first
 kiavcRequire('game/resources')
