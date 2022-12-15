@@ -4,7 +4,8 @@
  * mostly takes into account what the C side of the engine needs to
  * know, since all the logic related to the actual actor properties and
  * actions will sit in the Lua script instead. As such, we only keep
- * track of the costume it's "wearing", plus additional information
+ * track of the images and animations we may need to render (e.g., when
+ * standing still, walking or talking), plus additional information
  * related to rendering, like the direction the actor is facing, their
  * coordinates in a room, where they're going, etc.
  *
