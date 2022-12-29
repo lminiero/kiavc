@@ -491,6 +491,18 @@ int kiavc_engine_init(const char *bagfile) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error getting number of video displays: %s\n", SDL_GetError());
 	} else {
 		SDL_Log("There are %d connected screens\n", displays);
+		/* FIXME Simple iterator on displays and display modes */
+		int i = 0, j = 0, modes = 0;
+		SDL_DisplayMode mode;
+		for(i=0; i<displays; i++) {
+			modes = SDL_GetNumDisplayModes(i);
+			SDL_Log("[%d] There are %d display modes on this screen\n", i, modes);
+			for(j=0; j<modes; j++) {
+				if(SDL_GetDisplayMode(i, j, &mode) == 0) {
+					SDL_Log("  -- %dx%d @ %dhz\n", mode.w, mode.h, mode.refresh_rate);
+				}
+			}
+		}
 	}
 	/* Initialize SDL rendering and create the main window */
 	window = SDL_CreateWindow(kiavc_screen_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
