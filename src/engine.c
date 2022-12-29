@@ -339,7 +339,7 @@ static void kiavc_engine_regenerate_scanlines(void) {
 		Uint32 color = SDL_MapRGB(scanlines->format, 0, 0, 0);
 		SDL_Rect rect = { .x = 0, .y = 0, .w = kiavc_screen_width, .h = 1 };
 		int i = 0;
-		for(i=1; i<kiavc_screen_height; i+= 3) {
+		for(i=1; i<kiavc_screen_height; i+= 2) {
 			rect.y = i;
 			SDL_FillRect(scanlines, &rect, color);
 		}
