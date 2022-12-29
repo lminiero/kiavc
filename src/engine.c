@@ -371,6 +371,10 @@ static void kiavc_engine_trigger_fullscreen(void) {
 		/* Back to windowed mode */
 		SDL_Log("Windowed mode\n");
 		SDL_SetWindowFullscreen(window, 0);
+		if(kiavc_screen_scale_prev > 0) {
+			kiavc_screen_scale = kiavc_screen_scale_prev;
+			SDL_SetWindowSize(window, kiavc_screen_width * kiavc_screen_scale, kiavc_screen_height * kiavc_screen_scale);
+		}
 		return;
 	}
 	/* We need to go fullscreen, check the mode */
