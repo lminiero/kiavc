@@ -23,27 +23,33 @@ Room:new({
 		{ x1 = 106, y1 = 154, x2 = 190, y2 = 158, scale = 0.5, speed = 0.7 },
 		{ x1 = 80, y1 = 158, x2 = 200, y2 = 162, scale = 0.6, speed = 0.8 },
 		{ x1 = 60, y1 = 162, x2 = 216, y2 = 168, scale = 0.7, speed = 0.9 },
-		{ x1 = 0, y1 = 166, x2 = 14, y2 = 180, scale = 0.76, name = 'barrier1' },
-		{ x1 = 14, y1 = 166, x2 = 580, y2 = 180, scale = 0.76 },
+		{ x1 = 0, y1 = 166, x2 = 14, y2 = 180, scale = 0.76 },
+		{ x1 = 14, y1 = 166, x2 = 28, y2 = 180, scale = 0.76, name = 'barrier' },
+		{ x1 = 28, y1 = 166, x2 = 580, y2 = 180, scale = 0.76 },
 		{ x1 = 580, y1 = 166, x2 = 608, y2 = 180, scale = 0.76 },
 	},
 	triggers = {
-		barrier1 = function(actor)
-			-- When we trigger the walkbox called 'barrier', we start
+		barrier = function(actor)
+			-- When we trigger the walkbox called 'barrier', we check
+			-- the state of a variable, in order to possibly start
 			-- a script that prevents us from going further: triggers
 			-- on walkboxes can be helpful to do different things, and
 			-- since we know which actor caused the trigger, we can
 			-- choose to react differently depending on the scenario
-			startCutscene()
-			activeActor:look('down')
-			activeActor:say(text('streetBarrier1'))
-			waitFor(activeActor.id)
-			waitMs(500)
-			activeActor:say(text('streetBarrier2'))
-			waitFor(activeActor.id)
-			activeActor:walkTo(58, 170)
-			waitFor(activeActor.id)
-			stopCutscene()
+			if state.askedNpcAboutLetter == nil then
+				-- Until we show the letter to the NPC, we remain here
+				stopAction()
+				disableInput()
+				activeActor:look('down')
+				activeActor:say(text('streetBarrier1'))
+				waitFor(activeActor.id)
+				waitMs(500)
+				activeActor:say(text('streetBarrier2'))
+				waitFor(activeActor.id)
+				activeActor:walkTo(58, 174)
+				waitFor(activeActor.id)
+				enableInput()
+			end
 		end,
 		barrier2 = function()
 			rooms['outskirts']:enter()
@@ -66,6 +72,11 @@ Room:new({
 			-- actor on the right side, not on the left as in the intro
 			activeActor:moveTo('street', 570, 174)
 			activeActor:look('left')
+		elseif previousRoom ~= nil and previousRoom.id == 'stairs' then
+			-- If we're coming from the 'stairs' room, we place the main
+			-- actor on the left side, but not the same as in the intro
+			activeActor:moveTo('street', 58, 174)
+			activeActor:look('right')
 		end
 		-- We automatically start a script to show noises out of the girls bar
 		self:startScript('noises', noisesScript)
@@ -170,10 +181,11 @@ local girls = Object:new({
 girls:moveTo('street', 315, 125)
 girls:show()
 
--- This is a fake object, with no interaction except using it to change room
-local gateway = Object:new({
-	id = 'gateway',
-	name = 'gatewayName',
+-- This is a fake object, with no interaction except using it to change
+-- room and go to the outskirts, and as such acts as a door
+local door1 = Object:new({
+	id = 'outskirtsDoor',
+	name = 'outskirtsDoorName',
 	hover = { x1 = 580, y1 = 166, x2 = 608, y2 = 180 },
 	interaction = { direction = 'right', x = 590, y = 174 },
 	verbs = {
@@ -184,8 +196,25 @@ local gateway = Object:new({
 	onRightClick = 'use',
 	onLeftClick = 'use'
 })
-gateway:moveTo('street', 580, 166)
-gateway:show()
+door1:moveTo('street', 580, 166)
+door1:show()
+
+-- Same as above, but to go to the temple stairs
+local door2 = Object:new({
+	id = 'stairsDoor',
+	name = 'stairsDoorName',
+	hover = { x1 = 0, y1 = 166, x2 = 14, y2 = 180 },
+	interaction = { direction = 'left', x = 10, y = 174 },
+	verbs = {
+		use = function(self)
+			rooms['stairs']:enter()
+		end
+	},
+	onRightClick = 'use',
+	onLeftClick = 'use'
+})
+door2:moveTo('street', 0, 166)
+door2:show()
 
 
 -- Finally, we define the functions we'll use for scripts the room may

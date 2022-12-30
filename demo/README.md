@@ -27,19 +27,21 @@ The demo is quite basic, as it's made of only two rooms: a city street and some 
 
 The game starts in the street, and a cutscene moves the main character automatically up to a certain point, moves them around a bit, and then has them say something: this is meant to showcase how the cutscene mode works, and how you can use a dedicated script for implementing a scenario like this.
 
-The street background is large enough that it will scroll when you move in either direction. When you move on the far left, you'll be sent back automatically: this is again something added to showcase one of the engine features, that is "walkbox triggers", that allow you to start a specific script any time the character walks on a specific walkbox. I added this to implement the typical "bouncer scenario" (you're not allowed to go further until a puzzle is solved") but I'm sure there's plenty of other things that can be done with it. The street's walkboxes (which are used for pathfinding) also have automated scaling of size and speed the character when you walk: you can see this going back and forth on the street you came from.
+The street background is large enough that it will scroll when you move in either direction, and has room layers to implement a parallax effect in the background. When you move on the far left, you'll be sent back automatically until a specific action is performed: this is again something added to showcase one of the engine features, that is "walkbox triggers", that allow you to start a specific script any time the character walks on a specific walkbox. I added this to implement the typical "bouncer scenario" (you're not allowed to go further until a puzzle is solved") but I'm sure there's plenty of other things that can be done with it. The street's walkboxes (which are used for pathfinding) also have automated scaling of size and speed the character when you walk: you can see this going back and forth on the street you came from.
 
 The street has a few objects acting as props, meaning you can interact with them but not pick them up. Some are part of the background (which means we don't provide additional images for them), while the fire uses an animation to be displayed instead. Most importantly, the street also hosts another actor, an NPC you can talk to and interact with: since I'm not an artist, the same exact "costume" is used for this NPC as the main character, but I tried to play around this a bit :grin:  There's also a dialog puzzle in the game, when you talk to the NPC, showcasing how you can choose dialog lines to display, and how as a game developer you're notified about the choice the player made, so that you can do something with it.
 
 Another interesting feature of the street room is that it automatically starts a couple of scripts to add some "color": specifically, it shows some text automatically around a door, and it makes the NPC move around and say things automatically while you play on and independently of you. Both were, again, mostly added to showcase the functionality, which can be useful in different cases.
 
-The outskirts is a smaller room you reach going on the far right of the streets: its only interesting feature is an object you can pick up, and then use with the other objects (and the NPC). The inventory management is very barebones at the moment, and in fact the object will simply appear in the inventory on top when you pick it up: in the future, I plan to make this more flexible, in order to allow game developers to show the inventory any way they want (e.g., always on the bottom, or on demand clicking on a button, or appearing when you hover on top, etc.). Until then, it's ugly but functional for the demo!
+The demo also has a couple of other rooms. One you can reach going to the left after you solve the "puzzle", and shows some stairs reaching to a temple. When you join it, the game logic is configured to walk you automatically for a bit: the first time you enter the room, some text appears as well. Apart from this, the room is basically empty, as I only added it to test and experiment with vertical scrolling, as opposed to the horizontal scrolling you can see in the street room. The only object you see is a "door" to go back to the street.
+
+The outskirts, instead, is another small room you reach going on the far right of the streets: unlike street and stairs, there's no scrolling, since its background fits the screen. Its only interesting feature is an object you can pick up, and then use with the other objects (and the NPC). The inventory management is very barebones at the moment, and in fact the object will simply appear in the inventory on top when you pick it up: in the future, I plan to make this more flexible, in order to allow game developers to show the inventory any way they want (e.g., always on the bottom, or on demand clicking on a button, or appearing when you hover on top, etc.). Until then, it's ugly but functional for the demo!
 
 Finally, a simple localization is implemented too, and two languages are available: English (default) and Italian. To test the localization features, press `F8` to open the debugging console, and type:
 
 	lang = 'it'
 
-This should have the demo start showing all text (descriptions, dialogues, etc.) in Italian rather than English.
+This should have the demo start showing all text (descriptions, dialogues, etc.) in Italian rather than English (`'en'`).
 
 The demo is incomplete since there's no purpose at all, so don't bash your head too hard trying to figure out puzzles that are not there :joy:
 
@@ -50,6 +52,7 @@ I'm not an artist, so I relied on the kindness of strangers for the fonts, image
 * https://brokencellgames.itch.io/detective-point-click-character-pack
 * https://ansimuz.itch.io/cyberpunk-street-environment
 * https://dusan-pavkovic-warlord.itch.io/skadovsk
+* https://twitter.com/PixelArtJourney/status/1560261114516029446
 * https://cainos.itch.io/pixel-art-icon-pack-rpg
 * https://managore.itch.io/m5x7
 * https://managore.itch.io/m3x6
