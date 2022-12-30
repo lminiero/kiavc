@@ -55,10 +55,7 @@ Room:new({
 			if state.readLetter == 2 then
 				-- Have the actor say one final line
 				state.readLetter = 3
-				startScript(function()
-					waitMs(1)
-					activeActor:say(text('envelopeTutorial16'))
-				end)
+				activeActor:say(text('envelopeTutorial16'))
 			end
 		else
 			-- When we enter the room, we fade in the local music track

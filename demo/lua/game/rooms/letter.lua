@@ -33,7 +33,7 @@ Room:new({
 		-- When we enter the room, we print multiple text lines to
 		-- show the contents of the letter as if it were written
 		hideInventory()
-		self:startScript('letter', printLetter)
+		printLetter()
 	end,
 	onleave = function(self)
 		fadeOut(250)
@@ -49,11 +49,6 @@ Room:new({
 
 -- Helper function to print the content of the letter on the screen
 function printLetter()
-	-- We wait just a tiny bit to yield the coroutine, and let the
-	-- room actually be rendered by the engine: if we don't do that,
-	-- our text will be rendered on the previous room, and so immediately
-	-- destroyed when the letter room actually becomes visible
-	waitMs(1)
 	showText({ id = 'letter1', font = 'letter-font', text = text('envelopeTutorial3'),
 		color = black, x = 160, y = 10, absolute = true, plane = 40, duration = 0 })
 	local content = nil

@@ -16,13 +16,13 @@ Room = {
 				activeRoom:leave()
 			end
 			nextRoom = nil
-			-- Invoke the onenter callback, if configured
+			-- Show the room and mark it as the active one
+			activeRoom = self
+			showRoom(self.id)
+			-- Finally, invoke the onenter callback, if configured
 			if self.onenter ~= nil then
 				self:onenter()
 			end
-			-- Done, show the room and mark it as the active one
-			activeRoom = self
-			showRoom(self.id)
 		end,
 	leave =
 		function(self)
