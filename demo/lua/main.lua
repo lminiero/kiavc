@@ -29,7 +29,7 @@ setTitle('KIAVC engine demo')
 --~ setScanlines(true)
 
 -- We enable the scripting console, and specify which font to use
-Font:new({ id = 'console', path = './assets/fonts/orangekid.ttf', size = 24 })
+Font:new({ id = 'console', path = './assets/fonts/m3x6.ttf', size = 16 })
 enableConsole('console')
 
 -- Let's intercept some keys to trigger some actions
@@ -55,9 +55,11 @@ end)
 onUserInput('6', function()
 	scaleScreen(6)
 end)
--- When we press F, we get in or out of fullscreen
+-- When we press F, we get in or out of fullscreen. The 'true' as the
+-- second argument means we want to use what SDL2 calls the "fake"
+-- fullscreen that takes the size of the desktop (and is faster)
 onUserInput('F', function()
-	setFullscreen(not getFullscreen())
+	setFullscreen(not getFullscreen(), true)
 end)
 -- Pressing F8 enables the interactive console (ESC disables it)
 onUserInput('F8', showConsole)
