@@ -20,6 +20,11 @@ static float kiavc_pathfinding_distance(int x1, int y1, int x2, int y2) {
 
 /* Helper function to perform the A* algorithm */
 static kiavc_list *kiavc_pathfinding_astar(kiavc_list *from, kiavc_list *to);
+/* Helper function to find a smoother path using line of sight */
+static kiavc_list *kiavc_pathfinding_smoothen(kiavc_pathfinding_context *pathfinding, kiavc_list *path);
+/* Helper function that uses the Bresenham algorithm to check if two points have line of sight */
+static bool kiavc_pathfinding_lineofsight(kiavc_pathfinding_context *pathfinding,
+	kiavc_pathfinding_point *p1, kiavc_pathfinding_point *p2);
 
 /* Helper to create a new point instance */
 kiavc_pathfinding_point *kiavc_pathfinding_point_create(int x, int y) {
@@ -304,7 +309,8 @@ kiavc_list *kiavc_pathfinding_context_find_path(kiavc_pathfinding_context *pathf
 		/* Use the A* algorithm to find the path */
 		path = kiavc_pathfinding_astar(nodes, g_list_last(nodes));
 		if(path) {
-			SDL_Log("Calculated %d steps to get to the target\n", kiavc_list_size(path));
+			int steps = kiavc_list_size(path);
+			SDL_Log("Calculated %d steps to get to the target\n", steps);
 			kiavc_pathfinding_point *p = NULL;
 			temp = path;
 			while(temp) {
@@ -314,6 +320,20 @@ kiavc_list *kiavc_pathfinding_context_find_path(kiavc_pathfinding_context *pathf
 			}
 			p = kiavc_pathfinding_point_create(from->x, from->y);
 			path = kiavc_list_prepend(path, p);
+			/* Use line of sight to see if we can smoothen the path */
+			path = kiavc_pathfinding_smoothen(pathfinding, path);
+			if(path) {
+				int smoothened = kiavc_list_size(path->next);
+				if(smoothened < steps) {
+					SDL_Log("Shortened to %d steps to get to the target\n", smoothened);
+					temp = path->next;
+					while(temp) {
+						p = (kiavc_pathfinding_point *)temp->data;
+						SDL_Log("  -- [%d,%d]\n", p->x, p->y);
+						temp = temp->next;
+					}
+				}
+			}
 		}
 		/* Done */
 		g_list_free_full(nodes, (GDestroyNotify)kiavc_pathfinding_node_destroy);
@@ -402,3 +422,71 @@ static kiavc_list *kiavc_pathfinding_astar(kiavc_list *from, kiavc_list *to) {
 	return path;
 }
 
+/* Helper function to find a smoother path using line of sight */
+static kiavc_list *kiavc_pathfinding_smoothen(kiavc_pathfinding_context *pathfinding, kiavc_list *path) {
+	if(!pathfinding || !pathfinding->walkboxes || !path)
+		return NULL;
+	/* If there's only one step, nothing we need to do */
+	if(kiavc_list_size(path) == 2)
+		return path;
+	/* Now that we have a path made of multiple steps, we check if we
+	 * can skip some, using line of sight to see if two points can
+	 * actually be connected directly even though they're in different
+	 * walkboxes, rather than going through the border points */
+	kiavc_pathfinding_point *p1 = NULL, *p2 = NULL;
+	GList *start = path, *temp = NULL;
+	while(kiavc_list_size(start) > 2) {
+		p1 = (kiavc_pathfinding_point *)start->data;
+		temp = g_list_last(start);
+		while(temp != start->next) {
+			p2 = (kiavc_pathfinding_point *)temp->data;
+			if(kiavc_pathfinding_lineofsight(pathfinding, p1, p2)) {
+				/* There is line of sight, get rid of intermediate steps */
+				SDL_Log("There's line of sight between [%d,%d] and [%d,%d]\n", p1->x, p1->y, p2->x, p2->y);
+				while(start->next != temp) {
+					SDL_free(start->next->data);
+					path = kiavc_list_remove(path, start->next->data);
+				}
+				break;
+			}
+			SDL_Log("There's NO line of sight between [%d,%d] and [%d,%d]\n", p1->x, p1->y, p2->x, p2->y);
+			temp = temp->prev;
+		}
+		start = start->next;
+	}
+	return path;
+}
+
+/* Helper function that uses the Bresenham algorithm to check if two points have line of sight */
+static bool kiavc_pathfinding_lineofsight(kiavc_pathfinding_context *pathfinding,
+		kiavc_pathfinding_point *p1, kiavc_pathfinding_point *p2) {
+	/* Adapted from https://gist.github.com/bert/1085538#file-plot_line-c */
+	if(!pathfinding || !pathfinding->walkboxes || !p1 || !p2)
+		return false;
+	int dx = abs(p2->x - p1->x), sx = p1->x < p2->x ? 1 : -1;
+	int dy = -abs(p2->y - p1->y), sy = p1->y < p2->y ? 1 : -1;
+	int err = dx + dy, e2 = 0; /* error value e_xy */
+	kiavc_pathfinding_point p = { .x = p1->x, .y = p1->y };
+	while(true) {
+		if(kiavc_pathfinding_context_find_walkbox(pathfinding, &p) == NULL) {
+			/* This point in the line is not in any walkbox, which means
+			 * we don't have line of sight between the two target points */
+			return false;
+		}
+		if(p.x == p2->x && p.y == p2->y)
+			break;
+		e2 = 2*err;
+		if(e2 >= dy) {
+			/* e_xy+e_x > 0 */
+			err += dy;
+			p.x += sx;
+		}
+		if(e2 <= dx) {
+			/* e_xy+e_y < 0 */
+			err += dx;
+			p.y += sy;
+		}
+	}
+	/* If we got here, there's line of sight */
+	return true;
+}
