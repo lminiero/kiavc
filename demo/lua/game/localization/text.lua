@@ -96,17 +96,21 @@ translations = {
 		en = "I'm afraid it's locked.",
 		it = "Temo che sia chiuso a chiave.",
 	},
-	gatewayName = {
+	outskirtsDoorName = {
 		en = "outskirts",
 		it = "periferia",
 	},
+	stairsDoorName = {
+		en = "temple",
+		it = "tempio",
+	},
 	streetBarrier1 = {
-		en = "No need to go there, for now.",
-		it = "Non c'è ragione di andare da quella parte, per ora.",
+		en = "I still don't know who sent me this letter.",
+		it = "Non so ancora chi mi ha inviato questa lettera.",
 	},
 	streetBarrier2 = {
-		en = "I'll just stay around here.",
-		it = "Meglio restare qui nei paraggi.",
+		en = "I should show it to someone around here, before leaving.",
+		it = "Dovrei mostrarla a qualcuno nei dintorni, prima di andare via.",
 	},
 	npcSearch1 = {
 		en = "Where is it?!",
@@ -491,6 +495,22 @@ translations = {
 	backName = {
 		en = "back",
 		it = "esci",
+	},
+	stairsContinuity1 = {
+		en = "I'm a bit worried about continuity...",
+		it = "Mi preoccupa un po' la continuità narrativa...",
+	},
+	stairsContinuity2 = {
+		en = "Wasn't I in a bleak street city just a second ago?",
+		it = "Non ero in una cupa strada di città fino a pochi secondi fa?",
+	},
+	stairsClosed1 = {
+		en = "Looks like the temple is closed.",
+		it = "A quanto pare il tempio è chiuso.",
+	},
+	stairsClosed2 = {
+		en = "I'll come back later.",
+		it = "Meglio tornare più tardi.",
 	},
 }
 

@@ -105,8 +105,8 @@ typedef struct kiavc_engine {
 	kiavc_room *room;
 	/* Room ticks */
 	uint32_t room_ticks;
-	/* FIXME Room direction, for scrolling */
-	int room_direction;
+	/* FIXME Room directions, for scrolling */
+	int room_direction_x, room_direction_y;
 	/* Current controlled actor */
 	kiavc_actor *actor;
 	/* Actor we're following with the camera */
@@ -969,18 +969,33 @@ int kiavc_engine_update_world(void) {
 				}
 				if(actor->room == engine.room && engine.following == actor) {
 					int width = kiavc_screen_width;
-					if(engine.room_direction == 0) {
+					int height = kiavc_screen_height;
+					if(engine.room_direction_x == 0) {
 						/* FIXME */
 						int portion = width/3;
 						if((int)actor->res.x - (int)engine.room->res.x < portion)
-							engine.room_direction = -1;
+							engine.room_direction_x = -1;
 						else if((int)actor->res.x - (int)engine.room->res.x > (width - portion))
-							engine.room_direction = 1;
+							engine.room_direction_x = 1;
 					} else {
 						/* FIXME */
 						int portion = width/2;
 						if((int)actor->res.x - (int)engine.room->res.x > (portion-5) && (int)actor->res.x - (int)engine.room->res.x < (portion+5)) {
-							engine.room_direction = 0;
+							engine.room_direction_x = 0;
+						}
+					}
+					if(engine.room_direction_y == 0) {
+						/* FIXME */
+						int portion = height/2;
+						if((int)actor->res.y - (int)engine.room->res.y < portion)
+							engine.room_direction_y = -1;
+						else if((int)actor->res.y - (int)engine.room->res.y > (height - portion))
+							engine.room_direction_y = 1;
+					} else {
+						/* FIXME */
+						int portion = height/2;
+						if((int)actor->res.y - (int)engine.room->res.y > (portion-5) && (int)actor->res.y - (int)engine.room->res.y < (portion+5)) {
+							engine.room_direction_y = 0;
 						}
 					}
 				}
@@ -1112,14 +1127,26 @@ int kiavc_engine_update_world(void) {
 		engine.render_list = kiavc_list_sort(engine.render_list, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	if(ticks - engine.room_ticks >= 15) {
 		engine.room_ticks += 15;
-		if(engine.room && engine.room->background && engine.room->background->w) {
-			engine.room->res.x += engine.room_direction;
-			if((int)engine.room->res.x > engine.room->background->w - kiavc_screen_width) {
-				engine.room->res.x = engine.room->background->w - kiavc_screen_width;
-				engine.room_direction = 0;
-			} else if(engine.room->res.x < 0) {
-				engine.room->res.x = 0;
-				engine.room_direction = 0;
+		if(engine.room && engine.room->background) {
+			if(engine.room->background->w) {
+				engine.room->res.x += engine.room_direction_x;
+				if((int)engine.room->res.x > engine.room->background->w - kiavc_screen_width) {
+					engine.room->res.x = engine.room->background->w - kiavc_screen_width;
+					engine.room_direction_x = 0;
+				} else if(engine.room->res.x < 0) {
+					engine.room->res.x = 0;
+					engine.room_direction_x = 0;
+				}
+			}
+			if(engine.room->background->h) {
+				engine.room->res.y += engine.room_direction_y;
+				if((int)engine.room->res.y > engine.room->background->h - kiavc_screen_height) {
+					engine.room->res.y = engine.room->background->h - kiavc_screen_height;
+					engine.room_direction_y = 0;
+				} else if(engine.room->res.y < 0) {
+					engine.room->res.y = 0;
+					engine.room_direction_y = 0;
+				}
 			}
 		}
 	}
@@ -1236,11 +1263,11 @@ int kiavc_engine_render(void) {
 					clip.x = (int)engine.room->res.x;
 					clip.y = (int)engine.room->res.y;
 					clip.w = kiavc_screen_width;
-					clip.h = engine.room->background->h;
+					clip.h = kiavc_screen_height;
 					rect.x = 0;
 					rect.y = 0;
 					rect.w = kiavc_screen_width;
-					rect.h = engine.room->background->h;
+					rect.h = kiavc_screen_height;
 					if(engine.room->background->texture)
 						SDL_RenderCopy(renderer, engine.room->background->texture, &clip, &rect);
 				}
@@ -1252,20 +1279,24 @@ int kiavc_engine_render(void) {
 				if(layer && layer->background && engine.room && engine.room->background) {
 					/* Since parallax may be involved, check how much
 					 * the width of background and this layer differ */
-					int screen_w = kiavc_screen_width;
-					int room_range_w = engine.room->background->w - screen_w;
-					int layer_range_w = layer->background->w - screen_w;
-					float layer_x = (engine.room->res.x / (float)room_range_w) * (float)layer_range_w;
+					int room_range_w = engine.room->background->w - kiavc_screen_width;
+					int layer_range_w = layer->background->w - kiavc_screen_width;
+					float layer_x = 0;
+					if(room_range_w > 0 && layer_range_w > 0)
+						layer_x = (engine.room->res.x / (float)room_range_w) * (float)layer_range_w;
+					int room_range_h = engine.room->background->h - kiavc_screen_height;
+					int layer_range_h = layer->background->h - kiavc_screen_height;
+					float layer_y = 0;
+					if(room_range_h > 0 && layer_range_h > 0)
+						layer_y = (engine.room->res.y / (float)room_range_h) * (float)layer_range_h;
 					clip.x = (int)layer_x;
-					clip.y = (int)engine.room->res.y;
-					clip.w = screen_w;
-					clip.h = layer->background->h;
+					clip.y = (int)layer_y;
+					clip.w = kiavc_screen_width;
+					clip.h = kiavc_screen_height;
 					rect.x = 0;
 					rect.y = 0;
 					rect.w = kiavc_screen_width;
-					rect.h = layer->background->h;
-					if(rect.h > kiavc_screen_height)
-						rect.h = kiavc_screen_height;
+					rect.h = kiavc_screen_height;
 					if(layer->background->texture)
 						SDL_RenderCopy(renderer, layer->background->texture, &clip, &rect);
 				}
@@ -1797,7 +1828,6 @@ static bool kiavc_engine_is_console_visible(void) {
 static void kiavc_engine_enable_input(void) {
 	if(engine.input_disabled) {
 		SDL_Log("Enabling user input\n");
-		engine.hovering = NULL;
 		engine.input_disabled = false;
 		kiavc_engine_check_hovering();
 	}
@@ -1807,7 +1837,7 @@ static void kiavc_engine_disable_input(void) {
 		SDL_Log("Disabling user input\n");
 		engine.input_disabled = true;
 		kiavc_engine_hide_cursor_text();
-		engine.hovering = NULL;
+		kiavc_engine_check_hovering();
 	}
 }
 static bool kiavc_engine_is_input_enabled(void) {
@@ -1818,13 +1848,12 @@ static void kiavc_engine_start_cutscene(void) {
 		SDL_Log("Starting cutscene\n");
 		engine.cutscene = true;
 		kiavc_engine_hide_cursor_text();
-		engine.hovering = NULL;
+		kiavc_engine_check_hovering();
 	}
 }
 static void kiavc_engine_stop_cutscene(void) {
 	if(engine.cutscene) {
 		SDL_Log("Stopping cutscene\n");
-		engine.hovering = NULL;
 		engine.cutscene = false;
 		kiavc_engine_check_hovering();
 	}
@@ -2413,8 +2442,11 @@ static void kiavc_engine_show_room(const char *id) {
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, layer, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 		item = item->next;
 	}
-	if(engine.following && engine.following->room == room)
+	if(engine.following && engine.following->room == room) {
 		engine.room->res.x = (int)engine.following->res.x - kiavc_screen_width/2;
+		engine.room->res.y = (int)engine.following->res.y - kiavc_screen_height/2;
+	}
+	kiavc_engine_check_hovering();
 	/* Done */
 	SDL_Log("Shown room '%s'\n", room->id);
 }
@@ -2485,8 +2517,10 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 	actor->res.y = y;
 	if(actor->visible && engine.room && engine.room == room)
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
-	if(engine.room && engine.following == actor && engine.following->room == room)
+	if(engine.room && engine.following == actor && engine.following->room == room) {
 		engine.room->res.x = (int)engine.following->res.x - kiavc_screen_width/2;
+		engine.room->res.y = (int)engine.following->res.y - kiavc_screen_height/2;
+	}
 	g_list_free_full(actor->path, (GDestroyNotify)kiavc_pathfinding_point_destroy);
 	actor->path = NULL;
 	actor->step = NULL;
@@ -2541,7 +2575,8 @@ static void kiavc_engine_follow_actor(const char *id) {
 		SDL_Log("Camera following actor '%s'\n", actor->id);
 	} else {
 		SDL_Log("Camera not following any actor\n");
-		engine.room_direction = 0;
+		engine.room_direction_x = 0;
+		engine.room_direction_y = 0;
 	}
 }
 static void kiavc_engine_hide_actor(const char *id) {

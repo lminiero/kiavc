@@ -29,7 +29,7 @@ function userInput(key)
 end
 
 -- Function to handle hovering over things or people
-local hoveringOn = nil
+hoveringOn = nil
 function hovering(id, on)
 	-- Try objects first
 	local target = objects[id]
@@ -69,6 +69,7 @@ function leftClick(x, y)
 					return
 				end
 			end
+			kiavcLog('Left clicked on ' .. target.id)
 			target:leftClick()
 		else
 			activeActor:walkTo(x, y)
@@ -93,6 +94,7 @@ function rightClick(x, y)
 					return
 				end
 			end
+			kiavcLog('Right clicked on ' .. target.id)
 			target:rightClick()
 		elseif selectedObject == nil then
 			activeActor:walkTo(x, y)
@@ -227,6 +229,15 @@ end
 -- As above, but meant for actor actions, and so interruptable
 action = nil
 function startAction(func)
+	-- Let's stop the ongoing action first, if any
+	stopAction();
+	-- Now let's start the new one
+	action = coroutine.create(func)
+	return coroutine.resume(action)
+end
+
+-- Helper function to interrupt an ongoing action
+function stopAction()
 	if action ~= nil then
 		debug.sethook(action, function()error("Action interrupted")end, "l")
 		if coroutine.status(action) == 'suspended' then
@@ -234,8 +245,6 @@ function startAction(func)
 		end
 		action = nil
 	end
-	action = coroutine.create(func)
-	return coroutine.resume(action)
 end
 
 -- As above, but meant for cutscenes, and so interruptable

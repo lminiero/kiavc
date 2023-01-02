@@ -38,6 +38,7 @@ local npc = Actor:new({
 				self:say(text("npcGiveSkull3"))
 				waitFor(self.id)
 			elseif object == 'envelope' then
+				state.askedNpcAboutLetter = true
 				activeActor:say(text("npcGiveEnvelope1"))
 				waitFor(activeActor.id)
 				activeActor:setState('usemid')
