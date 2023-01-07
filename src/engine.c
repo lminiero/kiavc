@@ -433,18 +433,8 @@ static int kiavc_engine_sort_resources(const kiavc_resource *r1, const kiavc_res
 }
 
 /* Initialize the engine */
-int kiavc_engine_init(const char *bagfile) {
-	/* If we need to open a BAG file, let's import it now */
-	if(bagfile) {
-		bag = kiavc_bag_import(bagfile);
-		if(!bag) {
-			SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error importing BAG file\n");
-			return -1;
-		}
-		SDL_Log("Imported BAG file '%s'\n", bagfile);
-	} else {
-		SDL_Log("No BAG file, loading assets from disk\n");
-	}
+int kiavc_engine_init(kiavc_bag *bagfile) {
+	bag = bagfile;
 
 	/* Create maps */
 	animations = kiavc_map_create((kiavc_map_value_destroy)&kiavc_animation_destroy);
@@ -1640,7 +1630,6 @@ void kiavc_engine_destroy(void) {
 	kiavc_map_destroy(fonts);
 	kiavc_map_destroy(audios);
 	kiavc_map_destroy(animations);
-	kiavc_bag_destroy(bag);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	if(kiavc_screen_title)

@@ -10,8 +10,10 @@
 #ifndef __KIAVC_LOGGER_H
 #define __KIAVC_LOGGER_H
 
+#include <stdbool.h>
+
 /* Initialize the logger */
-void kiavc_logger_init(void);
+void kiavc_logger_init(const char *app, bool term);
 /* Destroy the logger */
 void kiavc_logger_destroy(void);
 

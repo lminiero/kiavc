@@ -3,7 +3,7 @@ Demo game
 
 This folder contains a simple (incomplete) demo game, whose only purpose is to showcase the engine functionality and show how to use the different features, e.g., in terms of adding rooms, actors, using images, sounds, etc., and how to properly script rooms so that you can wire a simple game.
 
-Notice that by default this folder only contains the `main.lua` script, the additional scripts in the `game` folder, and an `assets` folder containing files used by the game. To actually start the game, you'll first need to copy or link the `kiavc` (or `kiavc.exe`) executable in this `demo` folder (as you'll need the KIAVC engine to run this game), and then also copy the `engine` folder from the root `lua` folder to the `lua` folder here (as that contains the helper scripts that facilitate interaction with the engine core).
+Notice that by default this folder only contains the `game.kvc` file (where the name of the "game" is saved), the `main.lua` script, the additional scripts in the `game` folder, and an `assets` folder containing files used by the game. To actually start the game, you'll first need to copy or link the `kiavc` (or `kiavc.exe`) executable in this `demo` folder (as you'll need the KIAVC engine to run this game), and then also copy the `engine` folder from the root `lua` folder to the `lua` folder here (as that contains the helper scripts that facilitate interaction with the engine core).
 
 Once you've done that, just launch the engine:
 

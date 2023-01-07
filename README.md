@@ -45,17 +45,17 @@ To launch the engine, just type:
 
 	./kiavc
 
-This will have the engine automatically try and look for a `main.lua` script in the `lua` folder, to initialize the actual game. In case no such file is available, the engine will exit with an error.
+This will have the engine automatically try and look for a `game.kvc` (containing the name of the game) and a `main.lua` script in the `lua` folder, to initialize the actual game. In case those files are not available, the engine will exit with an error.
 
 The `demo` folder contains a demo you can use to test the engine, so follow the instructions there to try it out.
 
 ## Packaging game files
 
-Notice that, by default, the engine expects the files to be available on the disk in subfolders (e.g., `lua` and `assets`). In case you want to package the game files in an archive instead, you can use the `kiavc-bag` tool, which will create a BAG file that you can pass to the engine.
+Notice that, by default, the engine expects the files to be available on the disk in subfolders (e.g., `game.kvc`, `lua` and `assets`). In case you want to package the game files in an archive instead, you can use the `kiavc-bag` tool, which will create a BAG file that you can pass to the engine.
 
 To create a BAG file, type something like this:
 
-	./kiavc-bag assets.bag ./lua ./assets
+	./kiavc-bag assets.bag ./game.kvc ./lua ./assets
 
 The above command will take all files in the `lua` and `assets` subfolders, and package them in the `assets.bag` file. Notice that the tool only works with files in subfolders, and not with files in arbitrary positions. Relative paths should be used as well, or this will cause problems when used elsewhere.
 

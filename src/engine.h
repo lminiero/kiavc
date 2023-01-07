@@ -15,8 +15,10 @@
 
 #include <SDL2/SDL.h>
 
+#include "bag.h"
+
 /* Initialize the engine */
-int kiavc_engine_init(const char *bagfile);
+int kiavc_engine_init(kiavc_bag *bagfile);
 /* Return a SDL_RWops instance for a path */
 SDL_RWops *kiavc_engine_open_file(const char *path);
 /* Handle input from the user */
