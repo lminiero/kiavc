@@ -433,7 +433,7 @@ static int kiavc_engine_sort_resources(const kiavc_resource *r1, const kiavc_res
 }
 
 /* Initialize the engine */
-int kiavc_engine_init(kiavc_bag *bagfile) {
+int kiavc_engine_init(const char *app, kiavc_bag *bagfile) {
 	bag = bagfile;
 
 	/* Create maps */
@@ -451,7 +451,7 @@ int kiavc_engine_init(kiavc_bag *bagfile) {
 	/* FIXME As in the logger, we get the path where we can save files, which
 	 * we'll used for saved screenshots. And as in the logger, we're currently
 	 * hardcoding "KIAVC" as both org and app, which needs to be changed. */
-	app_path = SDL_GetPrefPath("KIAVC", "KIAVC");
+	app_path = SDL_GetPrefPath("KIAVC", app);
 
 	/* Initialize the scripting engine */
 	if(kiavc_scripts_load("./lua/main.lua", &scripts_callbacks) < 0) {
@@ -1751,7 +1751,9 @@ static bool kiavc_engine_is_debugging_walkboxes(void) {
 static void kiavc_engine_save_screenshot(const char *filename) {
 	if(!filename)
 		return;
-	SDL_Surface *screenshot = kiavc_create_surface(kiavc_screen_width, kiavc_screen_height);
+	SDL_Surface *screenshot = kiavc_create_surface(
+		kiavc_screen_width * kiavc_screen_scale,
+		kiavc_screen_height * kiavc_screen_scale);
 	if(!screenshot)
 		return;
 	if(SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_RGBA8888, screenshot->pixels, screenshot->pitch) < 0) {

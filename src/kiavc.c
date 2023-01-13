@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* Initialize the game engine */
-	if(kiavc_engine_init(bag) < 0) {
+	if(kiavc_engine_init(app, bag) < 0) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error initializing game engine\n");
 		goto error;
 	}
