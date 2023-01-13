@@ -37,6 +37,7 @@
 /* Global SDL resources */
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
+static SDL_Texture *canvas = NULL;
 static char *app_path = NULL;
 static bool quit = false;
 
@@ -526,6 +527,8 @@ int kiavc_engine_init(const char *app, kiavc_bag *bagfile) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error setting device independent resolution for rendering: %s\n", SDL_GetError());
 		return -1;
 	}
+	canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
+		SDL_TEXTUREACCESS_TARGET, kiavc_screen_width, kiavc_screen_height);
 	/* Check if we need to confine the mouse to the window */
 	if(kiavc_screen_grab_mouse)
 		SDL_SetWindowMouseGrab(window, kiavc_screen_grab_mouse);
@@ -1239,6 +1242,7 @@ int kiavc_engine_render(void) {
 	bool background_drawn = false;
 	if(ticks - engine.render_ticks >= (1000/kiavc_screen_fps)) {
 		engine.render_ticks += (1000/kiavc_screen_fps);
+		SDL_SetRenderTarget(renderer, canvas);
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderClear(renderer);
 		/* Now we iterate on dynamic resources (rooms, layers, actors, objects, text, etc.) */
@@ -1609,6 +1613,8 @@ int kiavc_engine_render(void) {
 		if(kiavc_screen_scanlines_texture)
 			SDL_RenderCopy(renderer, kiavc_screen_scanlines_texture, NULL, NULL);
 		/* Done */
+		SDL_SetRenderTarget(renderer, NULL);
+		SDL_RenderCopy(renderer, canvas, NULL, NULL);
 		SDL_RenderPresent(renderer);
 	}
 	SDL_Delay(10);
@@ -1632,6 +1638,7 @@ void kiavc_engine_destroy(void) {
 	kiavc_map_destroy(animations);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+	SDL_DestroyTexture(canvas);
 	if(kiavc_screen_title)
 		SDL_free(kiavc_screen_title);
 	if(kiavc_screen_icon)
