@@ -29,7 +29,7 @@ setTitle('KIAVC engine demo')
 --~ setScanlines(true)
 
 -- We enable the scripting console, and specify which font to use
-Font:new({ id = 'console', path = './assets/fonts/m3x6.ttf', size = 16 })
+Font:new({ id = 'console', path = './assets/fonts/m3x6.ttf', size = 32 })
 enableConsole('console')
 
 -- Let's intercept some keys to trigger some actions
