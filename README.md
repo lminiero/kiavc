@@ -12,11 +12,23 @@ If you want to learn more about the engine internals or its capabilities, please
 To compile KIAVC, you'll need the following dependencies (development versions):
 
 * [SDL2](https://github.com/libsdl-org/SDL)
-* [SDL_image](https://github.com/libsdl-org/SDL_image)
-* [SDL_mixer](https://github.com/libsdl-org/SDL_mixer)
-* [SDL_ttf](https://github.com/libsdl-org/SDL_ttf)
-* [GLib](https://docs.gtk.org/glib/)
+* [SDL2_image](https://github.com/libsdl-org/SDL_image)
+* [SDL2_mixer](https://github.com/libsdl-org/SDL_mixer)
+* [SDL2_ttf](https://github.com/libsdl-org/SDL_ttf)
+* [GLib2](https://docs.gtk.org/glib/)
 * [Lua](https://www.lua.org/download.html)
+
+On Linux, most of these dependencies are commonly available in distros. This is how you can install them on Fedora, for instance:
+
+	dnf install make gcc pkg-config SDL2-devel SDL2_image-devel \
+		SDL2_mixer-devel SDL2_ttf-devel glib2-devel lua-devel
+
+On Ubuntu, instead, you can install them like this:
+
+	apt-get -y install make gcc pkg-config libsdl2-dev libsdl2-image-dev \
+		libsdl2-mixer-dev libsdl2-ttf-dev liblua5.4-dev
+
+> **Note**: Depending on the version of Ubuntu, Lua 5.4 may or may not be available: in case it isn't, 5.3 is a viable option as well. Besides, notice that, depending on which Lua version is installed and which one is considered the default in the `alternatives`, `pkg-config` may not be able to find the library using the `lua` name: in that case, just edit the `Makefile` and edit both the `DEPS` and `DEPS_LIBS` variables so that they reference what `pkg-config` knows about instead (e.g., `lua53`).
 
 ## Compiling KIAVC
 
