@@ -15,6 +15,7 @@
 #else
 #include <arpa/inet.h>
 #endif
+#include <errno.h>
 
 #include <glib.h>
 

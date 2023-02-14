@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #include "../bag.h"
 #include "../version.h"
