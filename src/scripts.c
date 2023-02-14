@@ -734,9 +734,9 @@ static int kiavc_lua_method_setscanlines(lua_State *s) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
 		return 0;
 	}
-	bool scanlines = lua_toboolean(s, 1);
+	int alpha = lua_tointeger(s, 1);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_scanlines(scanlines);
+	kiavc_cb->set_scanlines(alpha);
 	return 0;
 }
 
@@ -749,9 +749,9 @@ static int kiavc_lua_method_getscanlines(lua_State *s) {
 		return 0;
 	}
 	/* Invoke the application callback to query this */
-	bool scanlines = kiavc_cb->get_scanlines();
+	int alpha = kiavc_cb->get_scanlines();
 	/* Pass the response back to the stack */
-	lua_pushboolean(s, scanlines);
+	lua_pushinteger(s, alpha);
 	return 1;
 }
 

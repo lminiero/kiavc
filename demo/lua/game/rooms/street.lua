@@ -50,9 +50,6 @@ Room:new({
 				waitFor(activeActor.id)
 				enableInput()
 			end
-		end,
-		barrier2 = function()
-			rooms['outskirts']:enter()
 		end
 	},
 	onenter = function(self)

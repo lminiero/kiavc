@@ -50,7 +50,7 @@ static int kiavc_screen_height = -1;
 static int kiavc_screen_fps = -1;
 static bool kiavc_screen_grab_mouse = false;
 static bool kiavc_screen_fullscreen = false, kiavc_screen_fullscreen_desktop = false;
-static bool kiavc_screen_scanlines = false;
+static int kiavc_screen_scanlines = 0;
 static SDL_Texture *kiavc_screen_scanlines_texture = NULL;
 
 /* Test console */
@@ -131,8 +131,8 @@ static void kiavc_engine_grab_mouse(bool grab);
 static bool kiavc_engine_is_grabbing_mouse(void);
 static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop);
 static bool kiavc_engine_get_fullscreen(void);
-static void kiavc_engine_set_scanlines(bool scanlines);
-static bool kiavc_engine_get_scanlines(void);
+static void kiavc_engine_set_scanlines(int alpha);
+static int kiavc_engine_get_scanlines(void);
 static void kiavc_engine_debug_objects(bool debug);
 static bool kiavc_engine_is_debugging_objects(void);
 static void kiavc_engine_debug_walkboxes(bool debug);
@@ -349,7 +349,7 @@ static void kiavc_engine_regenerate_scanlines(void) {
 		kiavc_screen_scanlines_texture = SDL_CreateTextureFromSurface(renderer, scanlines);
 		SDL_FreeSurface(scanlines);
 		SDL_SetTextureBlendMode(kiavc_screen_scanlines_texture, SDL_BLENDMODE_BLEND);
-		SDL_SetTextureAlphaMod(kiavc_screen_scanlines_texture, 24);
+		SDL_SetTextureAlphaMod(kiavc_screen_scanlines_texture, kiavc_screen_scanlines);
 	}
 }
 
@@ -1723,16 +1723,20 @@ static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop) {
 static bool kiavc_engine_get_fullscreen(void) {
 	return kiavc_screen_fullscreen;
 }
-static void kiavc_engine_set_scanlines(bool scanlines) {
-	if(kiavc_screen_scanlines == scanlines) {
+static void kiavc_engine_set_scanlines(int alpha) {
+	if(alpha > 255)
+		alpha = 255;
+	else if(alpha < 0)
+		alpha = 0;
+	if(kiavc_screen_scanlines == alpha) {
 		/* Nothing to do */
 		return;
 	}
-	kiavc_screen_scanlines = scanlines;
+	kiavc_screen_scanlines = alpha;
 	kiavc_engine_regenerate_scanlines();
-	SDL_Log("%s scanlines\n", kiavc_screen_scanlines ? "Enabling" : "Disabling");
+	SDL_Log("%s scanlines (%d alpha)\n", kiavc_screen_scanlines ? "Enabling" : "Disabling", kiavc_screen_scanlines);
 }
-static bool kiavc_engine_get_scanlines(void) {
+static int kiavc_engine_get_scanlines(void) {
 	return kiavc_screen_scanlines;
 }
 static void kiavc_engine_debug_objects(bool debug) {
