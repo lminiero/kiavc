@@ -37,6 +37,7 @@
 /* Global SDL resources */
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
+static SDL_Texture *canvas = NULL;
 static char *app_path = NULL;
 static bool quit = false;
 
@@ -49,7 +50,7 @@ static int kiavc_screen_height = -1;
 static int kiavc_screen_fps = -1;
 static bool kiavc_screen_grab_mouse = false;
 static bool kiavc_screen_fullscreen = false, kiavc_screen_fullscreen_desktop = false;
-static bool kiavc_screen_scanlines = false;
+static int kiavc_screen_scanlines = 0;
 static SDL_Texture *kiavc_screen_scanlines_texture = NULL;
 
 /* Test console */
@@ -130,8 +131,8 @@ static void kiavc_engine_grab_mouse(bool grab);
 static bool kiavc_engine_is_grabbing_mouse(void);
 static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop);
 static bool kiavc_engine_get_fullscreen(void);
-static void kiavc_engine_set_scanlines(bool scanlines);
-static bool kiavc_engine_get_scanlines(void);
+static void kiavc_engine_set_scanlines(int alpha);
+static int kiavc_engine_get_scanlines(void);
 static void kiavc_engine_debug_objects(bool debug);
 static bool kiavc_engine_is_debugging_objects(void);
 static void kiavc_engine_debug_walkboxes(bool debug);
@@ -333,20 +334,22 @@ static void kiavc_engine_regenerate_scanlines(void) {
 		SDL_DestroyTexture(kiavc_screen_scanlines_texture);
 	kiavc_screen_scanlines_texture = NULL;
 	if(kiavc_screen_scanlines) {
-		SDL_Surface *scanlines = kiavc_create_surface(kiavc_screen_width, kiavc_screen_height);
+		int w = kiavc_screen_width * kiavc_screen_scale;
+		int h = kiavc_screen_height * kiavc_screen_scale;
+		SDL_Surface *scanlines = kiavc_create_surface(w, h);
 		if(!scanlines)
 			return;
 		Uint32 color = SDL_MapRGB(scanlines->format, 0, 0, 0);
-		SDL_Rect rect = { .x = 0, .y = 0, .w = kiavc_screen_width, .h = 1 };
+		SDL_Rect rect = { .x = 0, .y = 0, .w = w, .h = 1 };
 		int i = 0;
-		for(i=1; i<kiavc_screen_height; i+= 2) {
+		for(i=1; i<h; i+= 3) {
 			rect.y = i;
 			SDL_FillRect(scanlines, &rect, color);
 		}
 		kiavc_screen_scanlines_texture = SDL_CreateTextureFromSurface(renderer, scanlines);
 		SDL_FreeSurface(scanlines);
 		SDL_SetTextureBlendMode(kiavc_screen_scanlines_texture, SDL_BLENDMODE_BLEND);
-		SDL_SetTextureAlphaMod(kiavc_screen_scanlines_texture, 24);
+		SDL_SetTextureAlphaMod(kiavc_screen_scanlines_texture, kiavc_screen_scanlines);
 	}
 }
 
@@ -522,10 +525,9 @@ int kiavc_engine_init(const char *app, kiavc_bag *bagfile) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error creating renderer: %s\n", SDL_GetError());
 		return -1;
 	}
-	if(SDL_RenderSetLogicalSize(renderer, kiavc_screen_width, kiavc_screen_height) < 0) {
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error setting device independent resolution for rendering: %s\n", SDL_GetError());
-		return -1;
-	}
+	canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
+		SDL_TEXTUREACCESS_TARGET, kiavc_screen_width, kiavc_screen_height);
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 	/* Check if we need to confine the mouse to the window */
 	if(kiavc_screen_grab_mouse)
 		SDL_SetWindowMouseGrab(window, kiavc_screen_grab_mouse);
@@ -729,8 +731,8 @@ int kiavc_engine_handle_input(void) {
 			/* No need to go on */
 			return -1;
 		} else if(e.type == SDL_MOUSEMOTION) {
-			engine.mouse_x = e.motion.x;
-			engine.mouse_y = e.motion.y;
+			engine.mouse_x = e.motion.x / kiavc_screen_scale;
+			engine.mouse_y = e.motion.y / kiavc_screen_scale;
 			kiavc_engine_check_hovering();
 		} else if(e.type == SDL_MOUSEBUTTONUP) {
 			int x, y;
@@ -1239,6 +1241,8 @@ int kiavc_engine_render(void) {
 	bool background_drawn = false;
 	if(ticks - engine.render_ticks >= (1000/kiavc_screen_fps)) {
 		engine.render_ticks += (1000/kiavc_screen_fps);
+		/* The game may need to be scaled, so let's use the texture as the render target */
+		SDL_SetRenderTarget(renderer, canvas);
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderClear(renderer);
 		/* Now we iterate on dynamic resources (rooms, layers, actors, objects, text, etc.) */
@@ -1468,6 +1472,49 @@ int kiavc_engine_render(void) {
 			}
 			item = item->next;
 		}
+		/* If we haven't drawn the dialog background yet, do it now */
+		if(engine.dialog && !background_drawn && (engine.dialog->lines || !engine.dialog->autohide)) {
+			background_drawn = true;
+			/* We draw in a viewport */
+			clip.x = engine.dialog->area.x;
+			clip.y = engine.dialog->area.y - 4;
+			clip.w = engine.dialog->area.w * kiavc_screen_scale;
+			clip.h = engine.dialog->area.h + 4;
+			SDL_RenderSetViewport(renderer, &clip);
+			SDL_SetRenderDrawColor(renderer, engine.dialog->background.r,
+				engine.dialog->background.g, engine.dialog->background.b, engine.dialog->background.a);
+			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+			SDL_RenderFillRect(renderer, NULL);
+			SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+			SDL_RenderSetViewport(renderer, NULL);
+		}
+		/* If we're fading in or out, draw the black fade texture with the right alpha */
+		if(engine.fade_texture && engine.fade_alpha > 0) {
+			SDL_SetTextureAlphaMod(engine.fade_texture, engine.fade_alpha);
+			SDL_RenderCopy(renderer, engine.fade_texture, NULL, NULL);
+		}
+		/* The cursor is always the last game thing we draw */
+		kiavc_cursor *cursor = (engine.hovering && engine.hotspot_cursor && engine.hotspot_cursor->animation) ?
+			engine.hotspot_cursor : engine.main_cursor;
+		if(engine.cursor_visible && cursor && cursor->animation && cursor->animation && (!engine.cutscene || engine.dialog)) {
+			kiavc_animation_load(cursor->animation, cursor, renderer);
+			if(cursor->frame < 0 || cursor->frame >= cursor->animation->frames)
+				cursor->frame = 0;
+			clip.w = cursor->animation->w;
+			clip.h = cursor->animation->h;
+			clip.x = cursor->frame*(clip.w);
+			clip.y = 0;
+			rect.x = (int)cursor->res.x;
+			rect.y = (int)cursor->res.y;
+			rect.w = cursor->animation->w;
+			rect.h = cursor->animation->h;
+			if(cursor->animation->texture)
+				SDL_RenderCopy(renderer, cursor->animation->texture, &clip, &rect);
+		}
+		/* Now that we're done with game stuff, let's pass the back texture to the renderer:
+		 * this will allow us to render debugging stuff and filters at the actual resolution */
+		SDL_SetRenderTarget(renderer, NULL);
+		SDL_RenderCopy(renderer, canvas, NULL, NULL);
 		/* Check if we're debugging objects */
 		if(kiavc_debug_objects && engine.render_list) {
 			SDL_SetRenderDrawColor(renderer, 255, 0, 255, SDL_ALPHA_OPAQUE);
@@ -1507,10 +1554,10 @@ int kiavc_engine_render(void) {
 					w = object->ui_animation->w;
 					h = object->ui_animation->h;
 				}
-				x1 = x - (object->ui ? 0 : (int)engine.room->res.x);
-				y1 = y - (object->ui ? 0 : (int)engine.room->res.y);
-				x2 = x + w - (object->ui ? 0 : (int)engine.room->res.x);
-				y2 = y + h - (object->ui ? 0 : (int)engine.room->res.y);
+				x1 = (x - (object->ui ? 0 : (int)engine.room->res.x)) * kiavc_screen_scale;
+				y1 = (y - (object->ui ? 0 : (int)engine.room->res.y)) * kiavc_screen_scale;
+				x2 = (x + w - (object->ui ? 0 : (int)engine.room->res.x)) * kiavc_screen_scale;
+				y2 = (y + h - (object->ui ? 0 : (int)engine.room->res.y)) * kiavc_screen_scale;
 				SDL_RenderDrawLine(renderer, x1, y1, x2, y1);
 				SDL_RenderDrawLine(renderer, x2, y1, x2, y2);
 				SDL_RenderDrawLine(renderer, x2, y2, x1, y2);
@@ -1530,10 +1577,10 @@ int kiavc_engine_render(void) {
 					temp = temp->next;
 					continue;
 				}
-				x1 = w->p1.x - (int)engine.room->res.x;
-				y1 = w->p1.y - (int)engine.room->res.y;
-				x2 = w->p2.x - (int)engine.room->res.x;
-				y2 = w->p2.y - (int)engine.room->res.y;
+				x1 = (w->p1.x - (int)engine.room->res.x) * kiavc_screen_scale;
+				y1 = (w->p1.y - (int)engine.room->res.y) * kiavc_screen_scale;
+				x2 = (w->p2.x - (int)engine.room->res.x) * kiavc_screen_scale;
+				y2 = (w->p2.y - (int)engine.room->res.y) * kiavc_screen_scale;
 				SDL_RenderDrawLine(renderer, x1, y1, x2, y1);
 				SDL_RenderDrawLine(renderer, x2, y1, x2, y2);
 				SDL_RenderDrawLine(renderer, x2, y2, x1, y2);
@@ -1548,67 +1595,28 @@ int kiavc_engine_render(void) {
 					p1 = (kiavc_pathfinding_point *)temp->data;
 					p2 = (kiavc_pathfinding_point *)(temp->next ? temp->next->data : NULL);
 					if(p2) {
-						x1 = p1->x - (int)engine.room->res.x;
-						y1 = p1->y - (int)engine.room->res.y;
-						x2 = p2->x - (int)engine.room->res.x;
-						y2 = p2->y - (int)engine.room->res.y;
+						x1 = (p1->x - (int)engine.room->res.x) * kiavc_screen_scale;
+						y1 = (p1->y - (int)engine.room->res.y) * kiavc_screen_scale;
+						x2 = (p2->x - (int)engine.room->res.x) * kiavc_screen_scale;
+						y2 = (p2->y - (int)engine.room->res.y) * kiavc_screen_scale;
 						SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
 					}
 					temp = temp->next;
 				}
 			}
 		}
-		/* If we haven't drawn the background yet, do it now */
-		if(engine.dialog && !background_drawn && (engine.dialog->lines || !engine.dialog->autohide)) {
-			background_drawn = true;
-			/* FIXME We draw in a viewport */
-			clip.x = engine.dialog->area.x;
-			clip.y = engine.dialog->area.y - 4;
-			clip.w = engine.dialog->area.w * kiavc_screen_scale;
-			clip.h = engine.dialog->area.h + 4;
-			SDL_RenderSetViewport(renderer, &clip);
-			SDL_SetRenderDrawColor(renderer, engine.dialog->background.r,
-				engine.dialog->background.g, engine.dialog->background.b, engine.dialog->background.a);
-			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-			SDL_RenderFillRect(renderer, NULL);
-			SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-			SDL_RenderSetViewport(renderer, NULL);
-		}
-		/* If we're fading in or out, draw the black fade texture with the right alpha */
-		if(engine.fade_texture && engine.fade_alpha > 0) {
-			SDL_SetTextureAlphaMod(engine.fade_texture, engine.fade_alpha);
-			SDL_RenderCopy(renderer, engine.fade_texture, NULL, NULL);
-		}
 		/* If the console's active, draw that now */
 		if(console_active && console_rendered) {
 			rect.x = 0;
-			rect.y = kiavc_screen_height - console_rendered->h;
+			rect.y = (kiavc_screen_height * kiavc_screen_scale) - console_rendered->h;
 			rect.w = console_rendered->w;
 			rect.h = console_rendered->h;
 			SDL_RenderCopy(renderer, console_rendered->texture, NULL, &rect);
 		}
-		/* The cursor is always the last thing we draw */
-		kiavc_cursor *cursor = (engine.hovering && engine.hotspot_cursor && engine.hotspot_cursor->animation) ?
-			engine.hotspot_cursor : engine.main_cursor;
-		if(engine.cursor_visible && cursor && cursor->animation && cursor->animation && (!engine.cutscene || engine.dialog)) {
-			kiavc_animation_load(cursor->animation, cursor, renderer);
-			if(cursor->frame < 0 || cursor->frame >= cursor->animation->frames)
-				cursor->frame = 0;
-			clip.w = cursor->animation->w;
-			clip.h = cursor->animation->h;
-			clip.x = cursor->frame*(clip.w);
-			clip.y = 0;
-			rect.x = (int)cursor->res.x;
-			rect.y = (int)cursor->res.y;
-			rect.w = cursor->animation->w;
-			rect.h = cursor->animation->h;
-			if(cursor->animation->texture)
-				SDL_RenderCopy(renderer, cursor->animation->texture, &clip, &rect);
-		}
-		/* ... unless we're adding a scanlines filter */
+		/* If the scanlines filter is active, display that too */
 		if(kiavc_screen_scanlines_texture)
 			SDL_RenderCopy(renderer, kiavc_screen_scanlines_texture, NULL, NULL);
-		/* Done */
+		/* Done, render to the screen */
 		SDL_RenderPresent(renderer);
 	}
 	SDL_Delay(10);
@@ -1632,6 +1640,7 @@ void kiavc_engine_destroy(void) {
 	kiavc_map_destroy(animations);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+	SDL_DestroyTexture(canvas);
 	if(kiavc_screen_title)
 		SDL_free(kiavc_screen_title);
 	if(kiavc_screen_icon)
@@ -1647,7 +1656,7 @@ static void kiavc_engine_set_resolution(int width, int height, int fps, int scal
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid resolution: %dx%d @ %d (scale: %d)\n", width, height, fps, scale);
 		return;
 	}
-	bool changed = (kiavc_screen_width != width || kiavc_screen_height != height);
+	bool changed = (kiavc_screen_width != width || kiavc_screen_height != height || kiavc_screen_scale != scale);
 	kiavc_screen_width = width;
 	kiavc_screen_height = height;
 	kiavc_screen_fps = fps;
@@ -1714,16 +1723,20 @@ static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop) {
 static bool kiavc_engine_get_fullscreen(void) {
 	return kiavc_screen_fullscreen;
 }
-static void kiavc_engine_set_scanlines(bool scanlines) {
-	if(kiavc_screen_scanlines == scanlines) {
+static void kiavc_engine_set_scanlines(int alpha) {
+	if(alpha > 255)
+		alpha = 255;
+	else if(alpha < 0)
+		alpha = 0;
+	if(kiavc_screen_scanlines == alpha) {
 		/* Nothing to do */
 		return;
 	}
-	kiavc_screen_scanlines = scanlines;
+	kiavc_screen_scanlines = alpha;
 	kiavc_engine_regenerate_scanlines();
-	SDL_Log("%s scanlines\n", kiavc_screen_scanlines ? "Enabling" : "Disabling");
+	SDL_Log("%s scanlines (%d alpha)\n", kiavc_screen_scanlines ? "Enabling" : "Disabling", kiavc_screen_scanlines);
 }
-static bool kiavc_engine_get_scanlines(void) {
+static int kiavc_engine_get_scanlines(void) {
 	return kiavc_screen_scanlines;
 }
 static void kiavc_engine_debug_objects(bool debug) {

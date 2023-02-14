@@ -29,7 +29,7 @@ setTitle('KIAVC engine demo')
 --~ setScanlines(true)
 
 -- We enable the scripting console, and specify which font to use
-Font:new({ id = 'console', path = './assets/fonts/m3x6.ttf', size = 16 })
+Font:new({ id = 'console', path = './assets/fonts/m3x6.ttf', size = 32 })
 enableConsole('console')
 
 -- Let's intercept some keys to trigger some actions
@@ -67,9 +67,10 @@ onUserInput('F8', showConsole)
 onUserInput('F9', function()
 	debugObjects(not isDebuggingObjects())
 end)
--- Pressing F10 enables or disables scanlines
+-- Pressing F10 enables or disables scanlines: when enabling scanlines
+-- we specify the alpha of the lines to draw, so 0 disables them
 onUserInput('F10', function()
-	setScanlines(not getScanlines())
+	setScanlines(getScanlines() == 0 and 96 or 0)
 end)
 -- Pressing F11 enables or disables the debugging of walkboxes
 onUserInput('F11', function()
