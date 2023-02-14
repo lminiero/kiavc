@@ -530,7 +530,11 @@ int kiavc_engine_init(const char *app, kiavc_bag *bagfile) {
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 	/* Check if we need to confine the mouse to the window */
 	if(kiavc_screen_grab_mouse)
+#if SDL_VERSION_ATLEAST(2, 0, 16)
 		SDL_SetWindowMouseGrab(window, kiavc_screen_grab_mouse);
+#else
+		SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SDL_SetWindowMouseGrab not available\n");
+#endif
 	SDL_ShowCursor(SDL_DISABLE);
 	/* Check if we need to start fullscreen */
 	if(kiavc_screen_fullscreen)
@@ -1704,7 +1708,11 @@ static void kiavc_engine_grab_mouse(bool grab) {
 	}
 	kiavc_screen_grab_mouse = grab;
 	if(window)
+#if SDL_VERSION_ATLEAST(2, 0, 16)
 		SDL_SetWindowMouseGrab(window, kiavc_screen_grab_mouse);
+#else
+		SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SDL_SetWindowMouseGrab not available\n");
+#endif
 	SDL_Log("%s mouse grabbing\n", kiavc_screen_grab_mouse ? "Enabling" : "Disabling");
 }
 static bool kiavc_engine_is_grabbing_mouse(void) {
