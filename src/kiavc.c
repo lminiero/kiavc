@@ -22,16 +22,14 @@
 int main(int argc, char *argv[]) {
 	/* Check if we need to read assets from a BAG file or from disk */
 	kiavc_bag *bag = NULL;
-	const char *bagfile = NULL;
+	const char *bagfile = "assets.bag";
 	if(argc > 1)
 		bagfile = argv[1];
 	/* If we need to open a BAG file, let's import it now */
-	if(bagfile) {
-		bag = kiavc_bag_import(bagfile);
-		if(!bag) {
-			SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error importing BAG file\n");
-			return -1;
-		}
+	bag = kiavc_bag_import(bagfile);
+	if(!bag && argc > 1) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error importing BAG file\n");
+		return -1;
 	}
 	/* Read the game.kvc file from the bag (or the disk, if there's no bag) */
 	const char *path = "./game.kvc";
