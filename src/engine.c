@@ -199,7 +199,7 @@ static void kiavc_engine_set_actor_state(const char *id, const char *type);
 static void kiavc_engine_register_costume(const char *id);
 static void kiavc_engine_set_costume_animation(const char *id, const char *type, const char *direction, const char *canim);
 static void kiavc_engine_register_object(const char *id);
-static void kiavc_engine_set_object_animation(const char *id, const char *canim);
+static void kiavc_engine_set_object_animation(const char *id, const char *state, const char *canim);
 static void kiavc_engine_set_object_interactable(const char *id, bool interactable);
 static void kiavc_engine_set_object_ui(const char *id, bool ui);
 static void kiavc_engine_set_object_ui_position(const char *id, int x, int y);
@@ -214,6 +214,7 @@ static void kiavc_engine_hide_object(const char *id);
 static void kiavc_engine_fade_object_to(const char *id, int alpha, int ms);
 static void kiavc_engine_set_object_alpha(const char *id, int alpha);
 static void kiavc_engine_set_object_plane(const char *id, int zplane);
+static void kiavc_engine_set_object_state(const char *id, const char *state);
 static void kiavc_engine_scale_object(const char *id, float scale);
 static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
 static void kiavc_engine_remove_object_from_inventory(const char *id, const char *owner);
@@ -315,6 +316,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.fade_object_to = kiavc_engine_fade_object_to,
 		.set_object_alpha = kiavc_engine_set_object_alpha,
 		.set_object_plane = kiavc_engine_set_object_plane,
+		.set_object_state = kiavc_engine_set_object_state,
 		.scale_object = kiavc_engine_scale_object,
 		.add_object_to_inventory = kiavc_engine_add_object_to_inventory,
 		.remove_object_from_inventory = kiavc_engine_remove_object_from_inventory,
@@ -601,7 +603,8 @@ static void kiavc_engine_check_hovering(void) {
 					}
 				} else {
 					/* Use the object coordinates and the image size */
-					kiavc_animation *animation = object->ui ? object->ui_animation : object->animation;
+					kiavc_animation *animation = object->ui ? object->ui_animation :
+						(object->state ? object->state->animation : NULL);
 					int w = 0, h = 0;
 					if(animation) {
 						w = animation->w;
@@ -1005,10 +1008,11 @@ int kiavc_engine_update_world(void) {
 		} else if(resource->type == KIAVC_OBJECT) {
 			/* This is an object */
 			kiavc_object *object = (kiavc_object *)resource;
-			int ms = object->animation ? object->animation->ms : 100;
+			kiavc_object_state *state = object ? object->state : NULL;
+			int ms = (state && state->animation ? state->animation->ms : 100);
 			if(ticks - object->res.ticks >= ms) {
 				object->res.ticks += ms;
-				if(object->animation) {
+				if(state && state->animation) {
 					object->frame++;
 				} else {
 					object->frame = 0;
@@ -1337,9 +1341,10 @@ int kiavc_engine_render(void) {
 				if(object && ((object->ui && !engine.cutscene && !engine.dialog) || object->room == engine.room)) {
 					int room_x = !object->ui && engine.room ? (int)engine.room->res.x : 0;
 					int room_y = !object->ui && engine.room ? (int)engine.room->res.y : 0;
-					kiavc_animation *animation = object->ui ? object->ui_animation : object->animation;
+					kiavc_animation *animation = object->ui ? object->ui_animation :
+						(object->state ? object->state->animation : NULL);
 					if(animation) {
-						kiavc_animation_load(animation, object, renderer);
+						kiavc_animation_load(animation, object->ui ? (void *)object : (void *)object->state, renderer);
 						clip.w = animation->w;
 						clip.h = animation->h;
 						if(object->frame < 0 || object->frame >= animation->frames)
@@ -1524,6 +1529,7 @@ int kiavc_engine_render(void) {
 			SDL_SetRenderDrawColor(renderer, 255, 0, 255, SDL_ALPHA_OPAQUE);
 			kiavc_resource *resource = NULL;
 			kiavc_object *object = NULL;
+			kiavc_object_state *state = NULL;
 			int x = 0, y = 0, w = 0, h = 0,
 				x1 = 0, y1 = 0, x2 = 0, y2 = 0;
 			kiavc_list *temp = engine.render_list;
@@ -1534,6 +1540,7 @@ int kiavc_engine_render(void) {
 					continue;
 				}
 				object = (kiavc_object *)resource;
+				state = object->state;
 				if(object->ui)
 					SDL_SetRenderDrawColor(renderer, 0, 255, 255, SDL_ALPHA_OPAQUE);
 				else
@@ -1547,11 +1554,11 @@ int kiavc_engine_render(void) {
 					y = object->hover.from_y;
 					w = object->hover.to_x - x;
 					h = object->hover.to_y - y;
-				} else if(!object->ui && object->animation) {
-					x = object_x - object->animation->w/2;
-					y = object_y - object->animation->h;
-					w = object->animation->w;
-					h = object->animation->h;
+				} else if(!object->ui && state && state->animation) {
+					x = object_x - state->animation->w/2;
+					y = object_y - state->animation->h;
+					w = state->animation->w;
+					h = state->animation->h;
 				} else if(object->ui && object->ui_animation) {
 					x = object_x;
 					y = object_y;
@@ -2400,8 +2407,14 @@ static void kiavc_engine_show_room(const char *id) {
 			kiavc_costume_unload_sets(actor->costume, actor);
 		} else if(resource->type == KIAVC_OBJECT) {
 			kiavc_object *object = (kiavc_object *)resource;
-			if(!object->ui)
-				kiavc_animation_unload(object->animation, object);
+			kiavc_object_state *state = NULL;
+			kiavc_list *states = kiavc_map_get_values(object->states), *temp = states;
+			while(temp) {
+				state = (kiavc_object_state *)temp->data;
+				kiavc_animation_unload(state->animation, state);
+				temp = temp->next;
+			}
+			kiavc_list_destroy(states);
 		} else if(resource->type == KIAVC_ROOM_LAYER) {
 			kiavc_room_layer *layer = (kiavc_room_layer *)resource;
 			kiavc_animation_unload(layer->background, layer);
@@ -2898,8 +2911,8 @@ static void kiavc_engine_register_object(const char *id) {
 	/* Done */
 	SDL_Log("Registered object '%s'\n", object->id);
 }
-static void kiavc_engine_set_object_animation(const char *id, const char *canim) {
-	if(!id || !canim)
+static void kiavc_engine_set_object_animation(const char *id, const char *state, const char *canim) {
+	if(!id || !state || !canim)
 		return;
 	/* Access object and image from the respective maps */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
@@ -2914,9 +2927,18 @@ static void kiavc_engine_set_object_animation(const char *id, const char *canim)
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object animation for object '%s', no such animation '%s'\n", id, canim);
 		return;
 	}
+	/* Check if a state with that ID exists already, or if we have to create it */
+	kiavc_object_state *obj_state = kiavc_map_lookup(object->states, state);
+	if(!obj_state) {
+		obj_state = SDL_calloc(1, sizeof(kiavc_object_state));
+		obj_state->id = SDL_strdup(state);
+		kiavc_map_insert(object->states, state, obj_state);
+		if(!object->state)
+			object->state = obj_state;
+	}
 	/* Done */
-	object->animation = anim;
-	SDL_Log("Set animation of object '%s' to '%s'\n", object->id, anim->id);
+	obj_state->animation = anim;
+	SDL_Log("Set animation for state '%s' of object '%s' to '%s'\n", obj_state->id, object->id, anim->id);
 }
 static void kiavc_engine_set_object_interactable(const char *id, bool interactable) {
 	if(!id)
@@ -3047,7 +3069,14 @@ static void kiavc_engine_move_object_to(const char *id, const char *rid, int x, 
 		object->owner = NULL;
 	if(!kiavc_list_find(room->objects, object))
 		room->objects = kiavc_list_append(room->objects, object);
-	kiavc_animation_unload(object->animation, object);
+	kiavc_object_state *state = NULL;
+	kiavc_list *states = kiavc_map_get_values(object->states), *temp = states;
+	while(temp) {
+		state = (kiavc_object_state *)temp->data;
+		kiavc_animation_unload(state->animation, state);
+		temp = temp->next;
+	}
+	kiavc_list_destroy(states);
 	engine.render_list = kiavc_list_remove(engine.render_list, object);
 	object->room = room;
 	object->ui = 0;
@@ -3124,7 +3153,14 @@ static void kiavc_engine_hide_object(const char *id) {
 	}
 	object->visible = false;
 	object->res.ticks = 0;
-	kiavc_animation_unload(object->animation, object);
+	kiavc_object_state *state = NULL;
+	kiavc_list *states = kiavc_map_get_values(object->states), *temp = states;
+	while(temp) {
+		state = (kiavc_object_state *)temp->data;
+		kiavc_animation_unload(state->animation, state);
+		temp = temp->next;
+	}
+	kiavc_list_destroy(states);
 	kiavc_animation_unload(object->ui_animation, object);
 	engine.render_list = kiavc_list_remove(engine.render_list, object);
 	/* Done */
@@ -3188,6 +3224,29 @@ static void kiavc_engine_set_object_plane(const char *id, int zplane) {
 	engine.render_list = kiavc_list_sort(engine.render_list, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
 	SDL_Log("Set object '%s' plane to '%d'\n", object->id, zplane);
+}
+static void kiavc_engine_set_object_state(const char *id, const char *state) {
+	if(!id || !state)
+		return;
+	/* Get the object */
+	kiavc_object *object = kiavc_map_lookup(objects, id);
+	if(!object) {
+		/* No such object */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object state, no such object '%s'\n", id);
+		return;
+	}
+	/* Get the state */
+	kiavc_object_state *obj_state = kiavc_map_lookup(object->states, state);
+	if(!obj_state) {
+		/* No such state */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object state, no such state '%s'\n", state);
+		return;
+	}
+	if(object->state && object->state != obj_state)
+		kiavc_animation_unload(object->state->animation, object->state);
+	object->state = obj_state;
+	/* Done */
+	SDL_Log("Set object '%s' state to '%s'\n", object->id, state);
 }
 static void kiavc_engine_scale_object(const char *id, float scale) {
 	if(!id)

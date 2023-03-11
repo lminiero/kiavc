@@ -94,7 +94,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const register_costume)(const char *id);
 	void (* const set_costume_animation)(const char *id, const char *type, const char *direction, const char *anim);
 	void (* const register_object)(const char *id);
-	void (* const set_object_animation)(const char *id, const char *anim);
+	void (* const set_object_animation)(const char *id, const char *state, const char *anim);
 	void (* const set_object_interactable)(const char *id, bool ui);
 	void (* const set_object_ui)(const char *id, bool ui);
 	void (* const set_object_ui_position)(const char *id, int x, int y);
@@ -109,6 +109,7 @@ typedef struct kiavc_scripts_callbacks {
 	void (* const fade_object_to)(const char *id, int alpha, int ms);
 	void (* const set_object_alpha)(const char *id, int alpha);
 	void (* const set_object_plane)(const char *id, int zplane);
+	void (* const set_object_state)(const char *id, const char *state);
 	void (* const scale_object)(const char *id, float scale);
 	void (* const add_object_to_inventory)(const char *id, const char *owner);
 	void (* const remove_object_from_inventory)(const char *id, const char *owner);

@@ -11,7 +11,7 @@ Image:new({ id = 'skull-inventory', path = './assets/images/skull-large.png' });
 local skull = Object:new({
 	id = 'skull',
 	name = 'skullName',
-	animation = 'skull',
+	animations = { default = 'skull' },
 	uiAnimation = 'skull-inventory',
 	interaction = { direction = 'right', use = 'low', x = 150, y = 166 },
 	plane = 0,

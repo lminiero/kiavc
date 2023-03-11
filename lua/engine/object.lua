@@ -114,7 +114,7 @@ Object = {
 		end
 	},
 	setAnimation =
-		function(self, animId)
+		function(self, animId, state)
 			if animId == nil then
 				kiavcError('Invalid animation ID')
 				return
@@ -125,7 +125,7 @@ Object = {
 			end
 			self.animation = animId
 			-- Tell the engine about the new directional anim
-			setObjectAnimation(self.id, animId)
+			setObjectAnimation(self.id, state, animId)
 		end,
 	setUiAnimation =
 		function(self, animId)
@@ -320,6 +320,12 @@ Object = {
 			-- Tell the engine to use the provided z-plane for the object
 			setObjectPlane(self.id, zplane)
 		end,
+	setState =
+		function(self, state)
+			self.state = state
+			-- Tell the engine to switch to the specified state for the object
+			setObjectState(self.id, state)
+		end,
 	show =
 		function(self)
 			-- Tell the engine to show the object in the room they're in
@@ -437,9 +443,11 @@ function Object:new(object)
 	objects[object.id] = object
 	-- Register the object at the engine
 	registerObject(object)
-	-- If an animation was provided, set it now
-	if object.animation ~= nil then
-		object:setAnimation(object.animation)
+	-- If animations were provided, set them now
+	if object.animations ~= nil then
+		for state, animation in pairs(object.animations) do
+			object:setAnimation(animation, state)
+		end
 	end
 	-- If an UI animation was provided, set it now
 	if object.uiAnimation ~= nil then
@@ -464,6 +472,10 @@ function Object:new(object)
 	-- If a z-plane was provided, set it now
 	if object.plane ~= nil then
 		object:setPlane(object.plane)
+	end
+	-- If a state was provided, set it now
+	if object.state ~= nil then
+		object:setState(object.state)
 	end
 	-- If hover coordinates were provided, set them now
 	if object.hover ~= nil then

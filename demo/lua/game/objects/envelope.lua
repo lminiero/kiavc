@@ -9,7 +9,7 @@ Image:new({ id = 'envelope-inventory', path = './assets/images/envelope-large.pn
 local envelope = Object:new({
 	id = 'envelope',
 	name = 'envelopeName',
-	animation = 'envelope',
+	animations = { default = 'envelope' },
 	uiAnimation = 'envelope-inventory',
 	plane = 0,
 	verbs = {

@@ -99,13 +99,17 @@ Room:new({
 -- them here, rather than creating a separate object file which makes
 -- more sense for object that you can carry around.
 
--- The fire is animated, so let's register the animation file first
+-- The fire is animated, so let's register a few animation files first:
+-- we have more than one just to show how we can play with object states
 Animation:new({ id = 'fire-loop', path = './assets/images/fire.png', frames = 8 });
+Animation:new({ id = 'fire-loop-green', path = './assets/images/fire-green.png', frames = 8 });
+Animation:new({ id = 'fire-loop-blue', path = './assets/images/fire-blue.png', frames = 8 });
 -- Now let's create the object for the fire
 local fire = Object:new({
 	id = 'fire',
 	name = 'fireName',
-	animation = 'fire-loop',
+	animations = { default = 'fire-loop', green = 'fire-loop-green', blue = 'fire-loop-blue' },
+	state = 'default',
 	plane = 0,
 	description = "fireDesc",
 	interaction = { direction = 'up', use = 'mid', x = 498, y = 166 },

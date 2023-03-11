@@ -226,6 +226,8 @@ static int kiavc_lua_method_fadeobjectto(lua_State *s);
 static int kiavc_lua_method_setobjectalpha(lua_State *s);
 /* Set the z-plane for the object */
 static int kiavc_lua_method_setobjectplane(lua_State *s);
+/* Set the state for the object */
+static int kiavc_lua_method_setobjectstate(lua_State *s);
 /* Scale an object */
 static int kiavc_lua_method_scaleobject(lua_State *s);
 /* Add an object to an actor's inventory */
@@ -409,6 +411,7 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "fadeObjectTo", kiavc_lua_method_fadeobjectto);
 	lua_register(lua_state, "setObjectAlpha", kiavc_lua_method_setobjectalpha);
 	lua_register(lua_state, "setObjectPlane", kiavc_lua_method_setobjectplane);
+	lua_register(lua_state, "setObjectState", kiavc_lua_method_setobjectstate);
 	lua_register(lua_state, "scaleObject", kiavc_lua_method_scaleobject);
 	lua_register(lua_state, "addObjectToInventory", kiavc_lua_method_addobjecttoinventory);
 	lua_register(lua_state, "removeObjectFromInventory", kiavc_lua_method_removeobjectfrominventory);
@@ -2120,20 +2123,23 @@ static int kiavc_lua_method_registerobject(lua_State *s) {
 
 /* Set the current animation for an object */
 static int kiavc_lua_method_setobjectanimation(lua_State *s) {
-	int n = lua_gettop(s), exp = 2;
+	int n = lua_gettop(s), exp = 3;
 	if(n != exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
 		return 0;
 	}
 	const char *id = luaL_checkstring(s, 1);
-	const char *anim = luaL_checkstring(s, 2);
+	const char *state = luaL_checkstring(s, 2);
+	const char *anim = luaL_checkstring(s, 3);
 	if(id == NULL || anim == NULL) {
 		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object animation ID\n");
 		return 0;
 	}
+	if(state == NULL)
+		state = "default";
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_animation(id, anim);
+	kiavc_cb->set_object_animation(id, state, anim);
 	return 0;
 }
 
@@ -2458,6 +2464,25 @@ static int kiavc_lua_method_setobjectplane(lua_State *s) {
 	}
 	/* Invoke the application callback to enforce this */
 	kiavc_cb->set_object_plane(id, zplane);
+	return 0;
+}
+
+/* Set the state for the object */
+static int kiavc_lua_method_setobjectstate(lua_State *s) {
+	int n = lua_gettop(s), exp = 2;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return 0;
+	}
+	const char *id = luaL_checkstring(s, 1);
+	const char *state = luaL_checkstring(s, 2);
+	if(id == NULL || state == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID or state\n");
+		return 0;
+	}
+	/* Invoke the application callback to enforce this */
+	kiavc_cb->set_object_state(id, state);
 	return 0;
 }
 

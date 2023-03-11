@@ -16,7 +16,15 @@
 
 #include "object.h"
 
-/* Cursor constructor */
+/* Object state destructor */
+static void kiavc_object_state_destroy(kiavc_object_state *state) {
+	if(state) {
+		SDL_free(state->id);
+		SDL_free(state);
+	}
+}
+
+/* Object constructor */
 kiavc_object *kiavc_object_create(const char *id) {
 	if(!id)
 		return NULL;
@@ -24,6 +32,7 @@ kiavc_object *kiavc_object_create(const char *id) {
 	object->res.type = KIAVC_OBJECT;
 	object->res.fade_alpha = 255;
 	object->id = SDL_strdup(id);
+	object->states = kiavc_map_create((kiavc_map_value_destroy)&kiavc_object_state_destroy);
 	/* FIXME */
 	object->interactable = true;
 	object->scale = 1.0;
@@ -34,10 +43,11 @@ kiavc_object *kiavc_object_create(const char *id) {
 	return object;
 }
 
-/* Cursor destructor */
+/* Object destructor */
 void kiavc_object_destroy(kiavc_object *object) {
 	if(object) {
 		SDL_free(object->id);
+		kiavc_map_destroy(object->states);
 		SDL_free(object);
 	}
 }
