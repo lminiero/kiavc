@@ -35,5 +35,5 @@ kiavcRequire('game/objects/skull')
 kiavcRequire('game/actors/detective')
 kiavcRequire('game/actors/npc')
 
--- Load the localization strings
-kiavcRequire('game/localization/text')
+-- Set the language to use for the localization strings
+lang = 'en'
