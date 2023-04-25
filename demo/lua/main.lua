@@ -61,6 +61,11 @@ end)
 onUserInput('F', function()
 	setFullscreen(not getFullscreen(), true)
 end)
+-- As a shortcut, we use L as a way to switch between Englisn and Italian
+onUserInput('L', function()
+	if lang == 'en' then lang = 'it' else lang = 'en' end
+	kiavcLog('Switched localization to \'' .. lang .. '\'')
+end)
 -- Pressing F8 enables the interactive console (ESC disables it)
 onUserInput('F8', showConsole)
 -- Pressing F9 enables or disables the debugging of objects hovering
