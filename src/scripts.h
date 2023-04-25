@@ -7,7 +7,7 @@
  * are exposed here as Lua functions, and bubbled up to the engine via
  * callbacks that just contain the provided data.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

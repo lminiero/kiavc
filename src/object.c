@@ -10,7 +10,7 @@
  * strictly needed, especially if the object is drawn on the background
  * already.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

@@ -2,7 +2,7 @@
  *
  * Hardcoded Kiavc icon.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

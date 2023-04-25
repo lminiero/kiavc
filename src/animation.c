@@ -14,7 +14,7 @@
  * how long each frame should be displayed when rendering the animation.
  * An animation with a single frame is a static image.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

@@ -8,7 +8,7 @@
  * as a workaround. We also keep track of where the cursor is at any
  * given time, and whether it should be displayed or not.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

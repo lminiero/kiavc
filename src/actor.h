@@ -9,7 +9,7 @@
  * related to rendering, like the direction the actor is facing, their
  * coordinates in a room, where they're going, etc.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

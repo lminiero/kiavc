@@ -10,7 +10,7 @@
  * audio tracks automatically when playing (e.g., for background music)
  * or just play them once (e.g., for sound effects).
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

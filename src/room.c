@@ -7,7 +7,7 @@
  * images we may need to render (e.g., background and overlay), plus
  * where the room visual data should be clipped when rendering.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

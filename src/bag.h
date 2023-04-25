@@ -6,7 +6,7 @@
  * body at the end of the archive includes info on how to access them
  * plus some metadata.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

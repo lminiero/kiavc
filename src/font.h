@@ -7,7 +7,7 @@
  * to create textures out of text we need to display somewhere using
  * one of the fonts we registered before.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

@@ -8,7 +8,7 @@
  * different actors can use the same costume if needed (e.g., multiple
  * characters that look the same).
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

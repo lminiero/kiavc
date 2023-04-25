@@ -9,7 +9,7 @@
  * less abstracted, the actual implementation can be replaced in the
  * future, if needed.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

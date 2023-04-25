@@ -6,7 +6,7 @@
  * actual audio and video rendering using SDL. Besides, it interacts
  * with the Lua scripts in both directions.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

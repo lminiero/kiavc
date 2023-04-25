@@ -2,7 +2,7 @@
  *
  * Definition of global and inheritable resources.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

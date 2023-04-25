@@ -2,7 +2,7 @@
  *
  * KIAVC Is an Adventure Videogame Creator (KIAVC).
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

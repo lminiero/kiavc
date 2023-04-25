@@ -4,7 +4,7 @@
  * of an ongoing dialog puzzle, the lines to display, and any opaque
  * metadata related to them when we should report about the selection.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 

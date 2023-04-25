@@ -2,7 +2,7 @@
  *
  * KIAVC utility to extract BAG archives.
  *
- * Author: Lorenzo Miniero (lorenzo@gmail.com)
+ * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
  */
 
