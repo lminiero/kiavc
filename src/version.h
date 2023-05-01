@@ -10,7 +10,7 @@
 #define __KIAVC_VERSION_H
 
 #define KIAVC_VERSION_MAJOR		0
-#define KIAVC_VERSION_MINOR		1
+#define KIAVC_VERSION_MINOR		2
 #define KIAVC_VERSION_PATCH		0
 
 #define KIAVC_VERSION_STRINGIFY_(major, minor, patch) #major "." #minor "." #patch

@@ -6,9 +6,12 @@ kiavc-bag.exe
 kiavc-unbag.exe
 *.d
 *.o
+*.oo
 *.obj
+*.oobj
+*.so
 *.bag
-dll
+*.dll
 /demo/kiavc
 /demo/kiavc.exe
 /demo/lua/engine

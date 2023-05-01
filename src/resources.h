@@ -18,6 +18,7 @@
 #define KIAVC_FONT_TEXT		5
 #define KIAVC_CURSOR		6
 #define KIAVC_DIALOG		7
+#define KIAVC_PLUGIN		8
 
 /* Dynamic renderable resource (rooms and cursors are excluded since
  * there can only be a single instance of each displayed at any time) */
