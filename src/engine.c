@@ -41,6 +41,7 @@ static SDL_Renderer *renderer = NULL;
 static SDL_Texture *canvas = NULL;
 static char *app_path = NULL;
 static bool quit = false;
+static SDL_threadID thread = 0;
 
 /* Window properties */
 static char *kiavc_screen_title = NULL;
@@ -340,9 +341,11 @@ static kiavc_scripts_callbacks scripts_callbacks =
 /* Plugin callbacks */
 static void kiavc_plugins_add_resource(kiavc_plugin_resource *resource);
 static void kiavc_plugins_remove_resource(kiavc_plugin_resource *resource);
+static void kiavc_plugins_run_command(const char *fmt, ...);
 static kiavc_plugin_callbacks plugin_callbacks =
 	{
 		.register_function = kiavc_scripts_register_function,
+		.run_command = kiavc_plugins_run_command,
 		.add_resource = kiavc_plugins_add_resource,
 		.remove_resource = kiavc_plugins_remove_resource,
 	};
@@ -459,6 +462,8 @@ static int kiavc_engine_sort_resources(const kiavc_resource *r1, const kiavc_res
 /* Initialize the engine */
 int kiavc_engine_init(const char *app, kiavc_bag *bagfile) {
 	bag = bagfile;
+	thread = SDL_ThreadID();
+	SDL_Log("Thread ID: %lu\n", thread);
 
 	/* Create maps */
 	animations = kiavc_map_create((kiavc_map_value_destroy)&kiavc_animation_destroy);
@@ -3536,4 +3541,15 @@ static void kiavc_plugins_remove_resource(kiavc_plugin_resource *resource) {
 		return;
 	plugin_resources = kiavc_list_remove(plugin_resources, resource);
 	engine.render_list = kiavc_list_remove(engine.render_list, resource);
+}
+static void kiavc_plugins_run_command(const char *fmt, ...) {
+	if(SDL_ThreadID() != thread) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Lua function not called from the main thread (%lu != %lu): use the update_world() callback for that",
+			SDL_ThreadID(), thread);
+		return;
+	}
+	va_list args;
+	va_start(args, fmt);
+	kiavc_scripts_run_command(fmt, args);
+	va_end(args);
 }
