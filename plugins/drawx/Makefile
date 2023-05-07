@@ -4,8 +4,8 @@ DEPS = `pkg-config --cflags SDL2_image SDL2_mixer SDL2_ttf glib-2.0 lua`
 DEPS_LIBS = `pkg-config --libs SDL2_image SDL2_mixer SDL2_ttf glib-2.0 lua` -lm
 OPTS = -Wall -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wunused #-Werror #-O2
 GDB = -g -ggdb
-ASAN = -O1 -g3 -ggdb3 -fno-omit-frame-pointer -fsanitize=address -fno-sanitize-recover=all -fsanitize-address-use-after-scope
-ASAN_LIBS = -fsanitize=address
+#~ ASAN = -O1 -g3 -ggdb3 -fno-omit-frame-pointer -fsanitize=address -fno-sanitize-recover=all -fsanitize-address-use-after-scope
+#~ ASAN_LIBS = -fsanitize=address
 K_OBJS = src/drawx.o
 
 K_DEPS = $(K_OBJS:.o=.d)
