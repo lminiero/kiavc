@@ -215,7 +215,7 @@ static int kiavc_simplerain_init(kiavc_plugin_callbacks *core) {
 
 static void kiavc_simplerain_destroy(void) {
 	/* This is where you get rid of your plugin resources */
-	SDL_Log("[%s] Plugin initialized\n", KIAVC_SIMPLERAIN_NAME);
+	SDL_Log("[%s] Plugin destroyed\n", KIAVC_SIMPLERAIN_NAME);
 }
 
 static int kiavc_simplerain_get_api_compatibility(void) {

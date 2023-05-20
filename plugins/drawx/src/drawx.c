@@ -8,7 +8,7 @@
  * 		showDiagonals('regular', -100)
  * 		showDiagonals('after', 0)
  * 		showDiagonals('last', 0)
- * 		stopDiagonals()
+ * 		hideDiagonals()
  *
  * Author: Lorenzo Miniero (lminiero@gmail.com)
  *
@@ -145,7 +145,7 @@ static int kiavc_drawx_init(kiavc_plugin_callbacks *core) {
 
 static void kiavc_drawx_destroy(void) {
 	/* This is where you get rid of your plugin resources */
-	SDL_Log("[%s] Plugin initialized\n", KIAVC_DRAWX_NAME);
+	SDL_Log("[%s] Plugin destroyed\n", KIAVC_DRAWX_NAME);
 }
 
 static int kiavc_drawx_get_api_compatibility(void) {

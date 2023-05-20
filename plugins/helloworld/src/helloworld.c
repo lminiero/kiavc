@@ -86,7 +86,7 @@ static int kiavc_helloworld_init(kiavc_plugin_callbacks *core) {
 
 static void kiavc_helloworld_destroy(void) {
 	/* This is where you get rid of your plugin resources */
-	SDL_Log("[%s] Plugin initialized\n", KIAVC_HELLOWORLD_NAME);
+	SDL_Log("[%s] Plugin destroyed\n", KIAVC_HELLOWORLD_NAME);
 }
 
 static int kiavc_helloworld_get_api_compatibility(void) {
