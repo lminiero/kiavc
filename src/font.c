@@ -145,6 +145,10 @@ kiavc_font_text *kiavc_font_render_text(kiavc_font *font, SDL_Renderer *renderer
 				if(!words[index] || line_offset + word_len > line_len) {
 					/* Render the string we came up with so far */
 					s_line = kiavc_font_render_helper(font, renderer, line, color, bg_color, max_width);
+					if(s_line == NULL) {
+						g_list_free_full(surfaces, (GDestroyNotify)SDL_FreeSurface);
+						return NULL;
+					}
 					if(s_width < s_line->w)
 						s_width = s_line->w;
 					s_height += s_line->h;
