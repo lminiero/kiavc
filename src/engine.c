@@ -3524,6 +3524,11 @@ static void kiavc_engine_quit(void) {
 
 /* Plugin callbacks */
 static void kiavc_plugins_add_resource(kiavc_plugin_resource *resource) {
+	if(SDL_ThreadID() != thread) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "add_resource not called from the main thread (%lu != %lu): use the update_world() callback for that",
+			SDL_ThreadID(), thread);
+		return;
+	}
 	if(!resource)
 		return;
 	if(kiavc_list_find(plugin_resources, resource))
@@ -3537,6 +3542,11 @@ static void kiavc_plugins_add_resource(kiavc_plugin_resource *resource) {
 	}
 }
 static void kiavc_plugins_remove_resource(kiavc_plugin_resource *resource) {
+	if(SDL_ThreadID() != thread) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "remove_resource not called from the main thread (%lu != %lu): use the update_world() callback for that",
+			SDL_ThreadID(), thread);
+		return;
+	}
 	if(!resource)
 		return;
 	plugin_resources = kiavc_list_remove(plugin_resources, resource);
