@@ -61,6 +61,7 @@ static kiavc_font *console_font = NULL;
 static char console_text[256];
 static kiavc_font_text *console_rendered = NULL;
 static kiavc_list *console_history = NULL, *console_current = NULL;
+static FILE *console_file = NULL;
 
 /* Visual debugging */
 static bool kiavc_debug_objects = false, kiavc_debug_walkboxes = false;
@@ -827,7 +828,18 @@ int kiavc_engine_handle_input(void) {
 					continue;
 				} else if(e.key.keysym.sym == SDLK_RETURN) {
 					kiavc_scripts_run_command("%s", console_text + 2);
-					console_history = kiavc_list_prepend(console_history, SDL_strdup(console_text + 2));
+					char *line = SDL_strdup(console_text + 2);
+					console_history = kiavc_list_prepend(console_history, line);
+					if(console_file) {
+						/* Also append to the debug history */
+						size_t len = strlen(line), written = fwrite(line, 1, strlen(line), console_file);
+						if(written != len) {
+							SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't write the debug line to history: %s\n",
+								strerror(errno));
+						} else {
+							(void)fwrite("\n", 1, 1, console_file);
+						}
+					}
 					console_current = NULL;
 					*(console_text + 2) = '\0';
 				} else if(e.key.keysym.sym == SDLK_UP) {
@@ -1719,6 +1731,8 @@ void kiavc_engine_destroy(void) {
 	if(kiavc_screen_scanlines_texture)
 		SDL_DestroyTexture(kiavc_screen_scanlines_texture);
 	SDL_free(app_path);
+	if(console_file)
+		fclose(console_file);
 }
 
 /* Scripting callbacks */
@@ -1870,10 +1884,45 @@ static void kiavc_engine_enable_console(const char *font) {
 	SDL_Log("Enabled console with font '%s'\n", font);
 }
 static void kiavc_engine_show_console(void) {
+	if(!console_font) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't show console, console not enabled\n");
+		return;
+	}
 	if(!console_active) {
+		/* If the console history file hasn't been loaded yet, do it now */
+		if(console_file == NULL) {
+			char fullpath[1024];
+			char *filename = "debug-history";
+			g_snprintf(fullpath, sizeof(fullpath)-1, "%s%s", app_path, filename);
+			console_file = fopen(fullpath, "a+");
+			if(console_file == NULL) {
+				SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Error opening '%s': %s\n",
+					fullpath, strerror(errno));
+			} else {
+				/* Import the console history */
+				char *line = NULL;
+				size_t len = 0;
+				ssize_t read = 0;
+				while((read = getline(&line, &len, console_file)) != -1) {
+					if(line && len > 0) {
+						char *end = strchr(line, '\r');
+						if(end)
+							*end = '\0';
+						end = strchr(line, '\n');
+						if(end)
+							*end = '\0';
+						console_history = kiavc_list_prepend(console_history, g_strdup(line));
+					}
+				}
+				if(line)
+					free(line);
+			}
+		}
+		/* Now enable the interactive console */
 		console_active = true;
+		console_current = NULL;
 		SDL_StartTextInput();
-		SDL_snprintf(console_text, sizeof(console_text)-1, "%s", "> -- Console active");
+		SDL_snprintf(console_text, sizeof(console_text)-1, "%s", console_history ? "> " : "> -- Console active");
 		SDL_Color color = { .r = 128, .g = 128, .b = 128, 0 };
 		console_rendered = kiavc_font_render_text(console_font, renderer, console_text, &color,
 			NULL, kiavc_screen_width * kiavc_screen_scale);
@@ -1891,6 +1940,8 @@ static void kiavc_engine_hide_console(void) {
 	}
 }
 static void kiavc_engine_disable_console(void) {
+	if(!console_font)
+		return;
 	SDL_StopTextInput();
 	console_active = FALSE;
 	console_text[0] = '\0';
