@@ -789,7 +789,8 @@ int kiavc_engine_handle_input(void) {
 						SDL_snprintf(console_text+len, sizeof(console_text)-len-1, "%s", e.text.text);
 						kiavc_font_text_destroy(console_rendered);
 						SDL_Color color = { .r = 128, .g = 128, .b = 128, 0 };
-						console_rendered = kiavc_font_render_text(console_font, renderer, console_text, &color, NULL, kiavc_screen_width);
+						console_rendered = kiavc_font_render_text(console_font, renderer, console_text, &color,
+							NULL, kiavc_screen_width * kiavc_screen_scale);
 					}
 				}
 			}
