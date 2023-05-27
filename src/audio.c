@@ -168,9 +168,9 @@ void kiavc_audio_destroy(kiavc_audio *track) {
 			SDL_snprintf(channel_str, sizeof(channel_str)-1, "%d", track->channel);
 			kiavc_map_remove(tracks_by_channel, channel_str);
 		}
+		kiavc_audio_unload(track);
 		SDL_free(track->id);
 		SDL_free(track->path);
-		kiavc_audio_unload(track);
 		SDL_free(track);
 	}
 	SDL_UnlockMutex(mutex);
