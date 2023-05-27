@@ -133,108 +133,108 @@ typedef struct kiavc_engine {
 static kiavc_engine engine = { 0 };
 
 /* Scripting callbacks */
-static void kiavc_engine_set_resolution(int width, int height, int fps, int scale);
-static void kiavc_engine_set_title(const char *title);
-static void kiavc_engine_set_icon(const char *path);
-static void kiavc_engine_grab_mouse(bool grab);
+static bool kiavc_engine_set_resolution(int width, int height, int fps, int scale);
+static bool kiavc_engine_set_title(const char *title);
+static bool kiavc_engine_set_icon(const char *path);
+static bool kiavc_engine_grab_mouse(bool grab);
 static bool kiavc_engine_is_grabbing_mouse(void);
-static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop);
+static bool kiavc_engine_set_fullscreen(bool fullscreen, bool desktop);
 static bool kiavc_engine_get_fullscreen(void);
-static void kiavc_engine_set_scanlines(int alpha);
+static bool kiavc_engine_set_scanlines(int alpha);
 static int kiavc_engine_get_scanlines(void);
-static void kiavc_engine_debug_objects(bool debug);
+static bool kiavc_engine_debug_objects(bool debug);
 static bool kiavc_engine_is_debugging_objects(void);
-static void kiavc_engine_debug_walkboxes(bool debug);
+static bool kiavc_engine_debug_walkboxes(bool debug);
 static bool kiavc_engine_is_debugging_walkboxes(void);
-static void kiavc_engine_save_screenshot(const char *path);
-static void kiavc_engine_enable_console(const char *font);
-static void kiavc_engine_show_console(void);
-static void kiavc_engine_hide_console(void);
-static void kiavc_engine_disable_console(void);
+static bool kiavc_engine_save_screenshot(const char *path);
+static bool kiavc_engine_enable_console(const char *font);
+static bool kiavc_engine_show_console(void);
+static bool kiavc_engine_hide_console(void);
+static bool kiavc_engine_disable_console(void);
 static bool kiavc_engine_is_console_enabled(void);
 static bool kiavc_engine_is_console_visible(void);
-static void kiavc_engine_enable_input(void);
-static void kiavc_engine_disable_input(void);
+static bool kiavc_engine_enable_input(void);
+static bool kiavc_engine_disable_input(void);
 static bool kiavc_engine_is_input_enabled(void);
-static void kiavc_engine_start_cutscene(void);
-static void kiavc_engine_stop_cutscene(void);
-static void kiavc_engine_fade_in(int ms);
-static void kiavc_engine_fade_out(int ms);
-static void kiavc_engine_start_dialog(const char *id, const char *font, SDL_Color *color, SDL_Color *outline,
+static bool kiavc_engine_start_cutscene(void);
+static bool kiavc_engine_stop_cutscene(void);
+static bool kiavc_engine_fade_in(int ms);
+static bool kiavc_engine_fade_out(int ms);
+static bool kiavc_engine_start_dialog(const char *id, const char *font, SDL_Color *color, SDL_Color *outline,
 	SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area, bool autohide);
-static void kiavc_engine_add_dialog_line(const char *id, const char *name, const char *text);
-static void kiavc_engine_stop_dialog(const char *id);
-static void kiavc_engine_register_animation(const char *id, const char *path, int ms, int frames, SDL_Color *transparency);
-static void kiavc_engine_register_font(const char *id, const char *path, int size);
-static void kiavc_engine_register_cursor(const char *id);
-static void kiavc_engine_set_cursor_animation(const char *id, const char *canim);
-static void kiavc_engine_set_main_cursor(const char *id);
-static void kiavc_engine_set_hotspot_cursor(const char *id);
-static void kiavc_engine_show_cursor(void);
-static void kiavc_engine_hide_cursor(void);
-static void kiavc_engine_show_cursor_text(const char *font, const char *text, SDL_Color *color, SDL_Color *outline);
-static void kiavc_engine_hide_cursor_text(void);
-static void kiavc_engine_register_audio(const char *id, const char *path);
-static void kiavc_engine_play_audio(const char *id, int fade_ms, bool loop);
-static void kiavc_engine_pause_audio(const char *id);
-static void kiavc_engine_resume_audio(const char *id);
-static void kiavc_engine_stop_audio(const char *id, int fade_ms);
-static void kiavc_engine_register_room(const char *id);
-static void kiavc_engine_set_room_background(const char *id, const char *bg);
-static void kiavc_engine_add_room_layer(const char *id, const char *name, const char *bg, int zplane);
-static void kiavc_engine_remove_room_layer(const char *id, const char *name);
-static void kiavc_engine_add_room_walkbox(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, float speed, bool disabled);
-static void kiavc_engine_enable_room_walkbox(const char *id, const char *name);
-static void kiavc_engine_disable_room_walkbox(const char *id, const char *name);
-static void kiavc_engine_recalculate_room_walkboxes(const char *id);
-static void kiavc_engine_show_room(const char *id);
-static void kiavc_engine_register_actor(const char *id);
-static void kiavc_engine_set_actor_costume(const char *id, const char *cost);
-static void kiavc_engine_move_actor_to(const char *id, const char *room, int x, int y);
-static void kiavc_engine_show_actor(const char *id);
-static void kiavc_engine_follow_actor(const char *id);
-static void kiavc_engine_hide_actor(const char *id);
-static void kiavc_engine_fade_actor_to(const char *id, int alpha, int ms);
-static void kiavc_engine_set_actor_alpha(const char *id, int alpha);
-static void kiavc_engine_set_actor_plane(const char *id, int zplane);
-static void kiavc_engine_set_actor_speed(const char *id, int speed);
-static void kiavc_engine_scale_actor(const char *id, float scale);
-static void kiavc_engine_walk_actor_to(const char *id, int x, int y);
-static void kiavc_engine_say_actor(const char *id, const char *text, const char *font, SDL_Color *color, SDL_Color *outline);
-static void kiavc_engine_set_actor_direction(const char *id, const char *direction);
-static void kiavc_engine_controlled_actor(const char *id);
-static void kiavc_engine_skip_actors_text(void);
-static void kiavc_engine_set_actor_state(const char *id, const char *type);
-static void kiavc_engine_register_costume(const char *id);
-static void kiavc_engine_set_costume_animation(const char *id, const char *type, const char *direction, const char *canim);
-static void kiavc_engine_register_object(const char *id);
-static void kiavc_engine_set_object_animation(const char *id, const char *state, const char *canim);
-static void kiavc_engine_set_object_interactable(const char *id, bool interactable);
-static void kiavc_engine_set_object_ui(const char *id, bool ui);
-static void kiavc_engine_set_object_ui_position(const char *id, int x, int y);
-static void kiavc_engine_set_object_ui_animation(const char *id, const char *canim);
-static void kiavc_engine_set_object_parent(const char *id, const char *parent);
-static void kiavc_engine_remove_object_parent(const char *id);
-static void kiavc_engine_move_object_to(const char *id, const char *room, int x, int y);
-static void kiavc_engine_float_object_to(const char *id, int x, int y, int speed);
-static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y);
-static void kiavc_engine_show_object(const char *id);
-static void kiavc_engine_hide_object(const char *id);
-static void kiavc_engine_fade_object_to(const char *id, int alpha, int ms);
-static void kiavc_engine_set_object_alpha(const char *id, int alpha);
-static void kiavc_engine_set_object_plane(const char *id, int zplane);
-static void kiavc_engine_set_object_state(const char *id, const char *state);
-static void kiavc_engine_scale_object(const char *id, float scale);
-static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
-static void kiavc_engine_remove_object_from_inventory(const char *id, const char *owner);
-static void kiavc_engine_show_text(const char *id, const char *text, const char *font,
+static bool kiavc_engine_add_dialog_line(const char *id, const char *name, const char *text);
+static bool kiavc_engine_stop_dialog(const char *id);
+static bool kiavc_engine_register_animation(const char *id, const char *path, int ms, int frames, SDL_Color *transparency);
+static bool kiavc_engine_register_font(const char *id, const char *path, int size);
+static bool kiavc_engine_register_cursor(const char *id);
+static bool kiavc_engine_set_cursor_animation(const char *id, const char *canim);
+static bool kiavc_engine_set_main_cursor(const char *id);
+static bool kiavc_engine_set_hotspot_cursor(const char *id);
+static bool kiavc_engine_show_cursor(void);
+static bool kiavc_engine_hide_cursor(void);
+static bool kiavc_engine_show_cursor_text(const char *font, const char *text, SDL_Color *color, SDL_Color *outline);
+static bool kiavc_engine_hide_cursor_text(void);
+static bool kiavc_engine_register_audio(const char *id, const char *path);
+static bool kiavc_engine_play_audio(const char *id, int fade_ms, bool loop);
+static bool kiavc_engine_pause_audio(const char *id);
+static bool kiavc_engine_resume_audio(const char *id);
+static bool kiavc_engine_stop_audio(const char *id, int fade_ms);
+static bool kiavc_engine_register_room(const char *id);
+static bool kiavc_engine_set_room_background(const char *id, const char *bg);
+static bool kiavc_engine_add_room_layer(const char *id, const char *name, const char *bg, int zplane);
+static bool kiavc_engine_remove_room_layer(const char *id, const char *name);
+static bool kiavc_engine_add_room_walkbox(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, float speed, bool disabled);
+static bool kiavc_engine_enable_room_walkbox(const char *id, const char *name);
+static bool kiavc_engine_disable_room_walkbox(const char *id, const char *name);
+static bool kiavc_engine_recalculate_room_walkboxes(const char *id);
+static bool kiavc_engine_show_room(const char *id);
+static bool kiavc_engine_register_actor(const char *id);
+static bool kiavc_engine_set_actor_costume(const char *id, const char *cost);
+static bool kiavc_engine_move_actor_to(const char *id, const char *room, int x, int y);
+static bool kiavc_engine_show_actor(const char *id);
+static bool kiavc_engine_follow_actor(const char *id);
+static bool kiavc_engine_hide_actor(const char *id);
+static bool kiavc_engine_fade_actor_to(const char *id, int alpha, int ms);
+static bool kiavc_engine_set_actor_alpha(const char *id, int alpha);
+static bool kiavc_engine_set_actor_plane(const char *id, int zplane);
+static bool kiavc_engine_set_actor_speed(const char *id, int speed);
+static bool kiavc_engine_scale_actor(const char *id, float scale);
+static bool kiavc_engine_walk_actor_to(const char *id, int x, int y);
+static bool kiavc_engine_say_actor(const char *id, const char *text, const char *font, SDL_Color *color, SDL_Color *outline);
+static bool kiavc_engine_set_actor_direction(const char *id, const char *direction);
+static bool kiavc_engine_controlled_actor(const char *id);
+static bool kiavc_engine_skip_actors_text(void);
+static bool kiavc_engine_set_actor_state(const char *id, const char *type);
+static bool kiavc_engine_register_costume(const char *id);
+static bool kiavc_engine_set_costume_animation(const char *id, const char *type, const char *direction, const char *canim);
+static bool kiavc_engine_register_object(const char *id);
+static bool kiavc_engine_set_object_animation(const char *id, const char *state, const char *canim);
+static bool kiavc_engine_set_object_interactable(const char *id, bool interactable);
+static bool kiavc_engine_set_object_ui(const char *id, bool ui);
+static bool kiavc_engine_set_object_ui_position(const char *id, int x, int y);
+static bool kiavc_engine_set_object_ui_animation(const char *id, const char *canim);
+static bool kiavc_engine_set_object_parent(const char *id, const char *parent);
+static bool kiavc_engine_remove_object_parent(const char *id);
+static bool kiavc_engine_move_object_to(const char *id, const char *room, int x, int y);
+static bool kiavc_engine_float_object_to(const char *id, int x, int y, int speed);
+static bool kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y);
+static bool kiavc_engine_show_object(const char *id);
+static bool kiavc_engine_hide_object(const char *id);
+static bool kiavc_engine_fade_object_to(const char *id, int alpha, int ms);
+static bool kiavc_engine_set_object_alpha(const char *id, int alpha);
+static bool kiavc_engine_set_object_plane(const char *id, int zplane);
+static bool kiavc_engine_set_object_state(const char *id, const char *state);
+static bool kiavc_engine_scale_object(const char *id, float scale);
+static bool kiavc_engine_add_object_to_inventory(const char *id, const char *owner);
+static bool kiavc_engine_remove_object_from_inventory(const char *id, const char *owner);
+static bool kiavc_engine_show_text(const char *id, const char *text, const char *font,
 	SDL_Color *color, SDL_Color *outline, int x, int y, int alpha, bool absolute, int zplane, Uint32 ms);
-static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed);
-static void kiavc_engine_fade_text_to(const char *id, int alpha, int ms);
-static void kiavc_engine_set_text_alpha(const char *id, int alpha);
-static void kiavc_engine_remove_text(const char *id);
-static void kiavc_engine_load_plugin(const char *name);
-static void kiavc_engine_quit(void);
+static bool kiavc_engine_float_text_to(const char *id, int x, int y, int speed);
+static bool kiavc_engine_fade_text_to(const char *id, int alpha, int ms);
+static bool kiavc_engine_set_text_alpha(const char *id, int alpha);
+static bool kiavc_engine_remove_text(const char *id);
+static bool kiavc_engine_load_plugin(const char *name);
+static bool kiavc_engine_quit(void);
 static kiavc_scripts_callbacks scripts_callbacks =
 	{
 		.set_resolution = kiavc_engine_set_resolution,
@@ -1736,10 +1736,10 @@ void kiavc_engine_destroy(void) {
 }
 
 /* Scripting callbacks */
-static void kiavc_engine_set_resolution(int width, int height, int fps, int scale) {
+static bool kiavc_engine_set_resolution(int width, int height, int fps, int scale) {
 	if(width < 1 || height < 1 || fps < 1 || scale < 1) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid resolution: %dx%d @ %d (scale: %d)\n", width, height, fps, scale);
-		return;
+		return false;
 	}
 	bool changed = (kiavc_screen_width != width || kiavc_screen_height != height || kiavc_screen_scale != scale);
 	kiavc_screen_width = width;
@@ -1756,18 +1756,20 @@ static void kiavc_engine_set_resolution(int width, int height, int fps, int scal
 		}
 		SDL_SetWindowSize(window, kiavc_screen_width * kiavc_screen_scale, kiavc_screen_height * kiavc_screen_scale);
 	}
+	return true;
 }
-static void kiavc_engine_set_title(const char *title) {
+static bool kiavc_engine_set_title(const char *title) {
 	if(!title)
-		return;
+		return false;
 	SDL_free(kiavc_screen_title);
 	kiavc_screen_title = SDL_strdup(title);
 	if(window)
 		SDL_SetWindowTitle(window, kiavc_screen_title);
+	return true;
 }
-static void kiavc_engine_set_icon(const char *path) {
+static bool kiavc_engine_set_icon(const char *path) {
 	if(!path)
-		return;	/* Been here already */
+		return false;
 	SDL_free(kiavc_screen_icon);
 	kiavc_screen_icon = SDL_strdup(path);
 	if(window) {
@@ -1776,16 +1778,17 @@ static void kiavc_engine_set_icon(const char *path) {
 		SDL_Surface *icon = IMG_Load_RW(icon_rw, 1);
 		if(!icon) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load icon '%s'\n", path);
-			return;
+			return false;
 		}
 		SDL_SetWindowIcon(window, icon);
 		SDL_FreeSurface(icon);
 	}
+	return true;
 }
-static void kiavc_engine_grab_mouse(bool grab) {
+static bool kiavc_engine_grab_mouse(bool grab) {
 	if(kiavc_screen_grab_mouse == grab) {
 		/* Nothing to do */
-		return;
+		return true;
 	}
 	kiavc_screen_grab_mouse = grab;
 	if(window)
@@ -1795,73 +1798,78 @@ static void kiavc_engine_grab_mouse(bool grab) {
 		SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SDL_SetWindowMouseGrab not available\n");
 #endif
 	SDL_Log("%s mouse grabbing\n", kiavc_screen_grab_mouse ? "Enabling" : "Disabling");
+	return true;
 }
 static bool kiavc_engine_is_grabbing_mouse(void) {
 	return kiavc_screen_grab_mouse;
 }
-static void kiavc_engine_set_fullscreen(bool fullscreen, bool desktop) {
+static bool kiavc_engine_set_fullscreen(bool fullscreen, bool desktop) {
 	if(kiavc_screen_fullscreen == fullscreen) {
 		/* Nothing to do */
-		return;
+		return true;
 	}
 	kiavc_screen_fullscreen = fullscreen;
 	kiavc_screen_fullscreen_desktop = desktop;
 	kiavc_engine_trigger_fullscreen();
 	SDL_Log("%s full-screen\n", kiavc_screen_fullscreen ? "Enabling" : "Disabling");
+	return true;
 }
 static bool kiavc_engine_get_fullscreen(void) {
 	return kiavc_screen_fullscreen;
 }
-static void kiavc_engine_set_scanlines(int alpha) {
+static bool kiavc_engine_set_scanlines(int alpha) {
 	if(alpha > 255)
 		alpha = 255;
 	else if(alpha < 0)
 		alpha = 0;
 	if(kiavc_screen_scanlines == alpha) {
 		/* Nothing to do */
-		return;
+		return true;
 	}
 	kiavc_screen_scanlines = alpha;
 	kiavc_engine_regenerate_scanlines();
 	SDL_Log("%s scanlines (%d alpha)\n", kiavc_screen_scanlines ? "Enabling" : "Disabling", kiavc_screen_scanlines);
+	return true;
 }
 static int kiavc_engine_get_scanlines(void) {
 	return kiavc_screen_scanlines;
 }
-static void kiavc_engine_debug_objects(bool debug) {
+static bool kiavc_engine_debug_objects(bool debug) {
 	if(kiavc_debug_objects == debug) {
 		/* Nothing to do */
-		return;
+		return true;
 	}
 	kiavc_debug_objects = debug;
 	SDL_Log("%s objects debugging\n", kiavc_debug_objects ? "Enabling" : "Disabling");
+	return true;
 }
 static bool kiavc_engine_is_debugging_objects(void) {
 	return kiavc_debug_objects;
 }
-static void kiavc_engine_debug_walkboxes(bool debug) {
+static bool kiavc_engine_debug_walkboxes(bool debug) {
 	if(kiavc_debug_walkboxes == debug) {
 		/* Nothing to do */
-		return;
+		return true;
 	}
 	kiavc_debug_walkboxes = debug;
 	SDL_Log("%s walkboxes debugging\n", kiavc_debug_walkboxes ? "Enabling" : "Disabling");
+	return true;
 }
 static bool kiavc_engine_is_debugging_walkboxes(void) {
 	return kiavc_debug_walkboxes;
 }
-static void kiavc_engine_save_screenshot(const char *filename) {
+static bool kiavc_engine_save_screenshot(const char *filename) {
 	if(!filename)
-		return;
+		return false;
 	SDL_Surface *screenshot = kiavc_create_surface(
 		kiavc_screen_width * kiavc_screen_scale,
 		kiavc_screen_height * kiavc_screen_scale);
 	if(!screenshot)
-		return;
+		return false;
 	if(SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_RGBA8888, screenshot->pixels, screenshot->pitch) < 0) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error reading rendered pixels: %s\n", SDL_GetError());
 		SDL_FreeSurface(screenshot);
-		return;
+		return false;
 	}
 	char fullpath[1024];
 	g_snprintf(fullpath, sizeof(fullpath)-1, "%s%s", app_path, filename);
@@ -1871,22 +1879,24 @@ static void kiavc_engine_save_screenshot(const char *filename) {
 		SDL_Log("Saved screenshot to '%s'\n", fullpath);
 	}
 	SDL_FreeSurface(screenshot);
+	return true;
 }
-static void kiavc_engine_enable_console(const char *font) {
+static bool kiavc_engine_enable_console(const char *font) {
 	if(!font)
-		return;
+		return false;
 	kiavc_font *f = kiavc_map_lookup(fonts, font);
 	if(!f) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't enable console, no such font '%s'\n", font);
-		return;
+		return false;
 	}
 	console_font = f;
 	SDL_Log("Enabled console with font '%s'\n", font);
+	return true;
 }
-static void kiavc_engine_show_console(void) {
+static bool kiavc_engine_show_console(void) {
 	if(!console_font) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't show console, console not enabled\n");
-		return;
+		return false;
 	}
 	if(!console_active) {
 		/* If the console history file hasn't been loaded yet, do it now */
@@ -1928,8 +1938,9 @@ static void kiavc_engine_show_console(void) {
 			NULL, kiavc_screen_width * kiavc_screen_scale);
 		SDL_Log("Showing console\n");
 	}
+	return true;
 }
-static void kiavc_engine_hide_console(void) {
+static bool kiavc_engine_hide_console(void) {
 	if(console_active) {
 		SDL_StopTextInput();
 		console_active = FALSE;
@@ -1938,10 +1949,11 @@ static void kiavc_engine_hide_console(void) {
 		console_rendered = NULL;
 		SDL_Log("Hidden console\n");
 	}
+	return true;
 }
-static void kiavc_engine_disable_console(void) {
+static bool kiavc_engine_disable_console(void) {
 	if(!console_font)
-		return;
+		return false;
 	SDL_StopTextInput();
 	console_active = FALSE;
 	console_text[0] = '\0';
@@ -1949,6 +1961,7 @@ static void kiavc_engine_disable_console(void) {
 	console_rendered = NULL;
 	console_font = NULL;
 	SDL_Log("Disabled console\n");
+	return true;
 }
 static bool kiavc_engine_is_console_enabled(void) {
 	return !!console_font;
@@ -1956,65 +1969,71 @@ static bool kiavc_engine_is_console_enabled(void) {
 static bool kiavc_engine_is_console_visible(void) {
 	return !!console_font && console_active;
 }
-static void kiavc_engine_enable_input(void) {
+static bool kiavc_engine_enable_input(void) {
 	if(engine.input_disabled) {
 		SDL_Log("Enabling user input\n");
 		engine.input_disabled = false;
 		kiavc_engine_check_hovering();
 	}
+	return true;
 }
-static void kiavc_engine_disable_input(void) {
+static bool kiavc_engine_disable_input(void) {
 	if(!engine.input_disabled) {
 		SDL_Log("Disabling user input\n");
 		engine.input_disabled = true;
 		kiavc_engine_hide_cursor_text();
 		kiavc_engine_check_hovering();
 	}
+	return true;
 }
 static bool kiavc_engine_is_input_enabled(void) {
 	return !engine.input_disabled;
 }
-static void kiavc_engine_start_cutscene(void) {
+static bool kiavc_engine_start_cutscene(void) {
 	if(!engine.cutscene) {
 		SDL_Log("Starting cutscene\n");
 		engine.cutscene = true;
 		kiavc_engine_hide_cursor_text();
 		kiavc_engine_check_hovering();
 	}
+	return true;
 }
-static void kiavc_engine_stop_cutscene(void) {
+static bool kiavc_engine_stop_cutscene(void) {
 	if(engine.cutscene) {
 		SDL_Log("Stopping cutscene\n");
 		engine.cutscene = false;
 		kiavc_engine_check_hovering();
 	}
+	return true;
 }
-static void kiavc_engine_fade_in(int ms) {
+static bool kiavc_engine_fade_in(int ms) {
 	if(ms < 1)
-		return;
+		return false;
 	if(engine.fade_in || engine.fade_out) {
 		/* Already fading */
-		return;
+		return false;
 	}
 	engine.fade_in = ms;
 	engine.fade_ticks = 0;
 	SDL_Log("Fading in (%d ms)", ms);
+	return true;
 }
-static void kiavc_engine_fade_out(int ms) {
+static bool kiavc_engine_fade_out(int ms) {
 	if(ms < 1)
-		return;
+		return false;
 	if(engine.fade_in || engine.fade_out) {
 		/* Already fading */
-		return;
+		return false;
 	}
 	engine.fade_out = ms;
 	engine.fade_ticks = 0;
 	SDL_Log("Fading out (%d ms)", ms);
+	return true;
 }
-static void kiavc_engine_start_dialog(const char *id, const char *fid, SDL_Color *color, SDL_Color *outline,
+static bool kiavc_engine_start_dialog(const char *id, const char *fid, SDL_Color *color, SDL_Color *outline,
 		SDL_Color *s_color, SDL_Color *s_outline, SDL_Color *background, SDL_Rect *area, bool autohide) {
 	if(!id || !fid || !color || !s_color || !area || !background)
-		return;
+		return false;
 	/* Get the dialog */
 	kiavc_dialog *dialog = kiavc_map_lookup(dialogs, id);
 	if(!dialog) {
@@ -2025,13 +2044,13 @@ static void kiavc_engine_start_dialog(const char *id, const char *fid, SDL_Color
 	if(dialog->active) {
 		/* Dialog already active */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't start dialog, dialog '%s' is already active\n", id);
-		return;
+		return false;
 	}
 	kiavc_font *font = kiavc_map_lookup(fonts, fid);
 	if(!font) {
 		/* No font */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't start dialog, no such font '%s'\n", fid);
-		return;
+		return false;
 	}
 	dialog->active = true;
 	dialog->renderer = renderer;
@@ -2054,43 +2073,45 @@ static void kiavc_engine_start_dialog(const char *id, const char *fid, SDL_Color
 	/* Done */
 	engine.dialog = dialog;
 	SDL_Log("Started dialog '%s'\n", id);
+	return true;
 }
-static void kiavc_engine_add_dialog_line(const char *id, const char *name, const char *text) {
+static bool kiavc_engine_add_dialog_line(const char *id, const char *name, const char *text) {
 	if(!id || !name || !text)
-		return;
+		return false;
 	/* Get the dialog */
 	kiavc_dialog *dialog = kiavc_map_lookup(dialogs, id);
 	if(!dialog) {
 		/* No dialog session */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add dialog line, no such dialog '%s'\n", id);
-		return;
+		return false;
 	}
 	if(!dialog->active || engine.dialog != dialog) {
 		/* Not an active dialog session */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add dialog line, dialog '%s' is not running\n", id);
-		return;
+		return false;
 	}
 	kiavc_dialog_line *line = kiavc_dialog_add_line(dialog, name, text);
 	if(line == NULL) {
 		/* Something went wrong */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error adding dialog line to dialog '%s'\n", id);
-		return;
+		return false;
 	}
 	bool selected = (line == dialog->selected);
 	engine.render_list = kiavc_list_append(engine.render_list, selected ? line->selected : line->text);
 	kiavc_engine_check_hovering();
 	/* Done */
 	SDL_Log("Added dialog line to '%s' (%s)\n", id, name);
+	return true;
 }
-static void kiavc_engine_stop_dialog(const char *id) {
+static bool kiavc_engine_stop_dialog(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the dialog */
 	kiavc_dialog *dialog = kiavc_map_lookup(dialogs, id);
 	if(!dialog) {
 		/* No dialog session */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't stop dialog, no such dialog '%s'\n", id);
-		return;
+		return false;
 	}
 	dialog->active = false;
 	/* Get rid of the dialog lines */
@@ -2108,84 +2129,89 @@ static void kiavc_engine_stop_dialog(const char *id) {
 	/* Done */
 	engine.dialog = NULL;
 	SDL_Log("Stopped dialog '%s'\n", id);
+	return true;
 }
-static void kiavc_engine_register_animation(const char *id, const char *path, int frames, int ms, SDL_Color *transparency) {
+static bool kiavc_engine_register_animation(const char *id, const char *path, int frames, int ms, SDL_Color *transparency) {
 	if(!id || !path || frames < 1)
-		return;
+		return false;
 	/* Check if this animation ID exists already */
 	kiavc_animation *anim = kiavc_map_lookup(animations, id);
 	if(anim) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot register new animation with ID '%s', it already exists\n", id);
-		return;
+		return false;
 	}
 	/* Create a new animation instance and add it to the map */
 	anim = kiavc_animation_create(id, path, frames, ms, transparency);
 	kiavc_map_insert(animations, anim->id, anim);
 	/* Done */
 	SDL_Log("Registered %d-frames animation '%s' (%s)\n", frames, anim->id, anim->path);
+	return true;
 }
-static void kiavc_engine_register_font(const char *id, const char *path, int size) {
+static bool kiavc_engine_register_font(const char *id, const char *path, int size) {
 	if(!id || !path || size < 1)
-		return;
+		return false;
 	/* Check if this font ID exists already */
 	kiavc_font *font = kiavc_map_lookup(fonts, id);
 	if(font) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot register new font with ID '%s', it already exists\n", id);
-		return;
+		return false;
 	}
 	/* Create a new font instance and add it to the map */
 	font = kiavc_font_create(id, path, size);
 	kiavc_map_insert(fonts, font->id, font);
 	/* Done */
 	SDL_Log("Registered font '%s'\n", font->id);
+	return true;
 }
-static void kiavc_engine_register_cursor(const char *id) {
+static bool kiavc_engine_register_cursor(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Check if this cursor ID exists already */
 	kiavc_cursor *cursor = kiavc_map_lookup(cursors, id);
 	if(cursor) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot register new cursor with ID '%s', it already exists\n", id);
-		return;
+		return false;
 	}
 	/* Create a new cursor instance and add it to the map */
 	cursor = kiavc_cursor_create(id);
 	kiavc_map_insert(cursors, cursor->id, cursor);
 	/* Done */
 	SDL_Log("Registered cursor '%s'\n", cursor->id);
+	return true;
 }
-static void kiavc_engine_set_cursor_animation(const char *id, const char *canim) {
+static bool kiavc_engine_set_cursor_animation(const char *id, const char *canim) {
 	if(!id || !canim)
-		return;
+		return false;
 	/* Access cursor and animation from the respective maps */
 	kiavc_cursor *cursor = kiavc_map_lookup(cursors, id);
 	if(!cursor) {
 		/* No such cursor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set cursor animation, no such cursor '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_animation *anim = kiavc_map_lookup(animations, canim);
 	if(!anim) {
 		/* No such animation */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set animation for cursor '%s', no such animation '%s'\n", id, canim);
-		return;
+		return false;
 	}
 	/* Done */
 	cursor->animation = anim;
 	SDL_Log("Set animation of cursor '%s' to '%s'\n", cursor->id, anim->id);
+	return true;
 }
-static void kiavc_engine_set_main_cursor(const char *id) {
+static bool kiavc_engine_set_main_cursor(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the cursor */
 	kiavc_cursor *cursor = kiavc_map_lookup(cursors, id);
 	if(!cursor) {
 		/* No such cursor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set main cursor, no such cursor '%s'\n", id);
-		return;
+		return false;
 	}
 	/* If we're showing a different cursor, hide that one first */
 	if(cursor->animation) {
@@ -2198,16 +2224,17 @@ static void kiavc_engine_set_main_cursor(const char *id) {
 	engine.main_cursor->res.ticks = 0;
 	/* Done */
 	SDL_Log("Set main cursor '%s'\n", cursor->id);
+	return true;
 }
-static void kiavc_engine_set_hotspot_cursor(const char *id) {
+static bool kiavc_engine_set_hotspot_cursor(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the cursor */
 	kiavc_cursor *cursor = kiavc_map_lookup(cursors, id);
 	if(!cursor) {
 		/* No such cursor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set hotspot cursor, no such cursor '%s'\n", id);
-		return;
+		return false;
 	}
 	/* If we're showing a different cursor, hide that one first */
 	if(cursor->animation) {
@@ -2220,25 +2247,28 @@ static void kiavc_engine_set_hotspot_cursor(const char *id) {
 	engine.hotspot_cursor->res.ticks = 0;
 	/* Done */
 	SDL_Log("Set hotspot cursor '%s'\n", cursor->id);
+	return true;
 }
-static void kiavc_engine_show_cursor(void) {
+static bool kiavc_engine_show_cursor(void) {
 	engine.cursor_visible = true;
 	/* Done */
 	SDL_Log("Shown cursor\n");
+	return true;
 }
-static void kiavc_engine_hide_cursor(void) {
+static bool kiavc_engine_hide_cursor(void) {
 	engine.cursor_visible = false;
 	/* Done */
 	SDL_Log("Hidden cursor\n");
+	return true;
 }
-static void kiavc_engine_show_cursor_text(const char *fid, const char *text, SDL_Color *color, SDL_Color *outline) {
+static bool kiavc_engine_show_cursor_text(const char *fid, const char *text, SDL_Color *color, SDL_Color *outline) {
 	if(!fid || !text || !color)
-		return;
+		return false;
 	kiavc_font *font = kiavc_map_lookup(fonts, fid);
 	if(!font) {
 		/* No font */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't show cursor text, no such font '%s'\n", fid);
-		return;
+		return false;
 	}
 	/* Create a line of text */
 	if(engine.cursor_text) {
@@ -2247,13 +2277,14 @@ static void kiavc_engine_show_cursor_text(const char *fid, const char *text, SDL
 	}
 	engine.cursor_text = kiavc_font_render_text(font, renderer, text, color, outline, kiavc_screen_width);
 	if(engine.cursor_text == NULL)
-		return;
+		return false;
 	engine.cursor_text->owner_type = KIAVC_CURSOR;
 	engine.render_list = kiavc_list_insert_sorted(engine.render_list, engine.cursor_text, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
 	SDL_Log("Added cursor text\n");
+	return true;
 }
-static void kiavc_engine_hide_cursor_text(void) {
+static bool kiavc_engine_hide_cursor_text(void) {
 	if(engine.cursor_text) {
 		engine.render_list = kiavc_list_remove(engine.render_list, engine.cursor_text);
 		kiavc_font_text_destroy(engine.cursor_text);
@@ -2261,110 +2292,117 @@ static void kiavc_engine_hide_cursor_text(void) {
 	engine.cursor_text = NULL;
 	/* Done */
 	SDL_Log("Hidden cursor text\n");
+	return true;
 }
-static void kiavc_engine_register_audio(const char *id, const char *path) {
+static bool kiavc_engine_register_audio(const char *id, const char *path) {
 	if(!id || !path)
-		return;
+		return false;
 	/* Check if this audio track ID exists already */
 	kiavc_audio *audio = kiavc_map_lookup(audios, id);
 	if(audio) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot register new audio track with ID '%s', it already exists\n", id);
-		return;
+		return false;
 	}
 	/* Create a new audio instance and add it to the map */
 	audio = kiavc_audio_create(id, path);
 	kiavc_map_insert(audios, audio->id, audio);
 	/* Done */
 	SDL_Log("Registered audio track '%s'\n", audio->id);
+	return true;
 }
-static void kiavc_engine_play_audio(const char *id, int fade_ms, bool loop) {
+static bool kiavc_engine_play_audio(const char *id, int fade_ms, bool loop) {
 	if(!id || fade_ms < 0)
-		return;
+		return false;
 	/* Access audio track from the map */
 	kiavc_audio *audio = kiavc_map_lookup(audios, id);
 	if(!audio) {
 		/* No such audio track */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't play audio, no such audio track '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_audio_play(audio, fade_ms, loop);
 	/* Done */
 	SDL_Log("%s audio track '%s'\n", (fade_ms ? "Fading in" : "Playing"), audio->id);
+	return true;
 }
-static void kiavc_engine_pause_audio(const char *id) {
+static bool kiavc_engine_pause_audio(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Access audio track from the map */
 	kiavc_audio *audio = kiavc_map_lookup(audios, id);
 	if(!audio) {
 		/* No such audio track */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't pause audio, no such audio track '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_audio_pause(audio);
 	/* Done */
 	SDL_Log("Paused audio track '%s'\n", audio->id);
+	return true;
 }
-static void kiavc_engine_resume_audio(const char *id) {
+static bool kiavc_engine_resume_audio(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Access audio track from the map */
 	kiavc_audio *audio = kiavc_map_lookup(audios, id);
 	if(!audio) {
 		/* No such audio track */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't resume audio, no such audio track '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_audio_resume(audio);
 	/* Done */
 	SDL_Log("Resumed audio track '%s'\n", audio->id);
+	return true;
 }
-static void kiavc_engine_stop_audio(const char *id, int fade_ms) {
+static bool kiavc_engine_stop_audio(const char *id, int fade_ms) {
 	if(!id || fade_ms < 0)
-		return;
+		return false;
 	/* Access audio track from the map */
 	kiavc_audio *audio = kiavc_map_lookup(audios, id);
 	if(!audio) {
 		/* No such audio track */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't stop audio, no such audio track '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_audio_stop(audio, fade_ms);
 	/* Done */
 	SDL_Log("%s audio track '%s'\n", (fade_ms ? "Fading out" : "Stopping"), audio->id);
+	return true;
 }
-static void kiavc_engine_register_room(const char *id) {
+static bool kiavc_engine_register_room(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Check if this room ID exists already */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(room) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot register new room with ID '%s', it already exists\n", id);
-		return;
+		return false;
 	}
 	/* Create a new room instance and add it to the map */
 	room = kiavc_room_create(id);
 	kiavc_map_insert(rooms, room->id, room);
 	/* Done */
 	SDL_Log("Registered room '%s'\n", room->id);
+	return true;
 }
-static void kiavc_engine_set_room_background(const char *id, const char *bg) {
+static bool kiavc_engine_set_room_background(const char *id, const char *bg) {
 	if(!id || !bg)
-		return;
+		return false;
 	/* Access room and image from the respective maps */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set room background, no such room '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_animation *img = kiavc_map_lookup(animations, bg);
 	if(!img) {
 		/* No such image */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set room background for room '%s', no such image '%s'\n", id, bg);
-		return;
+		return false;
 	}
 	/* Done */
 	if(room->background)
@@ -2373,43 +2411,45 @@ static void kiavc_engine_set_room_background(const char *id, const char *bg) {
 	room->res.x = 0;
 	room->res.y = 0;
 	SDL_Log("Set background of room '%s' to '%s'\n", room->id, img->id);
+	return true;
 }
-static void kiavc_engine_add_room_layer(const char *id, const char *name, const char *bg, int zplane) {
+static bool kiavc_engine_add_room_layer(const char *id, const char *name, const char *bg, int zplane) {
 	if(!id || !name || !bg)
-		return;
+		return false;
 	/* Access room from the map */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add room layer, no such room '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_animation *img = kiavc_map_lookup(animations, bg);
 	if(!img) {
 		/* No such image */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add room layer '%s' for room '%s', no such image '%s'\n", name, id, bg);
-		return;
+		return false;
 	}
 	kiavc_room_layer *layer = kiavc_room_add_layer(room, name, zplane);
 	if(!layer) {
 		/* Error adding layer */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add room layer '%s' for room '%s'\n", name, id);
-		return;
+		return false;
 	}
 	layer->background = img;
 	engine.render_list = kiavc_list_insert_sorted(engine.render_list, layer, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
 	SDL_Log("Added layer '%s' to room '%s'\n", name, room->id);
+	return true;
 }
-static void kiavc_engine_remove_room_layer(const char *id, const char *name) {
+static bool kiavc_engine_remove_room_layer(const char *id, const char *name) {
 	if(!id || !name)
-		return;
+		return false;
 	/* Access room from the map */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add room layer, no such room '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_list *list = room->layers;
 	while(list) {
@@ -2424,90 +2464,95 @@ static void kiavc_engine_remove_room_layer(const char *id, const char *name) {
 	if(kiavc_room_remove_layer(room, name) < 0) {
 		/* Error adding layer */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't remove room layer '%s' from room '%s'\n", name, id);
-		return;
+		return false;
 	}
 	/* Done */
 	SDL_Log("Removed layer '%s' from room '%s'\n", name, room->id);
+	return true;
 }
-static void kiavc_engine_add_room_walkbox(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, float speed, bool disabled) {
+static bool kiavc_engine_add_room_walkbox(const char *id, const char *name, int x1, int y1, int x2, int y2, float scale, float speed, bool disabled) {
 	if(!id)
-		return;
+		return false;
 	/* Access room from the map */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add room walkbox, no such room '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Create a new walkbox instance */
 	kiavc_pathfinding_walkbox *walkbox = kiavc_pathfinding_walkbox_create(name, x1, y1, x2, y2, scale, speed, disabled);
 	if(kiavc_room_add_walkbox(room, walkbox) < 0) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't add walkbox to room '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Done */
 	SDL_Log("Added '%s' walkbox to room '%s'\n", name ? name : "unnamed", room->id);
+	return true;
 }
-static void kiavc_engine_enable_room_walkbox(const char *id, const char *name) {
+static bool kiavc_engine_enable_room_walkbox(const char *id, const char *name) {
 	if(!id || !name)
-		return;
+		return false;
 	/* Access room from the map */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't enable room walkbox, no such room '%s'\n", id);
-		return;
+		return false;
 	}
 	if(kiavc_room_enable_walkbox(room, name) < 0) {
 		/* No such walkbox */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't enable room walkbox, no such walkbox '%s'\n", name);
-		return;
+		return false;
 	}
 	/* Done */
 	SDL_Log("Enabled walkbox '%s' in room '%s'\n", name, room->id);
+	return true;
 }
-static void kiavc_engine_disable_room_walkbox(const char *id, const char *name) {
+static bool kiavc_engine_disable_room_walkbox(const char *id, const char *name) {
 	if(!id || !name)
-		return;
+		return false;
 	/* Access room from the map */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't disable room walkbox, no such room '%s'\n", id);
-		return;
+		return false;
 	}
 	if(kiavc_room_disable_walkbox(room, name) < 0) {
 		/* No such walkbox */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't disable room walkbox, no such walkbox '%s'\n", name);
-		return;
+		return false;
 	}
 	/* Done */
 	SDL_Log("Disabled walkbox '%s' in room '%s'\n", name, room->id);
+	return true;
 }
-static void kiavc_engine_recalculate_room_walkboxes(const char *id) {
+static bool kiavc_engine_recalculate_room_walkboxes(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Access room from the map */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't recalculate room walkboxes, no such room '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_pathfinding_context_recalculate(room->pathfinding);
 	/* Done */
 	SDL_Log("Recalculated walkboxes in room '%s'\n", room->id);
+	return true;
 }
-static void kiavc_engine_show_room(const char *id) {
+static bool kiavc_engine_show_room(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Access room */
 	kiavc_room *room = kiavc_map_lookup(rooms, id);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set show room, no such room '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Cleanup previous room and render list */
 	kiavc_resource *resource = NULL;
@@ -2586,60 +2631,63 @@ static void kiavc_engine_show_room(const char *id) {
 	kiavc_engine_check_hovering();
 	/* Done */
 	SDL_Log("Shown room '%s'\n", room->id);
+	return true;
 }
-static void kiavc_engine_register_actor(const char *id) {
+static bool kiavc_engine_register_actor(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Check if this actor ID exists already */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(actor) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot register new actor with ID '%s', it already exists\n", id);
-		return;
+		return false;
 	}
 	/* Create a new actor instance and add it to the map */
 	actor = kiavc_actor_create(id);
 	kiavc_map_insert(actors, actor->id, actor);
 	/* Done */
 	SDL_Log("Registered actor '%s'\n", actor->id);
+	return true;
 }
-static void kiavc_engine_set_actor_costume(const char *id, const char *cost) {
+static bool kiavc_engine_set_actor_costume(const char *id, const char *cost) {
 	if(!id || !cost)
-		return;
+		return false;
 	/* Access actor and costume from the respective maps */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor costume, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_costume *costume = kiavc_map_lookup(costumes, cost);
 	if(!costume) {
 		/* No such costume */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor costume for actor '%s', no such costume '%s'\n", id, cost);
-		return;
+		return false;
 	}
 	/* Done */
 	if(actor->costume)
 		kiavc_costume_unload_sets(actor->costume, actor);
 	actor->costume = costume;
 	SDL_Log("Set costume of actor '%s' to '%s'\n", actor->id, costume->id);
+	return true;
 }
-static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, int y) {
+static bool kiavc_engine_move_actor_to(const char *id, const char *rid, int x, int y) {
 	if(!id || !rid)
-		return;
+		return false;
 	/* Access actor and room from the respective maps */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't move actor, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_room *room = kiavc_map_lookup(rooms, rid);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't move actor '%s', no such room '%s'\n", id, rid);
-		return;
+		return false;
 	}
 	/* Done */
 	if(actor->room)
@@ -2684,16 +2732,17 @@ static void kiavc_engine_move_actor_to(const char *id, const char *rid, int x, i
 		}
 	}
 	SDL_Log("Moved actor '%s' to room '%s' (%dx%d)\n", actor->id, room->id, (int)actor->res.x, (int)actor->res.y);
+	return true;
 }
-static void kiavc_engine_show_actor(const char *id) {
+static bool kiavc_engine_show_actor(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't show actor, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	actor->visible = true;
 	/* FIXME Should these be configurable? */
@@ -2702,8 +2751,9 @@ static void kiavc_engine_show_actor(const char *id) {
 	if(actor->room == engine.room && !kiavc_list_find(engine.render_list, actor))
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	SDL_Log("Shown actor '%s'\n", actor->id);
+	return true;
 }
-static void kiavc_engine_follow_actor(const char *id) {
+static bool kiavc_engine_follow_actor(const char *id) {
 	/* Get the actor, if an ID has been provided */
 	kiavc_actor *actor = id ? kiavc_map_lookup(actors, id) : NULL;
 	engine.following = actor;
@@ -2715,16 +2765,17 @@ static void kiavc_engine_follow_actor(const char *id) {
 		engine.room_direction_x = 0;
 		engine.room_direction_y = 0;
 	}
+	return true;
 }
-static void kiavc_engine_hide_actor(const char *id) {
+static bool kiavc_engine_hide_actor(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't hide actor, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	actor->visible = false;
 	actor->res.ticks = 0;
@@ -2732,10 +2783,11 @@ static void kiavc_engine_hide_actor(const char *id) {
 	engine.render_list = kiavc_list_remove(engine.render_list, actor);
 	/* Done */
 	SDL_Log("Hidden actor '%s'\n", actor->id);
+	return true;
 }
-static void kiavc_engine_fade_actor_to(const char *id, int alpha, int ms) {
+static bool kiavc_engine_fade_actor_to(const char *id, int alpha, int ms) {
 	if(!id || ms < 1)
-		return;
+		return false;
 	if(alpha > 255)
 		alpha = 255;
 	else if(alpha < 0)
@@ -2745,7 +2797,7 @@ static void kiavc_engine_fade_actor_to(const char *id, int alpha, int ms) {
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't fade actor, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	if(actor->room == engine.room && !kiavc_list_find(engine.render_list, actor))
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor, (kiavc_list_item_compare)kiavc_engine_sort_resources);
@@ -2758,16 +2810,17 @@ static void kiavc_engine_fade_actor_to(const char *id, int alpha, int ms) {
 		engine.fading = kiavc_list_append(engine.fading, actor);
 	/* Done */
 	SDL_Log("Fading actor '%s' alpha to '%d'\n", actor->id, alpha);
+	return true;
 }
-static void kiavc_engine_set_actor_alpha(const char *id, int alpha) {
+static bool kiavc_engine_set_actor_alpha(const char *id, int alpha) {
 	if(!id)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor alpha, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	if(alpha > 255)
 		alpha = 255;
@@ -2776,64 +2829,68 @@ static void kiavc_engine_set_actor_alpha(const char *id, int alpha) {
 	actor->res.fade_alpha = alpha;
 	/* Done */
 	SDL_Log("Set actor '%s' alpha to '%d'\n", actor->id, alpha);
+	return true;
 }
-static void kiavc_engine_set_actor_plane(const char *id, int zplane) {
+static bool kiavc_engine_set_actor_plane(const char *id, int zplane) {
 	if(!id)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor plane, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	actor->res.zplane = zplane;
 	engine.render_list = kiavc_list_sort(engine.render_list, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
 	SDL_Log("Set actor '%s' plane to '%d'\n", actor->id, zplane);
+	return true;
 }
-static void kiavc_engine_set_actor_speed(const char *id, int speed) {
+static bool kiavc_engine_set_actor_speed(const char *id, int speed) {
 	if(!id)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor speed, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	if(speed < 1) {
 		/* Invalid speed */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor speed, invalid value '%d'\n", speed);
-		return;
+		return false;
 	}
 	actor->res.speed = speed;
 	/* Done */
 	SDL_Log("Set actor '%s' speed to '%d'\n", actor->id, speed);
+	return true;
 }
-static void kiavc_engine_scale_actor(const char *id, float scale) {
+static bool kiavc_engine_scale_actor(const char *id, float scale) {
 	if(!id)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't scale actor, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	actor->scale = scale;
 	/* Done */
 	SDL_Log("Set actor '%s' scaling to '%f'\n", actor->id, scale);
+	return true;
 }
-static void kiavc_engine_walk_actor_to(const char *id, int x, int y) {
+static bool kiavc_engine_walk_actor_to(const char *id, int x, int y) {
 	if(!id || !engine.room || !engine.room->pathfinding)
-		return;
+		return false;
 	/* Access actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't walk actor, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Find a path to the destination */
 	kiavc_pathfinding_point from = { .x = (int)actor->res.x, .y = (int)actor->res.y };
@@ -2842,7 +2899,7 @@ static void kiavc_engine_walk_actor_to(const char *id, int x, int y) {
 	if(!actor->path) {
 		/* No path */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't walk actor, no path to destination\n");
-		return;
+		return false;
 	}
 	/* Set the first target */
 	kiavc_pathfinding_point *p = (kiavc_pathfinding_point *)actor->path->data;
@@ -2851,22 +2908,23 @@ static void kiavc_engine_walk_actor_to(const char *id, int x, int y) {
 	actor->step = actor->path->next;
 	/* Done */
 	SDL_Log("Walking actor '%s' to %dx%d\n", actor->id, to.x, to.y);
+	return true;
 }
-static void kiavc_engine_say_actor(const char *id, const char *text, const char *fid, SDL_Color *color, SDL_Color *outline) {
+static bool kiavc_engine_say_actor(const char *id, const char *text, const char *fid, SDL_Color *color, SDL_Color *outline) {
 	if(!id || !text || !fid || !color)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't have actor talk, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_font *font = kiavc_map_lookup(fonts, fid);
 	if(!font) {
 		/* No font */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't have actor talk, no such font '%s'\n", fid);
-		return;
+		return false;
 	}
 	/* Create a line of text */
 	if(actor->line) {
@@ -2876,7 +2934,7 @@ static void kiavc_engine_say_actor(const char *id, const char *text, const char 
 	int max_width = (2 * kiavc_screen_width) / 3;
 	actor->line = kiavc_font_render_text(font, renderer, text, color, outline, max_width);
 	if(actor->line == NULL)
-		return;
+		return false;
 	actor->line->owner_type = KIAVC_ACTOR;
 	actor->line->owner = actor;
 	actor->res.target_x = -1;
@@ -2885,42 +2943,45 @@ static void kiavc_engine_say_actor(const char *id, const char *text, const char 
 	engine.render_list = kiavc_list_insert_sorted(engine.render_list, actor->line, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
 	SDL_Log("Created text for actor '%s'\n", actor->id);
+	return true;
 }
-static void kiavc_engine_set_actor_direction(const char *id, const char *direction) {
+static bool kiavc_engine_set_actor_direction(const char *id, const char *direction) {
 	if(!id || !direction)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor direction, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	int dir = kiavc_costume_direction(direction);
 	if(dir == KIAVC_NONE) {
 		/* Invalid direction */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set actor direction, invalid direction '%s'\n", direction);
-		return;
+		return false;
 	}
 	actor->direction = dir;
 	/* Done */
 	SDL_Log("Changed actor '%s' direction to '%s'\n", actor->id, direction);
+	return true;
 }
-static void kiavc_engine_controlled_actor(const char *id) {
+static bool kiavc_engine_controlled_actor(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set controlled actor, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	engine.actor = actor;
 	/* Done */
 	SDL_Log("Changed controlled actor to '%s'\n", actor->id);
+	return true;
 }
-static void kiavc_engine_skip_actors_text(void) {
+static bool kiavc_engine_skip_actors_text(void) {
 	/* Iterate on all actor lines and set their duration to 1 */
 	kiavc_resource *resource = NULL;
 	kiavc_font_text *line = NULL;
@@ -2936,108 +2997,113 @@ static void kiavc_engine_skip_actors_text(void) {
 	}
 	/* Done */
 	SDL_Log("Skipped actors text\n");
+	return true;
 }
-static void kiavc_engine_set_actor_state(const char *id, const char *type) {
+static bool kiavc_engine_set_actor_state(const char *id, const char *type) {
 	if(!id || !type)
-		return;
+		return false;
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, id);
 	if(!actor) {
 		/* No such actor */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't have actor use object, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	actor->state = kiavc_actor_state(type);
 	/* Done */
 	SDL_Log("Set actor '%s' state to '%s'\n", id, type);
+	return true;
 }
 
-static void kiavc_engine_register_costume(const char *id) {
+static bool kiavc_engine_register_costume(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Check if this costume ID exists already */
 	kiavc_costume *costume = kiavc_map_lookup(costumes, id);
 	if(costume) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot register new costume with ID '%s', it already exists\n", id);
-		return;
+		return false;
 	}
 	/* Create a new costume instance and add it to the map */
 	costume = kiavc_costume_create(id);
 	kiavc_map_insert(costumes, costume->id, costume);
 	/* Done */
 	SDL_Log("Registered costume '%s'\n", costume->id);
+	return true;
 }
-static void kiavc_engine_set_costume_animation(const char *id, const char *type, const char *direction, const char *canim) {
+static bool kiavc_engine_set_costume_animation(const char *id, const char *type, const char *direction, const char *canim) {
 	if(!id || !type || !direction || !canim)
-		return;
+		return false;
 	/* FIXME We only accept still, walking, talking and using for animations at the moment */
 	if(SDL_strcasecmp(type, "still") && SDL_strcasecmp(type, "walking") && SDL_strcasecmp(type, "talking") &&
 			SDL_strcasecmp(type, "usehigh") && SDL_strcasecmp(type, "usemid") && SDL_strcasecmp(type, "uselow")) {
 		/* Invalid direction */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set costume animation, invalid type '%s'\n", type);
-		return;
+		return false;
 	}
 	int dir = kiavc_costume_direction(direction);
 	if(dir == KIAVC_NONE) {
 		/* Invalid direction */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set costume animation, invalid direction '%s'\n", direction);
-		return;
+		return false;
 	}
 	/* Access costume and image from the respective maps */
 	kiavc_costume *costume = kiavc_map_lookup(costumes, id);
 	if(!costume) {
 		/* No such costume */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set costume animation, no such costume '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_animation *anim = kiavc_map_lookup(animations, canim);
 	if(!anim) {
 		/* No such animation */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set costume animation for costume '%s', no such animation '%s'\n", id, canim);
-		return;
+		return false;
 	}
 	/* FIXME Done */
 	kiavc_costume_set *set = kiavc_costume_get_set(costume, type);
 	if(!set) {
 		/* Error accessing set */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set costume animation for costume '%s', error adding/retrieving set '%s'\n", id, type);
-		return;
+		return false;
 	}
 	set->animations[dir] = anim;
 	SDL_Log("Set %s %s animation of costume '%s' to '%s'\n", direction, type, costume->id, anim->id);
+	return true;
 }
-static void kiavc_engine_register_object(const char *id) {
+static bool kiavc_engine_register_object(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Check if this object ID exists already */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(object) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot register new object with ID '%s', it already exists\n", id);
-		return;
+		return false;
 	}
 	/* Create a new object instance and add it to the map */
 	object = kiavc_object_create(id);
 	kiavc_map_insert(objects, object->id, object);
 	/* Done */
 	SDL_Log("Registered object '%s'\n", object->id);
+	return true;
 }
-static void kiavc_engine_set_object_animation(const char *id, const char *state, const char *canim) {
+static bool kiavc_engine_set_object_animation(const char *id, const char *state, const char *canim) {
 	if(!id || !state || !canim)
-		return;
+		return false;
 	/* Access object and image from the respective maps */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object animation, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_animation *anim = kiavc_map_lookup(animations, canim);
 	if(!anim) {
 		/* No such animation */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object animation for object '%s', no such animation '%s'\n", id, canim);
-		return;
+		return false;
 	}
 	/* Check if a state with that ID exists already, or if we have to create it */
 	kiavc_object_state *obj_state = kiavc_map_lookup(object->states, state);
@@ -3051,128 +3117,135 @@ static void kiavc_engine_set_object_animation(const char *id, const char *state,
 	/* Done */
 	obj_state->animation = anim;
 	SDL_Log("Set animation for state '%s' of object '%s' to '%s'\n", obj_state->id, object->id, anim->id);
+	return true;
 }
-static void kiavc_engine_set_object_interactable(const char *id, bool interactable) {
+static bool kiavc_engine_set_object_interactable(const char *id, bool interactable) {
 	if(!id)
-		return;
+		return false;
 	/* Access object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object interactable state, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Done */
 	object->interactable = interactable;
 	object->res.x = -1;
 	object->res.y = -1;
 	SDL_Log("Marked object '%s' as %s\n", object->id, interactable ? "interactable" : "NOT interactable");
+	return true;
 }
-static void kiavc_engine_set_object_ui(const char *id, bool ui) {
+static bool kiavc_engine_set_object_ui(const char *id, bool ui) {
 	if(!id)
-		return;
+		return false;
 	/* Access object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object UI state, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Done */
 	object->ui = ui;
 	object->res.x = -1;
 	object->res.y = -1;
 	SDL_Log("Marked object '%s' as %s of the UI\n", object->id, ui ? "part" : "NOT part");
+	return true;
 }
-static void kiavc_engine_set_object_ui_position(const char *id, int x, int y) {
+static bool kiavc_engine_set_object_ui_position(const char *id, int x, int y) {
 	if(!id)
-		return;
+		return false;
 	/* Access object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object UI position, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	if(!object->ui) {
 		/* Not part of the UI */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object UI position, object '%s' not part of the UI\n", id);
-		return;
+		return false;
 	}
 	/* Done */
 	object->res.x = x;
 	object->res.y = y;
 	SDL_Log("Marked object '%s' position in the UI to [%d,%d]\n", object->id, x, y);
+	return true;
 }
-static void kiavc_engine_set_object_ui_animation(const char *id, const char *canim) {
+static bool kiavc_engine_set_object_ui_animation(const char *id, const char *canim) {
 	if(!id || !canim)
-		return;
+		return false;
 	/* Access object and image from the respective maps */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object UI animation, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_animation *anim = kiavc_map_lookup(animations, canim);
 	if(!anim) {
 		/* No such animation */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object UI animation for object '%s', no such animation '%s'\n", id, canim);
-		return;
+		return false;
 	}
 	/* Done */
 	object->ui_animation = anim;
 	SDL_Log("Set UI animation of object '%s' to '%s'\n", object->id, anim->id);
+	return true;
 }
-static void kiavc_engine_set_object_parent(const char *id, const char *parent) {
+static bool kiavc_engine_set_object_parent(const char *id, const char *parent) {
 	if(!id || !parent)
-		return;
+		return false;
 	/* Access objects from the map */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object or not part of the UI */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object parent, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_object *pobj = kiavc_map_lookup(objects, parent);
 	if(!pobj) {
 		/* No such object or not part of the UI */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object parent, no such object '%s'\n", parent);
-		return;
+		return false;
 	}
 	/* Done */
 	object->parent = pobj;
 	SDL_Log("Set UI parent of object '%s' to '%s'\n", object->id, pobj->id);
+	return true;
 }
-static void kiavc_engine_remove_object_parent(const char *id) {
+static bool kiavc_engine_remove_object_parent(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Access objects from the map */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't remove object UI parent, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Done */
 	object->parent = NULL;
 	SDL_Log("Removed UI parent of object '%s'\n", object->id);
+	return true;
 }
-static void kiavc_engine_move_object_to(const char *id, const char *rid, int x, int y) {
+static bool kiavc_engine_move_object_to(const char *id, const char *rid, int x, int y) {
 	if(!id || !rid)
-		return;
+		return false;
 	/* Access object and room from the respective maps */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't move object, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	kiavc_room *room = kiavc_map_lookup(rooms, rid);
 	if(!room) {
 		/* No such room */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't move object '%s', no such room '%s'\n", id, rid);
-		return;
+		return false;
 	}
 	/* Done */
 	if(object->room)
@@ -3197,37 +3270,39 @@ static void kiavc_engine_move_object_to(const char *id, const char *rid, int x, 
 	if(object->visible && engine.room && engine.room == room)
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	SDL_Log("Moved object '%s' to room '%s' (%dx%d)\n", object->id, room->id, (int)object->res.x, (int)object->res.y);
+	return true;
 }
-static void kiavc_engine_float_object_to(const char *id, int x, int y, int speed) {
+static bool kiavc_engine_float_object_to(const char *id, int x, int y, int speed) {
 	if(!id)
-		return;
+		return false;
 	/* Make sure this object ID exists */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* It does */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot float object, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	if(speed < 1) {
 		/* Invalid speed */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object speed, invalid value '%d'\n", speed);
-		return;
+		return false;
 	}
 	object->res.target_x = x;
 	object->res.target_y = y;
 	object->res.speed = speed;
 	object->res.move_ticks = 0;
 	/* Done */
+	return true;
 }
-static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y) {
+static bool kiavc_engine_set_object_hover(const char *id, int from_x, int from_y, int to_x, int to_y) {
 	if(!id || from_x < 0 || from_y < 0 || to_x < 0 || to_y < 0)
-		return;
+		return false;
 	/* Access object and room from the respective maps */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't move object, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Done */
 	object->hover.from_x = from_x;
@@ -3236,32 +3311,34 @@ static void kiavc_engine_set_object_hover(const char *id, int from_x, int from_y
 	object->hover.to_y = to_y;
 	SDL_Log("Set hover coordinated for object '%s' (%dx%d -> %dx%d)\n", object->id,
 		object->hover.from_x, object->hover.from_y, object->hover.to_x, object->hover.to_y);
+	return true;
 }
-static void kiavc_engine_show_object(const char *id) {
+static bool kiavc_engine_show_object(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't show object, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	object->visible = true;
 	/* Done */
 	if((object->ui || object->room == engine.room) && !kiavc_list_find(engine.render_list, object))
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	SDL_Log("Shown object '%s'\n", object->id);
+	return true;
 }
-static void kiavc_engine_hide_object(const char *id) {
+static bool kiavc_engine_hide_object(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't hide object, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	object->visible = false;
 	object->res.ticks = 0;
@@ -3277,10 +3354,11 @@ static void kiavc_engine_hide_object(const char *id) {
 	engine.render_list = kiavc_list_remove(engine.render_list, object);
 	/* Done */
 	SDL_Log("Hidden object '%s'\n", object->id);
+	return true;
 }
-static void kiavc_engine_fade_object_to(const char *id, int alpha, int ms) {
+static bool kiavc_engine_fade_object_to(const char *id, int alpha, int ms) {
 	if(!id || ms < 1)
-		return;
+		return false;
 	if(alpha > 255)
 		alpha = 255;
 	else if(alpha < 0)
@@ -3290,7 +3368,7 @@ static void kiavc_engine_fade_object_to(const char *id, int alpha, int ms) {
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't fade object, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	if((object->ui || object->room == engine.room) && !kiavc_list_find(engine.render_list, object))
 		engine.render_list = kiavc_list_insert_sorted(engine.render_list, object, (kiavc_list_item_compare)kiavc_engine_sort_resources);
@@ -3303,16 +3381,17 @@ static void kiavc_engine_fade_object_to(const char *id, int alpha, int ms) {
 		engine.fading = kiavc_list_append(engine.fading, object);
 	/* Done */
 	SDL_Log("Fading object '%s' alpha to '%d'\n", object->id, alpha);
+	return true;
 }
-static void kiavc_engine_set_object_alpha(const char *id, int alpha) {
+static bool kiavc_engine_set_object_alpha(const char *id, int alpha) {
 	if(!id)
-		return;
+		return false;
 	/* Get the object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object alpha, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	if(alpha > 255)
 		alpha = 255;
@@ -3321,75 +3400,79 @@ static void kiavc_engine_set_object_alpha(const char *id, int alpha) {
 	object->res.fade_alpha = alpha;
 	/* Done */
 	SDL_Log("Set object '%s' alpha to '%d'\n", object->id, alpha);
+	return true;
 }
-static void kiavc_engine_set_object_plane(const char *id, int zplane) {
+static bool kiavc_engine_set_object_plane(const char *id, int zplane) {
 	if(!id)
-		return;
+		return false;
 	/* Get the object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object plane, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	object->res.zplane = zplane;
 	engine.render_list = kiavc_list_sort(engine.render_list, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
 	SDL_Log("Set object '%s' plane to '%d'\n", object->id, zplane);
+	return true;
 }
-static void kiavc_engine_set_object_state(const char *id, const char *state) {
+static bool kiavc_engine_set_object_state(const char *id, const char *state) {
 	if(!id || !state)
-		return;
+		return false;
 	/* Get the object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object state, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Get the state */
 	kiavc_object_state *obj_state = kiavc_map_lookup(object->states, state);
 	if(!obj_state) {
 		/* No such state */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set object state, no such state '%s'\n", state);
-		return;
+		return false;
 	}
 	if(object->state && object->state != obj_state)
 		kiavc_animation_unload(object->state->animation, object->state);
 	object->state = obj_state;
 	/* Done */
 	SDL_Log("Set object '%s' state to '%s'\n", object->id, state);
+	return true;
 }
-static void kiavc_engine_scale_object(const char *id, float scale) {
+static bool kiavc_engine_scale_object(const char *id, float scale) {
 	if(!id)
-		return;
+		return false;
 	/* Get the object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't scale object, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	object->scale = scale;
 	/* Done */
 	SDL_Log("Set object '%s' scaling to '%f'\n", object->id, scale);
+	return true;
 }
-static void kiavc_engine_add_object_to_inventory(const char *id, const char *owner) {
+static bool kiavc_engine_add_object_to_inventory(const char *id, const char *owner) {
 	if(!id || !owner)
-		return;
+		return false;
 	/* Get the object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add object to inventory, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, owner);
 	if(!actor) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't add object to inventory, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	/* FIXME */
 	if(object->room)
@@ -3399,23 +3482,24 @@ static void kiavc_engine_add_object_to_inventory(const char *id, const char *own
 	object->visible = false;
 	/* Done */
 	SDL_Log("Added object '%s' to actor '%s' inventory\n", object->id, actor->id);
+	return true;
 }
-static void kiavc_engine_remove_object_from_inventory(const char *id, const char *owner) {
+static bool kiavc_engine_remove_object_from_inventory(const char *id, const char *owner) {
 	if(!id || !owner)
-		return;
+		return false;
 	/* Get the object */
 	kiavc_object *object = kiavc_map_lookup(objects, id);
 	if(!object) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't remove object from inventory, no such object '%s'\n", id);
-		return;
+		return false;
 	}
 	/* Get the actor */
 	kiavc_actor *actor = kiavc_map_lookup(actors, owner);
 	if(!actor) {
 		/* No such object */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't remove object from inventory, no such actor '%s'\n", id);
-		return;
+		return false;
 	}
 	/* FIXME */
 	if(object->room)
@@ -3424,32 +3508,33 @@ static void kiavc_engine_remove_object_from_inventory(const char *id, const char
 	object->owner = actor;
 	/* Done */
 	SDL_Log("Removed object '%s' from actor '%s' inventory\n", object->id, actor->id);
+	return true;
 }
-static void kiavc_engine_show_text(const char *id, const char *text, const char *fid,
+static bool kiavc_engine_show_text(const char *id, const char *text, const char *fid,
 		SDL_Color *color, SDL_Color *outline, int x, int y, int alpha, bool absolute, int zplane, Uint32 ms) {
 	if(!text || !fid || !color)
-		return;
+		return false;
 	if(id) {
 		/* Check if this text ID exists already */
 		kiavc_font_text *line = kiavc_map_lookup(texts, id);
 		if(line) {
 			/* It does */
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot show text with ID '%s', it already exists\n", id);
-			return;
+			return false;
 		}
 	}
 	kiavc_font *font = kiavc_map_lookup(fonts, fid);
 	if(!font) {
 		/* No font */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't show text, no such font '%s'\n", fid);
-		return;
+		return false;
 	}
 	int max_width = kiavc_screen_width;
 	if(max_width > (kiavc_screen_width - 10))
 		max_width = kiavc_screen_width - 10;
 	kiavc_font_text *line = kiavc_font_render_text(font, renderer, text, color, outline, max_width);
 	if(line == NULL)
-		return;
+		return false;
 	line->res.x = x;
 	line->res.y = y;
 	line->res.zplane = zplane;
@@ -3467,21 +3552,22 @@ static void kiavc_engine_show_text(const char *id, const char *text, const char 
 	}
 	engine.render_list = kiavc_list_insert_sorted(engine.render_list, line, (kiavc_list_item_compare)kiavc_engine_sort_resources);
 	/* Done */
+	return true;
 }
-static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed) {
+static bool kiavc_engine_float_text_to(const char *id, int x, int y, int speed) {
 	if(!id)
-		return;
+		return false;
 	/* Make sure this text ID exists */
 	kiavc_font_text *line = kiavc_map_lookup(texts, id);
 	if(!line) {
 		/* It doesn't */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot float text, no such text '%s'\n", id);
-		return;
+		return false;
 	}
 	if(speed < 1) {
 		/* Invalid speed */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set text speed, invalid value '%d'\n", speed);
-		return;
+		return false;
 	}
 	line->res.target_x = x;
 	line->res.target_y = y;
@@ -3489,10 +3575,11 @@ static void kiavc_engine_float_text_to(const char *id, int x, int y, int speed) 
 	line->res.move_ticks = 0;
 	/* Done */
 	SDL_Log("Floating text '%s' to %dx%d at speed %d\n", line->id, x, y, speed);
+	return true;
 }
-static void kiavc_engine_fade_text_to(const char *id, int alpha, int ms) {
+static bool kiavc_engine_fade_text_to(const char *id, int alpha, int ms) {
 	if(!id || ms < 1)
-		return;
+		return false;
 	if(alpha > 255)
 		alpha = 255;
 	else if(alpha < 0)
@@ -3502,7 +3589,7 @@ static void kiavc_engine_fade_text_to(const char *id, int alpha, int ms) {
 	if(!line) {
 		/* It doesn't */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't fade text, no such text '%s'\n", id);
-		return;
+		return false;
 	}
 	line->res.fade_ms = ms;
 	line->res.fade_start = line->res.fade_alpha;
@@ -3512,16 +3599,17 @@ static void kiavc_engine_fade_text_to(const char *id, int alpha, int ms) {
 		engine.fading = kiavc_list_append(engine.fading, line);
 	/* Done */
 	SDL_Log("Fading text '%s' alpha to '%d'\n", line->id, alpha);
+	return true;
 }
-static void kiavc_engine_set_text_alpha(const char *id, int alpha) {
+static bool kiavc_engine_set_text_alpha(const char *id, int alpha) {
 	if(!id)
-		return;
+		return false;
 	/* Make sure this text ID exists */
 	kiavc_font_text *line = kiavc_map_lookup(texts, id);
 	if(!line) {
 		/* It doesn't */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't set the text alpha, no such text '%s'\n", id);
-		return;
+		return false;
 	}
 	if(alpha > 255)
 		alpha = 255;
@@ -3530,47 +3618,51 @@ static void kiavc_engine_set_text_alpha(const char *id, int alpha) {
 	line->res.fade_alpha = alpha;
 	/* Done */
 	SDL_Log("Set text '%s' alpha to '%d'\n", line->id, alpha);
+	return true;
 }
-static void kiavc_engine_remove_text(const char *id) {
+static bool kiavc_engine_remove_text(const char *id) {
 	if(!id)
-		return;
+		return false;
 	/* Get the text */
 	kiavc_font_text *line = kiavc_map_lookup(texts, id);
 	if(!line) {
 		/* No such text */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't remove text, no such text '%s'\n", id);
-		return;
+		return false;
 	}
 	engine.render_list = kiavc_list_remove(engine.render_list, line);
 	engine.fading = kiavc_list_remove(engine.fading, line);
 	kiavc_map_remove(texts, id);
 	/* Done */
 	SDL_Log("Removed text '%s'\n", id);
+	return true;
 }
-static void kiavc_engine_load_plugin(const char *name) {
+static bool kiavc_engine_load_plugin(const char *name) {
 	if(!name)
-		return;
+		return false;
 	/* Get the text */
 	kiavc_plugin *plugin = kiavc_map_lookup(plugins, name);
 	if(plugin) {
 		/* Plugin already loaded */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't load plugin, plugin '%s' already loaded\n", name);
-		return;
+		return false;
 	}
 	plugin = kiavc_plugin_load(&plugin_callbacks, name);
 	if(!plugin) {
 		/* Error loading plugin */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't load plugin '%s'\n", name);
-		return;
+		return false;
 	}
 	kiavc_map_insert(plugins, name, plugin);
 	plugins_list = kiavc_list_append(plugins_list, plugin);
 	/* Done */
 	SDL_Log("Loaded plugin '%s' (%s)\n", name, plugin->get_name());
+	return true;
 }
-static void kiavc_engine_quit(void) {
+static bool kiavc_engine_quit(void) {
 	SDL_Log("Quitting the engine\n");
 	quit = true;
+	return true;
 }
 
 /* Plugin callbacks */

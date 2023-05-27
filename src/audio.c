@@ -38,6 +38,7 @@ static void kiavc_audio_channel_finished(int channel) {
 		track->playing = false;
 		track->paused = false;
 		kiavc_map_remove(tracks_by_channel, channel_str);
+		kiavc_audio_unload(track);
 	}
 	SDL_UnlockMutex(mutex);
 }
@@ -68,6 +69,7 @@ int kiavc_audio_load(kiavc_audio *track) {
 		SDL_UnlockMutex(mutex);
 		return -1;
 	}
+	SDL_Log("Loading audio track '%s'\n", track->id);
 	/* If the chunk exists already, do nothing */
 	if(track->chunk) {
 		SDL_UnlockMutex(mutex);
@@ -85,9 +87,12 @@ int kiavc_audio_load(kiavc_audio *track) {
 
 /* Music track de-initialization */
 void kiavc_audio_unload(kiavc_audio *track) {
-	if(!track)
-		return;
 	SDL_LockMutex(mutex);
+	if(!track) {
+		SDL_UnlockMutex(mutex);
+		return;
+	}
+	SDL_Log("Unloading audio track '%s'\n", track->id);
 	kiavc_audio_stop(track, 0);
 	if(track->chunk)
 		Mix_FreeChunk(track->chunk);
