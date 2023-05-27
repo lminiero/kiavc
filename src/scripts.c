@@ -474,7 +474,7 @@ void kiavc_scripts_run_command(const char *fmt, ...) {
 	lua_getglobal(lua_state, "runCommand");
 	lua_pushstring(lua_state, command);
 	if(lua_pcall(lua_state, 1, 0, 0) != 0) {
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error running function `updateWorld': %s",
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error running function `runCommand': %s",
 			lua_tostring(lua_state, -1));
 	}
 }
@@ -502,18 +502,21 @@ void kiavc_scripts_unload(void) {
  * Methods that we expose to the Lua script
  */
 
+/* Helper macro to quickly return a success (true) or error (false) */
+#define KIAVC_LUA_RESULT(s, r)	({ int retval = 1; lua_pushboolean(s, r); retval; });
+
 /* Load a script from the assets */
 static int kiavc_lua_method_kiavcrequire(lua_State *s) {
 	/* This method allows the Lua script to import another Lua file */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *required = luaL_checkstring(s, 1);
 	if(required == NULL) {
-		/* Ignore */
-		return 0;
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Invalid path\n");
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	char path[256];
 	path[0] = '\0';
@@ -521,26 +524,22 @@ static int kiavc_lua_method_kiavcrequire(lua_State *s) {
 	char *script = kiavc_scripts_open_file(path);
 	if(!script) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Couldn't open Lua script '%s'\n", path);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	int err = luaL_dostring(lua_state, script);
 	SDL_free(script);
 	if(err) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Error loading Lua script '%s': %s\n",
 			path, lua_tostring(lua_state, -1));
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	SDL_Log("Loaded script '%s'\n", path);
-	return 0;
+	return KIAVC_LUA_RESULT(s, true);
 }
 
 /* Return version as major/minor/patch */
 static int kiavc_lua_method_getversion(lua_State *s) {
 	/* This method allows the Lua script to retrieve info on the engine version */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
 	lua_pushnumber(s, KIAVC_VERSION_MAJOR);
 	lua_pushnumber(s, KIAVC_VERSION_MINOR);
 	lua_pushnumber(s, KIAVC_VERSION_PATCH);
@@ -550,11 +549,6 @@ static int kiavc_lua_method_getversion(lua_State *s) {
 /* Return version string */
 static int kiavc_lua_method_getversionstring(lua_State *s) {
 	/* This method allows the Lua script to retrieve the engine version as a string */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
 	lua_pushstring(s, KIAVC_VERSION_STRING);
 	return 1;
 }
@@ -563,13 +557,13 @@ static int kiavc_lua_method_getversionstring(lua_State *s) {
 static int kiavc_lua_method_kiavclog(lua_State *s) {
 	/* This method allows the Lua script to use the Janus internal logger */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
 		return 0;
 	}
 	const char *text = luaL_checkstring(s, 1);
 	if(text == NULL) {
-		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text to log\n");
 		return 0;
 	}
 	SDL_Log("[Lua] %s\n", text);
@@ -580,13 +574,13 @@ static int kiavc_lua_method_kiavclog(lua_State *s) {
 static int kiavc_lua_method_kiavcerror(lua_State *s) {
 	/* This method allows the Lua script to use the Janus internal logger */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
 		return 0;
 	}
 	const char *text = luaL_checkstring(s, 1);
 	if(text == NULL) {
-		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text to log\n");
 		return 0;
 	}
 	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] %s\n", text);
@@ -597,13 +591,13 @@ static int kiavc_lua_method_kiavcerror(lua_State *s) {
 static int kiavc_lua_method_kiavcwarn(lua_State *s) {
 	/* This method allows the Lua script to use the Janus internal logger */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
 		return 0;
 	}
 	const char *text = luaL_checkstring(s, 1);
 	if(text == NULL) {
-		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text to log\n");
 		return 0;
 	}
 	SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "[Lua] %s\n", text);
@@ -614,9 +608,9 @@ static int kiavc_lua_method_kiavcwarn(lua_State *s) {
 static int kiavc_lua_method_setresolution(lua_State *s) {
 	/* This method allows the Lua script to set the window resolution and scaling */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "width");
@@ -628,130 +622,100 @@ static int kiavc_lua_method_setresolution(lua_State *s) {
 	lua_getfield(s, 1, "scale");
 	int scale = luaL_checknumber(s, 5);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_resolution(width, height, fps, scale);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_resolution(width, height, fps, scale));
 }
 
 /* Set window title */
 static int kiavc_lua_method_settitle(lua_State *s) {
 	/* This method allows the Lua script to set the window title */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *title = luaL_checkstring(s, 1);
 	if(title == NULL) {
-		/* Ignore */
-		return 0;
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing title\n");
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_title(title);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_title(title));
 }
 
 /* Set window icon */
 static int kiavc_lua_method_seticon(lua_State *s) {
 	/* This method allows the Lua script to set the window icon */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *path = luaL_checkstring(s, 1);
 	if(path == NULL) {
-		/* Ignore */
-		return 0;
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing icon path\n");
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_icon(path);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_icon(path));
 }
 
 /* Set whether we should grab the mouse and confine it to the window */
 static int kiavc_lua_method_grabmouse(lua_State *s) {
 	/* This method allows the Lua script to enable or disable mouse grabbing */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	bool grab = lua_toboolean(s, 1);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->grab_mouse(grab);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->grab_mouse(grab));
 }
 
 /* Check whether we're grabbing the mouse and confining it to the window */
 static int kiavc_lua_method_isgrabbingmouse(lua_State *s) {
 	/* This method allows the Lua script check if fullscreen is enabled */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to query this */
-	bool grabbing = kiavc_cb->is_grabbing_mouse();
-	/* Pass the response back to the stack */
-	lua_pushboolean(s, grabbing);
-	return 1;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->is_grabbing_mouse());
 }
 
 /* Set fullscreen mode */
 static int kiavc_lua_method_setfullscreen(lua_State *s) {
 	/* This method allows the Lua script to enable or disable the fullscreen mode */
 	int n = lua_gettop(s), exp = 1, exp2 = 2;
-	if(n != exp && n != exp2) {
+	if(n < exp && n < exp2) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d or %d)\n", n, exp, exp2);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	bool fullscreen = lua_toboolean(s, 1);
 	bool desktop = false;
 	if(n == 2)
 		desktop = lua_toboolean(s, 2);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_fullscreen(fullscreen, desktop);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_fullscreen(fullscreen, desktop));
 }
 
 /* Get fullscreen mode */
 static int kiavc_lua_method_getfullscreen(lua_State *s) {
 	/* This method allows the Lua script check if fullscreen is enabled */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to query this */
-	bool fullscreen = kiavc_cb->get_fullscreen();
-	/* Pass the response back to the stack */
-	lua_pushboolean(s, fullscreen);
-	return 1;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->get_fullscreen());
 }
 
 /* Set scanlines mode */
 static int kiavc_lua_method_setscanlines(lua_State *s) {
 	/* This method allows the Lua script to show or hide the scanlines */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	int alpha = lua_tointeger(s, 1);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_scanlines(alpha);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_scanlines(alpha));
 }
 
 /* Get scanlines mode */
 static int kiavc_lua_method_getscanlines(lua_State *s) {
 	/* This method allows the Lua script check if scanlines is enabled */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to query this */
 	int alpha = kiavc_cb->get_scanlines();
 	/* Pass the response back to the stack */
 	lua_pushinteger(s, alpha);
@@ -762,267 +726,167 @@ static int kiavc_lua_method_getscanlines(lua_State *s) {
 static int kiavc_lua_method_debugobjects(lua_State *s) {
 	/* This method allows the Lua script to debug objects */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	bool debug = lua_toboolean(s, 1);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->debug_objects(debug);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->debug_objects(debug));
 }
 
 /* Check whether objects debugging is on or not */
 static int kiavc_lua_method_isdebuggingobjects(lua_State *s) {
 	/* This method allows the Lua script check if objects debugging is enabled */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to query this */
-	bool debug = kiavc_cb->is_debugging_objects();
-	/* Pass the response back to the stack */
-	lua_pushboolean(s, debug);
-	return 1;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->is_debugging_objects());
 }
 
 /* Set whether to debug walkboxes or not */
 static int kiavc_lua_method_debugwalkboxes(lua_State *s) {
 	/* This method allows the Lua script to debug walkboxes */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	bool debug = lua_toboolean(s, 1);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->debug_walkboxes(debug);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->debug_walkboxes(debug));
 }
 
 /* Check whether walkboxes debugging is on or not */
 static int kiavc_lua_method_isdebuggingwalkboxes(lua_State *s) {
 	/* This method allows the Lua script check if walkboxes debugging is enabled */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to query this */
-	bool debug = kiavc_cb->is_debugging_walkboxes();
-	/* Pass the response back to the stack */
-	lua_pushboolean(s, debug);
-	return 1;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->is_debugging_walkboxes());
 }
 
 /* Save a screenshot */
 static int kiavc_lua_method_savescreenshot(lua_State *s) {
 	/* This method allows the Lua script to save a screenshot */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *path = luaL_checkstring(s, 1);
 	if(path == NULL) {
-		/* Ignore */
-		return 0;
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing screenshot path\n");
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->save_screenshot(path);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->save_screenshot(path));
 }
 
 /* Enable the console and specify which font to use */
 static int kiavc_lua_method_enableconsole(lua_State *s) {
 	/* This method allows the Lua script to enable the scripting console */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *font = luaL_checkstring(s, 1);
 	if(font == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing font ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->enable_console(font);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->enable_console(font));
 }
 
 /* Show the console */
 static int kiavc_lua_method_showconsole(lua_State *s) {
 	/* This method allows the Lua script to show the scripting console */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to enforce this */
-	kiavc_cb->show_console();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->show_console());
 }
 
 /* Hide the console */
 static int kiavc_lua_method_hideconsole(lua_State *s) {
 	/* This method allows the Lua script to hide the scripting console */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to enforce this */
-	kiavc_cb->hide_console();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->hide_console());
 }
 
 /* Disable the console */
 static int kiavc_lua_method_disableconsole(lua_State *s) {
 	/* This method allows the Lua script to disable the scripting console */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to enforce this */
-	kiavc_cb->disable_console();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->disable_console());
 }
 
 /* Check if the console is enabled */
 static int kiavc_lua_method_isconsoleenabled(lua_State *s) {
 	/* This method allows the Lua script check if the console is enabled */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to query this */
-	bool enabled = kiavc_cb->is_console_enabled();
-	/* Pass the response back to the stack */
-	lua_pushboolean(s, enabled);
-	return 1;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->is_console_enabled());
 }
 
 /* Check if the console is visible */
 static int kiavc_lua_method_isconsolevisible(lua_State *s) {
 	/* This method allows the Lua script check if the console is visible */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to query this */
-	bool visible = kiavc_cb->is_console_visible();
-	/* Pass the response back to the stack */
-	lua_pushboolean(s, visible);
-	return 1;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->is_console_visible());
 }
 
 /* Enable input from the user */
 static int kiavc_lua_method_enableinput(lua_State *s) {
 	/* This method allows the Lua script to disable input from the user temporarily */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to enforce this */
-	kiavc_cb->enable_input();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->enable_input());
 }
 
 /* Check if input from the user is enabled */
 static int kiavc_lua_method_isinputenabled(lua_State *s) {
 	/* This method allows the Lua script check if input from the user is enabled */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to query this */
-	bool enabled = kiavc_cb->is_input_enabled();
-	/* Pass the response back to the stack */
-	lua_pushboolean(s, enabled);
-	return 1;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->is_input_enabled());
 }
 
 /* Disable input from the user */
 static int kiavc_lua_method_disableinput(lua_State *s) {
 	/* This method allows the Lua script to disable input from the user temporarily */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to enforce this */
-	kiavc_cb->disable_input();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->disable_input());
 }
 
 /* Start a cutscene */
 static int kiavc_lua_method_startcutscene(lua_State *s) {
 	/* This method allows the Lua script to start a cutscene */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to enforce this */
-	kiavc_cb->start_cutscene();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->start_cutscene());
 }
 
 /* Stop a cutscene */
 static int kiavc_lua_method_stopcutscene(lua_State *s) {
 	/* This method allows the Lua script to stop a cutscene */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to enforce this */
-	kiavc_cb->stop_cutscene();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->stop_cutscene());
 }
 
 /* Fade in */
 static int kiavc_lua_method_fadein(lua_State *s) {
 	/* This method allows the Lua script to fade in */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
 	int ms = luaL_checknumber(s, 1);
-	kiavc_cb->fade_in(ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_in(ms));
 }
 
 /* Fade out */
 static int kiavc_lua_method_fadeout(lua_State *s) {
 	/* This method allows the Lua script to fade out */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
 	int ms = luaL_checknumber(s, 1);
-	kiavc_cb->fade_out(ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_out(ms));
 }
 
 /* Start a new dialog session */
 static int kiavc_lua_method_startdialog(lua_State *s) {
 	/* This method allows the Lua script to start a new dialog session */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
@@ -1074,9 +938,8 @@ static int kiavc_lua_method_startdialog(lua_State *s) {
 	}
 	SDL_Color s_outline = { .r = sor, .g = sog, .b = sob };
 	if(id == NULL || font == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing dialog of font ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	lua_getfield(s, 1, "background");
 	tidx = ++idx;
@@ -1109,17 +972,16 @@ static int kiavc_lua_method_startdialog(lua_State *s) {
 	if(lua_getfield(s, 1, "autohide") != LUA_TNIL)
 		autohide = lua_toboolean(s, idx);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->start_dialog(id, font, &color, (or != -1 && og != -1 && ob != -1 ? &outline : NULL),
-		&s_color, (sor != -1 && sog != -1 && sob != -1 ? &s_outline : NULL), &background, &area, autohide);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->start_dialog(id, font, &color, (or != -1 && og != -1 && ob != -1 ? &outline : NULL),
+		&s_color, (sor != -1 && sog != -1 && sob != -1 ? &s_outline : NULL), &background, &area, autohide));
 }
 
 /* Add a line to a dialog session */
 static int kiavc_lua_method_adddialogline(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
@@ -1129,40 +991,36 @@ static int kiavc_lua_method_adddialogline(lua_State *s) {
 	lua_getfield(s, 1, "name");
 	const char *name = luaL_checkstring(s, 4);
 	if(id == NULL || text == NULL || name == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing dialog ID, text or line name\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->add_dialog_line(id, name, text);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->add_dialog_line(id, name, text));
 }
 
 /* Stop a dialog session */
 static int kiavc_lua_method_stopdialog(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing cursor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->stop_dialog(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->stop_dialog(id));
 }
 
 /* Register a new animation in the engine */
 static int kiavc_lua_method_registeranimation(lua_State *s) {
 	/* This method allows the Lua script to notify the engine about a new animation */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
@@ -1186,29 +1044,27 @@ static int kiavc_lua_method_registeranimation(lua_State *s) {
 	if(lua_getfield(s, 1, "ms") != LUA_TNIL)
 		ms = luaL_checknumber(s, ++idx);
 	if(id == NULL || path == NULL || frames < 1 || ms < 1) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing animation ID or path, or invalid number of frames/timing\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	if(tr < 0 || tb < 0 || tg < 0) {
 		/* Invoke the application callback to enforce this */
-		kiavc_cb->register_animation(id, path, frames, ms, NULL);
+		return KIAVC_LUA_RESULT(s, kiavc_cb->register_animation(id, path, frames, ms, NULL));
 	} else {
 		/* RGB for color keying was passed as well */
 		SDL_Color color = { .r = tr, .g = tg, .b = tb };
 		/* Invoke the application callback to enforce this */
-		kiavc_cb->register_animation(id, path, frames, ms, &color);
+		return KIAVC_LUA_RESULT(s, kiavc_cb->register_animation(id, path, frames, ms, &color));
 	}
-	return 0;
 }
 
 /* Register a new font in the engine */
 static int kiavc_lua_method_registerfont(lua_State *s) {
 	/* This method allows the Lua script to notify the engine about a new font */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
@@ -1218,121 +1074,99 @@ static int kiavc_lua_method_registerfont(lua_State *s) {
 	lua_getfield(s, 1, "size");
 	int size = luaL_checknumber(s, 4);
 	if(id == NULL || path == NULL || size < 1) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing font ID or path, or invalid size\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->register_font(id, path, size);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->register_font(id, path, size));
 }
 
 /* Register a new cursor in the engine */
 static int kiavc_lua_method_registercursor(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
 	const char *id = luaL_checkstring(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing cursor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->register_cursor(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->register_cursor(id));
 }
 
 /* Set the current animation for a cursor */
 static int kiavc_lua_method_setcursoranimation(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *anim = luaL_checkstring(s, 2);
 	if(id == NULL || anim == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing cursor or animation ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_cursor_animation(id, anim);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_cursor_animation(id, anim));
 }
 
 /* Set the main cursor */
 static int kiavc_lua_method_setmaincursor(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing cursor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_main_cursor(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_main_cursor(id));
 }
 
 /* Set the hotspot cursor */
 static int kiavc_lua_method_sethotspotcursor(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing cursor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_hotspot_cursor(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_hotspot_cursor(id));
 }
 
 /* Show a cursor */
 static int kiavc_lua_method_showcursor(lua_State *s) {
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->show_cursor();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->show_cursor());
 }
 
 /* Hide a cursor */
 static int kiavc_lua_method_hidecursor(lua_State *s) {
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->hide_cursor();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->hide_cursor());
 }
 
 /* Show a cursor text */
 static int kiavc_lua_method_showcursortext(lua_State *s) {
 	/* This method allows the Lua script to show custom text on the cursor as it moves */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "font");
@@ -1361,34 +1195,27 @@ static int kiavc_lua_method_showcursortext(lua_State *s) {
 	}
 	SDL_Color outline = { .r = or, .g = og, .b = ob };
 	if(font == NULL || text == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing cursor font or text\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->show_cursor_text(font, text, &color, (or != -1 && og != -1 && ob != -1 ? &outline : NULL));
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->show_cursor_text(font, text, &color,
+		(or != -1 && og != -1 && ob != -1 ? &outline : NULL)));
 }
 
 /* Hide a cursor text */
 static int kiavc_lua_method_hidecursortext(lua_State *s) {
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->hide_cursor_text();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->hide_cursor_text());
 }
 
 /* Register a new audio track in the engine */
 static int kiavc_lua_method_registeraudio(lua_State *s) {
 	/* This method allows the Lua script to notify the engine about a new audio */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
@@ -1396,168 +1223,150 @@ static int kiavc_lua_method_registeraudio(lua_State *s) {
 	lua_getfield(s, 1, "path");
 	const char *path = luaL_checkstring(s, 3);
 	if(id == NULL || path == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing audio ID or path\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->register_audio(id, path);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->register_audio(id, path));
 }
 
 /* Play an audio track in the engine */
 static int kiavc_lua_method_playaudio(lua_State *s) {
 	int n = lua_gettop(s), exp = 3;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int fade_ms = luaL_checknumber(s, 2);
 	bool loop = lua_toboolean(s, 3);
 	if(id == NULL || fade_ms < 0) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing audio ID or invalid fade-in value\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->play_audio(id, fade_ms, loop);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->play_audio(id, fade_ms, loop));
 }
 
 /* Pause an audio track in the engine */
 static int kiavc_lua_method_pauseaudio(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing audio track ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->pause_audio(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->pause_audio(id));
 }
 
 /* Resume an audio track in the engine */
 static int kiavc_lua_method_resumeaudio(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing audio track ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->resume_audio(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->resume_audio(id));
 }
 
 /* Stop an audio track in the engine */
 static int kiavc_lua_method_stopaudio(lua_State *s) {
 	int n = lua_gettop(s), exp = 1, exp2 = 2;
-	if(n != exp && n != exp2) {
+	if(n < exp && n < exp2) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d or %d)\n", n, exp, exp2);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int fade_ms = (n == 2 ? luaL_checknumber(s, 2) : 0);
 	if(id == NULL || fade_ms < 0) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing audio track ID or invalid fade-out value\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->stop_audio(id, fade_ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->stop_audio(id, fade_ms));
 }
 
 /* Register a new room in the engine */
 static int kiavc_lua_method_registerroom(lua_State *s) {
 	/* This method allows the Lua script to notify the engine about a new room */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
 	const char *id = luaL_checkstring(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->register_room(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->register_room(id));
 }
 
 /* Set the current background for a room */
 static int kiavc_lua_method_setroombackground(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *bg = luaL_checkstring(s, 2);
 	if(id == NULL || bg == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room or image ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_room_background(id, bg);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_room_background(id, bg));
 }
 
 /* Add a room layer */
 static int kiavc_lua_method_addroomlayer(lua_State *s) {
 	int n = lua_gettop(s), exp = 4;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *name = luaL_checkstring(s, 2);
 	const char *bg = luaL_checkstring(s, 3);
 	int zplane = luaL_checkinteger(s, 4);
 	if(id == NULL || name == NULL || bg == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room or layer ID, or layer image\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->add_room_layer(id, name, bg, zplane);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->add_room_layer(id, name, bg, zplane));
 }
 
 /* Remove a room layer */
 static int kiavc_lua_method_removeroomlayer(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *name = luaL_checkstring(s, 2);
 	if(id == NULL || name == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room or layer ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->remove_room_layer(id, name);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->remove_room_layer(id, name));
 }
 
 /* Add a room walkbox */
@@ -1565,13 +1374,12 @@ static int kiavc_lua_method_addroomwalkbox(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
 	if(n > exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 2, LUA_TTABLE);
 	lua_getfield(s, 2, "x1");
@@ -1599,161 +1407,145 @@ static int kiavc_lua_method_addroomwalkbox(lua_State *s) {
 	if(lua_getfield(s, 2, "speed") != LUA_TNIL)
 		speed = luaL_checknumber(s, idx);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->add_room_walkbox(id, name, from_x, from_y, to_x, to_y, scale, speed, disabled);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->add_room_walkbox(id, name,
+		from_x, from_y, to_x, to_y, scale, speed, disabled));
 }
 
 /* Enable a room walkbox */
 static int kiavc_lua_method_enableroomwalkbox(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *name = luaL_checkstring(s, 2);
 	if(id == NULL || name == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room or walkbox ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->enable_room_walkbox(id, name);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->enable_room_walkbox(id, name));
 }
 
 /* Disable a room walkbox */
 static int kiavc_lua_method_disableroomwalkbox(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *name = luaL_checkstring(s, 2);
 	if(id == NULL || name == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room or walkbox ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->disable_room_walkbox(id, name);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->disable_room_walkbox(id, name));
 }
 
 /* Recalculate walkboxes in a room */
 static int kiavc_lua_method_recalculateroomwalkboxes(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->recalculate_room_walkboxes(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->recalculate_room_walkboxes(id));
 }
 
 /* Set the active room */
 static int kiavc_lua_method_showroom(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->show_room(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->show_room(id));
 }
 
 /* Register a new actor in the engine */
 static int kiavc_lua_method_registeractor(lua_State *s) {
 	/* This method allows the Lua script to notify the engine about a new actor */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
 	const char *id = luaL_checkstring(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->register_actor(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->register_actor(id));
 }
 
 /* Set the current costume for an actor */
 static int kiavc_lua_method_setactorcostume(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *cost = luaL_checkstring(s, 2);
 	if(id == NULL || cost == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor or costume ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_actor_costume(id, cost);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_actor_costume(id, cost));
 }
 
 /* Move an actor to a specific room */
 static int kiavc_lua_method_moveactorto(lua_State *s) {
 	int n = lua_gettop(s), exp = 4;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *room = luaL_checkstring(s, 2);
 	int x = luaL_checknumber(s, 3);
 	int y = luaL_checknumber(s, 4);
 	if(id == NULL || room == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor or room ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->move_actor_to(id, room, x, y);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->move_actor_to(id, room, x, y));
 }
 
 /* Show an actor in the room they're in */
 static int kiavc_lua_method_showactor(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->show_actor(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->show_actor(id));
 }
 
 /* Follow an actor in the room they're in */
@@ -1761,193 +1553,174 @@ static int kiavc_lua_method_followactor(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
 	if(n > exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = (n == 1 ? luaL_checkstring(s, 1) : NULL);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->follow_actor(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->follow_actor(id));
 }
 
 /* Hide an actor in the room they're in */
 static int kiavc_lua_method_hideactor(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->hide_actor(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->hide_actor(id));
 }
 
 /* Fade an actor in */
 static int kiavc_lua_method_fadeactorin(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int ms = luaL_checknumber(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_actor_to(id, 255, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_actor_to(id, 255, ms));
 }
 
 /* Fade an actor out */
 static int kiavc_lua_method_fadeactorout(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int ms = luaL_checknumber(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_actor_to(id, 0, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_actor_to(id, 0, ms));
 }
 
 /* Fade an actor to a specific alpha */
 static int kiavc_lua_method_fadeactorto(lua_State *s) {
 	int n = lua_gettop(s), exp = 3;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int alpha = luaL_checknumber(s, 2);
 	int ms = luaL_checknumber(s, 3);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_actor_to(id, alpha, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_actor_to(id, alpha, ms));
 }
 
 /* Set the alpha for the actor */
 static int kiavc_lua_method_setactoralpha(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int alpha = luaL_checkinteger(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_actor_alpha(id, alpha);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_actor_alpha(id, alpha));
 }
 
 /* Set the z-plane for the actor */
 static int kiavc_lua_method_setactorplane(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int zplane = luaL_checkinteger(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_actor_plane(id, zplane);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_actor_plane(id, zplane));
 }
 
 /* Set the movement speed for the actor */
 static int kiavc_lua_method_setactorspeed(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int speed = luaL_checkinteger(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_actor_speed(id, speed);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_actor_speed(id, speed));
 }
 
 /* Scale an actor */
 static int kiavc_lua_method_scaleactor(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	float scale = luaL_checknumber(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->scale_actor(id, scale);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->scale_actor(id, scale));
 }
 
 /* Walk an actor to some coordinates */
 static int kiavc_lua_method_walkactorto(lua_State *s) {
 	int n = lua_gettop(s), exp = 3;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int x = luaL_checknumber(s, 2);
 	int y = luaL_checknumber(s, 3);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->walk_actor_to(id, x, y);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->walk_actor_to(id, x, y));
 }
 
 /* Have an actor say something */
 static int kiavc_lua_method_sayactor(lua_State *s) {
 	/* This method allows the Lua script to have an actor say something */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
@@ -1978,324 +1751,288 @@ static int kiavc_lua_method_sayactor(lua_State *s) {
 	}
 	SDL_Color outline = { .r = or, .g = og, .b = ob };
 	if(id == NULL || font == NULL || text == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID or text\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->say_actor(id, text, font, &color, (or != -1 && og != -1 && ob != -1 ? &outline : NULL));
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->say_actor(id, text, font, &color,
+		(or != -1 && og != -1 && ob != -1 ? &outline : NULL)));
 }
 
 /* Change the actor's direction */
 static int kiavc_lua_method_setactordirection(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *direction = luaL_checkstring(s, 2);
 	if(id == NULL || direction == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID or direction\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_actor_direction(id, direction);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_actor_direction(id, direction));
 
 }
 
 /* Set the currently controlled actor */
 static int kiavc_lua_method_controlledactor(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->controlled_actor(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->controlled_actor(id));
 
 }
 
 /* Skip the text any actor is saying */
 static int kiavc_lua_method_skipactorstext(lua_State *s) {
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->skip_actors_text();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->skip_actors_text());
 
 }
 
 /* Set a specific state for an actor */
 static int kiavc_lua_method_setactorstate(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *type = luaL_checkstring(s, 2);
 	if(id == NULL || type == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID or type\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_actor_state(id, type);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_actor_state(id, type));
 }
 
 /* Register a new costume in the engine */
 static int kiavc_lua_method_registercostume(lua_State *s) {
 	/* This method allows the Lua script to notify the engine about a new costume */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
 	const char *id = luaL_checkstring(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing costume ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->register_costume(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->register_costume(id));
 }
 
 /* Set the current animation for a costume */
 static int kiavc_lua_method_setcostumeanimation(lua_State *s) {
 	int n = lua_gettop(s), exp = 4;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *type = luaL_checkstring(s, 2);
 	const char *direction = luaL_checkstring(s, 3);
 	const char *anim = luaL_checkstring(s, 4);
 	if(id == NULL || type == NULL || direction == NULL || anim == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing costume ID, type, direction or animation ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_costume_animation(id, type, direction, anim);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_costume_animation(id, type, direction, anim));
 }
 
 /* Register a new object in the engine */
 static int kiavc_lua_method_registerobject(lua_State *s) {
 	/* This method allows the Lua script to notify the engine about a new object */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
 	const char *id = luaL_checkstring(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->register_object(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->register_object(id));
 }
 
 /* Set the current animation for an object */
 static int kiavc_lua_method_setobjectanimation(lua_State *s) {
 	int n = lua_gettop(s), exp = 3;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *state = luaL_checkstring(s, 2);
 	const char *anim = luaL_checkstring(s, 3);
 	if(id == NULL || anim == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object animation ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	if(state == NULL)
 		state = "default";
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_animation(id, state, anim);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_animation(id, state, anim));
 }
 
 /* Mark whether this object can be interacted with */
 static int kiavc_lua_method_setobjectinteractable(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	bool interactable = lua_toboolean(s, 2);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_interactable(id, interactable);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_interactable(id, interactable));
 
 }
 
 /* Mark whether this object is of the UI */
 static int kiavc_lua_method_setobjectui(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	bool ui = lua_toboolean(s, 2);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_ui(id, ui);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_ui(id, ui));
 
 }
 
 /* Set the UI position for this object */
 static int kiavc_lua_method_setobjectuiposition(lua_State *s) {
 	int n = lua_gettop(s), exp = 3;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int x = luaL_checknumber(s, 2);
 	int y = luaL_checknumber(s, 3);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_ui_position(id, x, y);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_ui_position(id, x, y));
 
 }
 
 /* Set the current animation for an object, when part of the UI */
 static int kiavc_lua_method_setobjectuianimation(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *anim = luaL_checkstring(s, 2);
 	if(id == NULL || anim == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object animation ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_ui_animation(id, anim);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_ui_animation(id, anim));
 }
 
 /* Set the parent for an object (start relative positioning), when part of the UI */
 static int kiavc_lua_method_setobjectparent(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *parent = luaL_checkstring(s, 2);
 	if(id == NULL || parent == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object IDs\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_parent(id, parent);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_parent(id, parent));
 }
 
 /* Remove the parent for an object (stop relative positioning), when part of the UI */
 static int kiavc_lua_method_removeobjectparent(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->remove_object_parent(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->remove_object_parent(id));
 }
 
 /* Move an object to a specific room */
 static int kiavc_lua_method_moveobjectto(lua_State *s) {
 	int n = lua_gettop(s), exp = 4;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *room = luaL_checkstring(s, 2);
 	int x = luaL_checknumber(s, 3);
 	int y = luaL_checknumber(s, 4);
 	if(id == NULL || room == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object or room ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->move_object_to(id, room, x, y);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->move_object_to(id, room, x, y));
 }
 
 /* Float an object at some coordinates at a certain speed */
 static int kiavc_lua_method_floatobjectto(lua_State *s) {
 	/* This method allows the Lua script to move an object around */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
 	const char *id = luaL_checkstring(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	lua_getfield(s, 1, "x");
 	int x = luaL_checknumber(s, 3);
@@ -2304,8 +2041,7 @@ static int kiavc_lua_method_floatobjectto(lua_State *s) {
 	lua_getfield(s, 1, "speed");
 	int speed = luaL_checknumber(s, 5);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->float_object_to(id, x, y, speed);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->float_object_to(id, x, y, speed));
 }
 
 /* Specify the hover coordinates for an object */
@@ -2313,7 +2049,7 @@ static int kiavc_lua_method_setobjecthover(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
 	if(n > exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	luaL_checktype(s, 2, LUA_TTABLE);
@@ -2326,229 +2062,205 @@ static int kiavc_lua_method_setobjecthover(lua_State *s) {
 	lua_getfield(s, 2, "y2");
 	int to_y = luaL_checknumber(s, 6);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing room ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_hover(id, from_x, from_y, to_x, to_y);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_hover(id, from_x, from_y, to_x, to_y));
 }
 
 /* Show an object in the room they're in */
 static int kiavc_lua_method_showobject(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->show_object(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->show_object(id));
 }
 
 /* Hide an object in the room they're in */
 static int kiavc_lua_method_hideobject(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->hide_object(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->hide_object(id));
 }
 
 /* Fade an object in */
 static int kiavc_lua_method_fadeobjectin(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int ms = luaL_checknumber(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_object_to(id, 255, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_object_to(id, 255, ms));
 }
 
 /* Fade an object out */
 static int kiavc_lua_method_fadeobjectout(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int ms = luaL_checknumber(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_object_to(id, 0, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_object_to(id, 0, ms));
 }
 
 /* Fade an object to a specific alpha */
 static int kiavc_lua_method_fadeobjectto(lua_State *s) {
 	int n = lua_gettop(s), exp = 3;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int alpha = luaL_checknumber(s, 2);
 	int ms = luaL_checknumber(s, 3);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_object_to(id, alpha, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_object_to(id, alpha, ms));
 }
 
 /* Set the alpha for the object */
 static int kiavc_lua_method_setobjectalpha(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int alpha = luaL_checkinteger(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_alpha(id, alpha);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_alpha(id, alpha));
 }
 
 /* Set the z-plane for the object */
 static int kiavc_lua_method_setobjectplane(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int zplane = luaL_checkinteger(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_plane(id, zplane);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_plane(id, zplane));
 }
 
 /* Set the state for the object */
 static int kiavc_lua_method_setobjectstate(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *state = luaL_checkstring(s, 2);
 	if(id == NULL || state == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID or state\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_object_state(id, state);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_object_state(id, state));
 }
 
 /* Scale an object */
 static int kiavc_lua_method_scaleobject(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	float scale = luaL_checknumber(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->scale_object(id, scale);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->scale_object(id, scale));
 }
 
 /* Add an object to an actor's inventory */
 static int kiavc_lua_method_addobjecttoinventory(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *owner = luaL_checkstring(s, 2);
 	if(id == NULL || owner == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object or actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->add_object_to_inventory(id, owner);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->add_object_to_inventory(id, owner));
 }
 
 /* Remove an object from an actor's inventory */
 static int kiavc_lua_method_removeobjectfrominventory(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	const char *owner = luaL_checkstring(s, 2);
 	if(id == NULL || owner == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing object or actor ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->remove_object_from_inventory(id, owner);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->remove_object_from_inventory(id, owner));
 }
 
 /* Show some text at some coordinates for some time */
 static int kiavc_lua_method_showtext(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "font");
@@ -2556,9 +2268,8 @@ static int kiavc_lua_method_showtext(lua_State *s) {
 	lua_getfield(s, 1, "text");
 	const char *text = luaL_checkstring(s, 3);
 	if(font == NULL || text == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing actor ID or text\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	lua_getfield(s, 1, "x");
 	int x = luaL_checknumber(s, 4);
@@ -2603,26 +2314,24 @@ static int kiavc_lua_method_showtext(lua_State *s) {
 	if(lua_getfield(s, 1, "plane") != LUA_TNIL)
 		plane = luaL_checknumber(s, idx);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->show_text(id, text, font, &color,
-		(or != -1 && og != -1 && ob != -1 ? &outline : NULL), x, y, alpha, absolute, plane, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->show_text(id, text, font, &color,
+		(or != -1 && og != -1 && ob != -1 ? &outline : NULL), x, y, alpha, absolute, plane, ms));
 }
 
 /* Float some text at some coordinates at a certain speed */
 static int kiavc_lua_method_floattextto(lua_State *s) {
 	/* This method allows the Lua script to move text around */
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	luaL_checktype(s, 1, LUA_TTABLE);
 	lua_getfield(s, 1, "id");
 	const char *id = luaL_checkstring(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	lua_getfield(s, 1, "x");
 	int x = luaL_checknumber(s, 3);
@@ -2631,114 +2340,96 @@ static int kiavc_lua_method_floattextto(lua_State *s) {
 	lua_getfield(s, 1, "speed");
 	int speed = luaL_checknumber(s, 5);
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->float_text_to(id, x, y, speed);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->float_text_to(id, x, y, speed));
 }
 
 /* Fade rendered text in */
 static int kiavc_lua_method_fadetextin(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int ms = luaL_checknumber(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_text_to(id, 255, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_text_to(id, 255, ms));
 }
 
 /* Fade rendered text out */
 static int kiavc_lua_method_fadetextout(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int ms = luaL_checknumber(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_text_to(id, 0, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_text_to(id, 0, ms));
 }
 
 /* Fade rendered text to a specific alpha */
 static int kiavc_lua_method_fadetextto(lua_State *s) {
 	int n = lua_gettop(s), exp = 3;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int alpha = luaL_checknumber(s, 2);
 	int ms = luaL_checknumber(s, 3);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->fade_text_to(id, alpha, ms);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->fade_text_to(id, alpha, ms));
 }
 
 /* Set the alpha for the rendered text */
 static int kiavc_lua_method_settextalpha(lua_State *s) {
 	int n = lua_gettop(s), exp = 2;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	int alpha = luaL_checkinteger(s, 2);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->set_text_alpha(id, alpha);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->set_text_alpha(id, alpha));
 }
 
 /* Remove rendered text, if an ID had been provided */
 static int kiavc_lua_method_removetext(lua_State *s) {
 	int n = lua_gettop(s), exp = 1;
-	if(n != exp) {
+	if(n < exp) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	const char *id = luaL_checkstring(s, 1);
 	if(id == NULL) {
-		/* Ignore */
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing text ID\n");
-		return 0;
+		return KIAVC_LUA_RESULT(s, false);
 	}
 	/* Invoke the application callback to enforce this */
-	kiavc_cb->remove_text(id);
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->remove_text(id));
 }
 
 /* Quit */
 static int kiavc_lua_method_quit(lua_State *s) {
 	/* This method allows the Lua script to quit the game */
-	int n = lua_gettop(s), exp = 0;
-	if(n != exp) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
-		return 0;
-	}
-	/* Invoke the application callback to enforce this */
-	kiavc_cb->quit();
-	return 0;
+	return KIAVC_LUA_RESULT(s, kiavc_cb->quit());
 }
