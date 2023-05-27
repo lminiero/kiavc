@@ -234,6 +234,7 @@ static bool kiavc_engine_fade_text_to(const char *id, int alpha, int ms);
 static bool kiavc_engine_set_text_alpha(const char *id, int alpha);
 static bool kiavc_engine_remove_text(const char *id);
 static bool kiavc_engine_load_plugin(const char *name);
+static bool kiavc_engine_is_plugin_loaded(const char *name);
 static bool kiavc_engine_quit(void);
 static kiavc_scripts_callbacks scripts_callbacks =
 	{
@@ -336,6 +337,7 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.set_text_alpha = kiavc_engine_set_text_alpha,
 		.remove_text = kiavc_engine_remove_text,
 		.load_plugin = kiavc_engine_load_plugin,
+		.is_plugin_loaded = kiavc_engine_is_plugin_loaded,
 		.quit = kiavc_engine_quit,
 	};
 
@@ -3640,7 +3642,7 @@ static bool kiavc_engine_remove_text(const char *id) {
 static bool kiavc_engine_load_plugin(const char *name) {
 	if(!name)
 		return false;
-	/* Get the text */
+	/* Check if the plugin is already in the list */
 	kiavc_plugin *plugin = kiavc_map_lookup(plugins, name);
 	if(plugin) {
 		/* Plugin already loaded */
@@ -3658,6 +3660,13 @@ static bool kiavc_engine_load_plugin(const char *name) {
 	/* Done */
 	SDL_Log("Loaded plugin '%s' (%s)\n", name, plugin->get_name());
 	return true;
+}
+static bool kiavc_engine_is_plugin_loaded(const char *name) {
+	if(!name)
+		return false;
+	/* Check if we know about this plugin */
+	kiavc_plugin *plugin = kiavc_map_lookup(plugins, name);
+	return (plugin ? true : false);
 }
 static bool kiavc_engine_quit(void) {
 	SDL_Log("Quitting the engine\n");

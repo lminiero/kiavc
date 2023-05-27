@@ -120,6 +120,7 @@ typedef struct kiavc_scripts_callbacks {
 	bool (* const set_text_alpha)(const char *id, int alpha);
 	bool (* const remove_text)(const char *id);
 	bool (* const load_plugin)(const char *name);
+	bool (* const is_plugin_loaded)(const char *name);
 	bool (* const quit)(void);
 } kiavc_scripts_callbacks;
 
