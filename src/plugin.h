@@ -67,6 +67,8 @@ typedef kiavc_plugin *create_p(void);
 struct kiavc_plugin_callbacks {
 	/* Helper function to register a new script function */
 	void (* const register_function)(const char *name, int (* const function)(void *s));
+	/* Helper function to get a file from the game resources */
+	SDL_RWops *(* const open_file)(const char *path);
 	/* Helper function to run a Lua command from a string */
 	void (* const run_command)(const char *fmt, ...);
 	/* Helper function to add a new plugin resource to render along others */

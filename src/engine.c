@@ -348,6 +348,7 @@ static void kiavc_plugins_run_command(const char *fmt, ...);
 static kiavc_plugin_callbacks plugin_callbacks =
 	{
 		.register_function = kiavc_scripts_register_function,
+		.open_file = kiavc_engine_open_file,
 		.run_command = kiavc_plugins_run_command,
 		.add_resource = kiavc_plugins_add_resource,
 		.remove_resource = kiavc_plugins_remove_resource,
