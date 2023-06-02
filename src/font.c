@@ -71,6 +71,10 @@ static SDL_Surface *kiavc_font_render_helper(kiavc_font *font, SDL_Renderer *ren
 		const char *text, SDL_Color *color, SDL_Color *bg_color, int max_width) {
 	if(!font || !renderer || !text || !color)
 		return NULL;
+	if(strlen(text) == 0) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Text is an empty string, can't render\n");
+		return NULL;
+	}
 	int w = 0, h = 0;
 	if(TTF_SizeUTF8(font->instance, text, &w, &h) < 0) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't estimate text size: %s\n", TTF_GetError());
@@ -122,51 +126,85 @@ kiavc_font_text *kiavc_font_render_text(kiavc_font *font, SDL_Renderer *renderer
 	}
 	/* Check if we should split on multiple lines */
 	SDL_Surface *s_text = NULL;
-	if(max_width == 0 || w <= max_width) {
+	if(strstr(text, "\n") == NULL && (max_width == 0 || w <= max_width)) {
 		/* The text fits the maximum width, render as it is */
 		s_text = kiavc_font_render_helper(font, renderer, text, color, bg_color, max_width);
 	} else {
-		/* Split in multiple strings before rendering */
-		int len = strlen(text);
-		float diff = (float)w / (float)max_width;
-		int diff_dec = (int)diff;
-		if(diff > (float)diff_dec)
-			diff_dec++;
-		int line_len = len / diff_dec;
-		char **words = g_strsplit(text, " ", -1);
-		int index = 0, s_height = 0, s_width = 0, word_len = 0, line_offset = 0;
-		char line[256];
-		line[0] = '\0';
-		SDL_Surface *s_line = NULL;
+		/* Split in multiple strings before rendering: start splitting by \n */
+		char **lines = g_strsplit(text, "\n", -1);
 		kiavc_list *surfaces = NULL;
-		if(words) {
-			while(true) {
-				word_len = words[index] ? SDL_strlen(words[index]) : 0;
-				if(!words[index] || line_offset + word_len > line_len) {
-					/* Render the string we came up with so far */
-					s_line = kiavc_font_render_helper(font, renderer, line, color, bg_color, max_width);
-					if(s_line == NULL) {
-						g_list_free_full(surfaces, (GDestroyNotify)SDL_FreeSurface);
-						return NULL;
-					}
-					if(s_width < s_line->w)
-						s_width = s_line->w;
-					s_height += s_line->h;
-					surfaces = kiavc_list_append(surfaces, s_line);
-					line[0] = '\0';
-					line_offset = 0;
-				}
-				if(!words[index])
-					break;
-				/* Add another word to the current line */
-				SDL_snprintf(line + line_offset, sizeof(line) - line_offset - 1,
-					"%s%s", line_offset ? " " : "", words[index]);
-				line_offset += word_len;
-				if(line_offset > word_len)
-					line_offset++;
-				index++;
+		SDL_Surface *s_line = NULL;
+		int li = 0, lw = 0, lh = 0, s_height = 0, s_width = 0;
+		while(lines && lines[li]) {
+			if(TTF_SizeUTF8(font->instance, lines[li], &lw, &lh) < 0) {
+				SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't estimate line size: %s\n", TTF_GetError());
 			}
-			g_strfreev(words);
+			if(max_width == 0 || lw <= max_width) {
+				/* We can render this line in one go, let's do that */
+				s_line = kiavc_font_render_helper(font, renderer, lines[li], color, bg_color, max_width);
+				if(s_line == NULL) {
+					g_list_free_full(surfaces, (GDestroyNotify)SDL_FreeSurface);
+					return NULL;
+				}
+				if(s_width < s_line->w)
+					s_width = s_line->w;
+				s_height += s_line->h;
+				surfaces = kiavc_list_append(surfaces, s_line);
+				li++;
+				continue;
+			}
+			/* If we got here, we need to split this line in more lines */
+			int len = strlen(lines[li]);
+			if(len == 0) {
+				li++;
+				continue;
+			}
+			float diff = (float)lw / (float)max_width;
+			int diff_dec = (int)diff;
+			if(diff > (float)diff_dec)
+				diff_dec++;
+			int line_len = len / diff_dec;
+			char **words = g_strsplit(lines[li], " ", -1);
+			int index = 0, word_len = 0, line_offset = 0;
+			char line[256];
+			line[0] = '\0';
+			if(words) {
+				while(true) {
+					word_len = words[index] ? SDL_strlen(words[index]) : 0;
+					if(!words[index] || (strlen(line) > 0 && line_offset + word_len > line_len)) {
+						/* Render the string we came up with so far */
+						s_line = kiavc_font_render_helper(font, renderer, line, color, bg_color, max_width);
+						if(s_line == NULL) {
+							g_list_free_full(surfaces, (GDestroyNotify)SDL_FreeSurface);
+							return NULL;
+						}
+						if(s_width < s_line->w)
+							s_width = s_line->w;
+						s_height += s_line->h;
+						surfaces = kiavc_list_append(surfaces, s_line);
+						line[0] = '\0';
+						line_offset = 0;
+					}
+					if(!words[index])
+						break;
+					/* Add another word to the current line */
+					SDL_snprintf(line + line_offset, sizeof(line) - line_offset - 1,
+						"%s%s", line_offset ? " " : "", words[index]);
+					line_offset += word_len;
+					if(line_offset > word_len)
+						line_offset++;
+					index++;
+				}
+				g_strfreev(words);
+			}
+			/* Next line (if we splitted by \n) */
+			li++;
+		}
+		g_strfreev(lines);
+		if(s_width == 0 || s_height == 0) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error splitting lines\n");
+			g_list_free_full(surfaces, (GDestroyNotify)SDL_FreeSurface);
+			return NULL;
 		}
 		/* Create the complete surface */
 		s_text = kiavc_create_surface(s_width, s_height);
