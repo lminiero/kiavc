@@ -248,6 +248,10 @@ static int kiavc_lua_method_fadetextto(lua_State *s);
 static int kiavc_lua_method_settextalpha(lua_State *s);
 /* Remove rendered text, if an ID had been provided */
 static int kiavc_lua_method_removetext(lua_State *s);
+/* Load an external KIAVC plugin */
+static int kiavc_lua_method_load_plugin(lua_State *s);
+/* Checks whether a specific KIAVC plugin has been loaded */
+static int kiavc_lua_method_is_plugin_loaded(lua_State *s);
 /* Quit */
 static int kiavc_lua_method_quit(lua_State *s);
 
@@ -422,6 +426,8 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "fadeTextTo", kiavc_lua_method_fadetextto);
 	lua_register(lua_state, "setTextAlpha", kiavc_lua_method_settextalpha);
 	lua_register(lua_state, "removeText", kiavc_lua_method_removetext);
+	lua_register(lua_state, "loadPlugin", kiavc_lua_method_load_plugin);
+	lua_register(lua_state, "isPluginLoaded", kiavc_lua_method_is_plugin_loaded);
 	lua_register(lua_state, "quit", kiavc_lua_method_quit);
 	/* Set the scripts folder */
 	lua_getglobal(lua_state, "package");
@@ -490,6 +496,13 @@ int kiavc_scripts_update_world(Uint32 ticks) {
 		return -1;
 	}
 	return 0;
+}
+
+/* Register an external function */
+void kiavc_scripts_register_function(const char *name, int (* const function)(void *s)) {
+	if(!lua_state)
+		return;
+	lua_register(lua_state, name, (lua_CFunction)function);
 }
 
 /* Close the script engine */
@@ -2426,6 +2439,40 @@ static int kiavc_lua_method_removetext(lua_State *s) {
 	}
 	/* Invoke the application callback to enforce this */
 	return KIAVC_LUA_RESULT(s, kiavc_cb->remove_text(id));
+}
+
+/* Load an external KIAVC plugin */
+static int kiavc_lua_method_load_plugin(lua_State *s) {
+	int n = lua_gettop(s), exp = 1;
+	if(n < exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return KIAVC_LUA_RESULT(s, false);
+	}
+	const char *name = luaL_checkstring(s, 1);
+	if(name == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing plugin name\n");
+		return KIAVC_LUA_RESULT(s, false);
+	}
+	/* Invoke the application callback to enforce this */
+	return KIAVC_LUA_RESULT(s, kiavc_cb->load_plugin(name));
+}
+
+/* Checks whether a specific KIAVC plugin has been loaded */
+static int kiavc_lua_method_is_plugin_loaded(lua_State *s) {
+	int n = lua_gettop(s), exp = 1;
+	if(n < exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments: %d (expected %d)\n", n, exp);
+		return KIAVC_LUA_RESULT(s, false);
+	}
+	const char *name = luaL_checkstring(s, 1);
+	if(name == NULL) {
+		/* Ignore */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Missing plugin name\n");
+		return KIAVC_LUA_RESULT(s, false);
+	}
+	/* Invoke the application callback to enforce this */
+	return KIAVC_LUA_RESULT(s, kiavc_cb->is_plugin_loaded(name));
 }
 
 /* Quit */

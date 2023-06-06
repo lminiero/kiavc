@@ -119,6 +119,8 @@ typedef struct kiavc_scripts_callbacks {
 	bool (* const fade_text_to)(const char *id, int alpha, int ms);
 	bool (* const set_text_alpha)(const char *id, int alpha);
 	bool (* const remove_text)(const char *id);
+	bool (* const load_plugin)(const char *name);
+	bool (* const is_plugin_loaded)(const char *name);
 	bool (* const quit)(void);
 } kiavc_scripts_callbacks;
 
@@ -128,6 +130,8 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 void kiavc_scripts_run_command(const char *fmt, ...);
 /* Update the world in the script */
 int kiavc_scripts_update_world(Uint32 ticks);
+/* Register an external function */
+void kiavc_scripts_register_function(const char *name, int (* const function)(void *s));
 /* Close the script engine */
 void kiavc_scripts_unload(void);
 
