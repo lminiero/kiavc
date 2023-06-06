@@ -34,6 +34,10 @@ static int kiavc_lua_method_kiavcrequire(lua_State *s);
 static int kiavc_lua_method_getversion(lua_State *s);
 /* Return version string */
 static int kiavc_lua_method_getversionstring(lua_State *s);
+/* Require compatibility of version as major, minor, patch */
+static int kiavc_lua_method_requireenginecompatible(lua_State *s);
+/* Require exact version as major, minor, patch */
+static int kiavc_lua_method_requireengineversion(lua_State *s);
 /* Logging, to use the same SDL-based logging as the rest of the application */
 static int kiavc_lua_method_kiavclog(lua_State *s);
 /* Error logging, to use the same SDL-based logging as the rest of the application */
@@ -315,6 +319,8 @@ int kiavc_scripts_load(const char *path, const kiavc_scripts_callbacks *callback
 	lua_register(lua_state, "kiavcRequire", kiavc_lua_method_kiavcrequire);
 	lua_register(lua_state, "getVersion", kiavc_lua_method_getversion);
 	lua_register(lua_state, "getVersionString", kiavc_lua_method_getversionstring);
+	lua_register(lua_state, "requireEngineCompatible", kiavc_lua_method_requireenginecompatible);
+	lua_register(lua_state, "requireEngineVersion", kiavc_lua_method_requireengineversion);
 	lua_register(lua_state, "kiavcLog", kiavc_lua_method_kiavclog);
 	lua_register(lua_state, "kiavcError", kiavc_lua_method_kiavcerror);
 	lua_register(lua_state, "kiavcWarn", kiavc_lua_method_kiavcwarn);
@@ -551,6 +557,67 @@ static int kiavc_lua_method_getversionstring(lua_State *s) {
 	/* This method allows the Lua script to retrieve the engine version as a string */
 	lua_pushstring(s, KIAVC_VERSION_STRING);
 	return 1;
+}
+
+/* Require compatibility of version as major, minor, patch */
+static int kiavc_lua_method_requireenginecompatible(lua_State *s) {
+	/* This method is the common core of the two engine version checker functions */
+	int n = lua_gettop(s), exp = 3;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments (require engine compatible): %d (expected %d)\n", n, exp);
+		kiavc_cb->quit();
+		return 0;
+	}
+	int major = luaL_checknumber(s, 1);
+	if(major != KIAVC_VERSION_MAJOR) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC major version number incompatible: %d (expected %d)\n", KIAVC_VERSION_MAJOR, major);
+		kiavc_cb->quit();
+		return 0;
+	}
+	int minor = luaL_checknumber(s, 2);
+	if(minor > KIAVC_VERSION_MINOR) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC minor version number too low: %d (expected %d)\n", KIAVC_VERSION_MINOR, minor);
+		kiavc_cb->quit();
+		return 0;
+	}
+	int patch = luaL_checknumber(s, 3);
+	if(minor == KIAVC_VERSION_MINOR && patch > KIAVC_VERSION_PATCH) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC patch version number too low: %d (expected %d)\n", KIAVC_VERSION_PATCH, patch);
+		kiavc_cb->quit();
+		return 0;
+	}
+	return 0;
+}
+
+/* Require exact version as major, minor, patch */
+static int kiavc_lua_method_requireengineversion(lua_State *s) {
+	/* This method is the common core of the two engine version checker functions */
+	int n = lua_gettop(s), exp = 3;
+	if(n != exp) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] Wrong number of arguments (require engine version): %d (expected %d)\n", n, exp);
+		kiavc_cb->quit();
+		return 0;
+	}
+	short differences = 0;
+	int major = luaL_checknumber(s, 1);
+	if(major != KIAVC_VERSION_MAJOR) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC major version number mismatch: %d (expected %d)\n", KIAVC_VERSION_MAJOR, major);
+		differences += 1;
+	}
+	int minor = luaL_checknumber(s, 2);
+	if(minor > KIAVC_VERSION_MINOR) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC minor version number mismatch: %d (expected %d)\n", KIAVC_VERSION_MINOR, minor);
+		differences += 1;
+	}
+	int patch = luaL_checknumber(s, 3);
+	if(patch > KIAVC_VERSION_PATCH) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[Lua] KIAVC patch version number mismatch: %d (expected %d)\n", KIAVC_VERSION_PATCH, patch);
+		differences += 1;
+	}
+	if (differences > 0) {
+		kiavc_cb->quit();
+	}
+	return 0;
 }
 
 /* Logging, to use the same SDL-based logging as the rest of the application */
