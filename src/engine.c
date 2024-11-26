@@ -33,6 +33,7 @@
 #include "costume.h"
 #include "object.h"
 #include "dialog.h"
+#include "plugin.h"
 
 /* Global SDL resources */
 static SDL_Window *window = NULL;
@@ -40,6 +41,7 @@ static SDL_Renderer *renderer = NULL;
 static SDL_Texture *canvas = NULL;
 static char *app_path = NULL;
 static bool quit = false;
+static SDL_threadID thread = 0;
 
 /* Window properties */
 static char *kiavc_screen_title = NULL;
@@ -78,6 +80,12 @@ static kiavc_map *costumes = NULL;
 static kiavc_map *objects = NULL;
 static kiavc_map *texts = NULL;
 static kiavc_map *dialogs = NULL;
+static kiavc_map *plugins = NULL;
+
+/* Map of plugins as a list, to avoid having to allocate one every time */
+static kiavc_list *plugins_list = NULL;
+/* List of plugin resources to render, sorted by z-plane */
+static kiavc_list *plugin_resources = NULL;
 
 /* Engine struct */
 typedef struct kiavc_engine {
@@ -225,6 +233,8 @@ static bool kiavc_engine_float_text_to(const char *id, int x, int y, int speed);
 static bool kiavc_engine_fade_text_to(const char *id, int alpha, int ms);
 static bool kiavc_engine_set_text_alpha(const char *id, int alpha);
 static bool kiavc_engine_remove_text(const char *id);
+static bool kiavc_engine_load_plugin(const char *name);
+static bool kiavc_engine_is_plugin_loaded(const char *name);
 static bool kiavc_engine_quit(void);
 static kiavc_scripts_callbacks scripts_callbacks =
 	{
@@ -326,7 +336,22 @@ static kiavc_scripts_callbacks scripts_callbacks =
 		.fade_text_to = kiavc_engine_fade_text_to,
 		.set_text_alpha = kiavc_engine_set_text_alpha,
 		.remove_text = kiavc_engine_remove_text,
+		.load_plugin = kiavc_engine_load_plugin,
+		.is_plugin_loaded = kiavc_engine_is_plugin_loaded,
 		.quit = kiavc_engine_quit,
+	};
+
+/* Plugin callbacks */
+static void kiavc_plugins_add_resource(kiavc_plugin_resource *resource);
+static void kiavc_plugins_remove_resource(kiavc_plugin_resource *resource);
+static void kiavc_plugins_run_command(const char *fmt, ...);
+static kiavc_plugin_callbacks plugin_callbacks =
+	{
+		.register_function = kiavc_scripts_register_function,
+		.open_file = kiavc_engine_open_file,
+		.run_command = kiavc_plugins_run_command,
+		.add_resource = kiavc_plugins_add_resource,
+		.remove_resource = kiavc_plugins_remove_resource,
 	};
 
 /* Helper to renegerate the scanlines texture (if scanlines are enabled) */
@@ -441,6 +466,8 @@ static int kiavc_engine_sort_resources(const kiavc_resource *r1, const kiavc_res
 /* Initialize the engine */
 int kiavc_engine_init(const char *app, kiavc_bag *bagfile) {
 	bag = bagfile;
+	thread = SDL_ThreadID();
+	SDL_Log("Thread ID: %lu\n", thread);
 
 	/* Create maps */
 	animations = kiavc_map_create((kiavc_map_value_destroy)&kiavc_animation_destroy);
@@ -453,6 +480,7 @@ int kiavc_engine_init(const char *app, kiavc_bag *bagfile) {
 	objects = kiavc_map_create((kiavc_map_value_destroy)&kiavc_object_destroy);
 	texts = kiavc_map_create((kiavc_map_value_destroy)&kiavc_font_text_destroy);
 	dialogs = kiavc_map_create((kiavc_map_value_destroy)&kiavc_dialog_destroy);
+	plugins = kiavc_map_create((kiavc_map_value_destroy)&kiavc_plugin_destroy);
 
 	/* FIXME As in the logger, we get the path where we can save files, which
 	 * we'll used for saved screenshots. And as in the logger, we're currently
@@ -837,7 +865,8 @@ int kiavc_engine_handle_input(void) {
 				}
 				kiavc_font_text_destroy(console_rendered);
 				SDL_Color color = { .r = 128, .g = 128, .b = 128 };
-				console_rendered = kiavc_font_render_text(console_font, renderer, console_text, &color, NULL, kiavc_screen_width);
+				console_rendered = kiavc_font_render_text(console_font, renderer, console_text, &color,
+					NULL, kiavc_screen_width * kiavc_screen_scale);
 				continue;
 			}
 			/* If we got here, the console is not active: pass the key to the script */
@@ -1246,6 +1275,14 @@ int kiavc_engine_update_world(void) {
 		fading = fading->next;
 	}
 	kiavc_list_destroy(faded);
+	/* To conclude, we tell all plugins that want to know it about the new tick */
+	kiavc_list *pl = plugins_list;
+	while(pl) {
+		kiavc_plugin *plugin = (kiavc_plugin *)pl->data;
+		if(plugin && plugin->update_world)
+			plugin->update_world(ticks);
+		pl = pl->next;
+	}
 	/* Done */
 	return 0;
 }
@@ -1491,6 +1528,11 @@ int kiavc_engine_render(void) {
 					SDL_SetTextureAlphaMod(line->texture, line->res.fade_alpha);
 					SDL_RenderCopy(renderer, line->texture, NULL, &rect);
 				}
+			} else if(resource->type == KIAVC_PLUGIN) {
+				/* This is a plugin resource, invoke its render function */
+				kiavc_plugin_resource *pr = (kiavc_plugin_resource *)resource;
+				if(pr && pr->rendering == KIAVC_PLUGIN_RENDERING_REGULAR && pr->plugin && pr->plugin->render)
+					pr->plugin->render(pr, renderer, kiavc_screen_width, kiavc_screen_height);
 			}
 			item = item->next;
 		}
@@ -1532,6 +1574,14 @@ int kiavc_engine_render(void) {
 			rect.h = cursor->animation->h;
 			if(cursor->animation->texture)
 				SDL_RenderCopy(renderer, cursor->animation->texture, &clip, &rect);
+		}
+		/* Check if there's any plugins that want to render stuff now */
+		kiavc_list *pl = plugin_resources;
+		while(pl) {
+			kiavc_plugin_resource *pr = (kiavc_plugin_resource *)pl->data;
+			if(pr && pr->rendering == KIAVC_PLUGIN_RENDERING_AFTER && pr->plugin && pr->plugin->render)
+				pr->plugin->render(pr, renderer, kiavc_screen_width, kiavc_screen_height);
+			pl = pl->next;
 		}
 		/* Now that we're done with game stuff, let's pass the back texture to the renderer:
 		 * this will allow us to render debugging stuff and filters at the actual resolution */
@@ -1640,6 +1690,16 @@ int kiavc_engine_render(void) {
 		/* If the scanlines filter is active, display that too */
 		if(kiavc_screen_scanlines_texture)
 			SDL_RenderCopy(renderer, kiavc_screen_scanlines_texture, NULL, NULL);
+		/* Check if there's any plugins that want to render stuff as the last thing */
+		pl = plugin_resources;
+		while(pl) {
+			kiavc_plugin_resource *pr = (kiavc_plugin_resource *)pl->data;
+			if(pr && pr->rendering == KIAVC_PLUGIN_RENDERING_LAST && pr->plugin && pr->plugin->render) {
+				pr->plugin->render(pr, renderer, kiavc_screen_width * kiavc_screen_scale,
+					kiavc_screen_height * kiavc_screen_scale);
+			}
+			pl = pl->next;
+		}
 		/* Done, render to the screen */
 		SDL_RenderPresent(renderer);
 	}
@@ -1662,6 +1722,8 @@ void kiavc_engine_destroy(void) {
 	kiavc_map_destroy(fonts);
 	kiavc_map_destroy(audios);
 	kiavc_map_destroy(animations);
+	kiavc_map_destroy(plugins);
+	kiavc_list_destroy(plugins_list);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_DestroyTexture(canvas);
@@ -1875,7 +1937,8 @@ static bool kiavc_engine_show_console(void) {
 		SDL_StartTextInput();
 		SDL_snprintf(console_text, sizeof(console_text)-1, "%s", console_history ? "> " : "> -- Console active");
 		SDL_Color color = { .r = 128, .g = 128, .b = 128, 0 };
-		console_rendered = kiavc_font_render_text(console_font, renderer, console_text, &color, NULL, kiavc_screen_width);
+		console_rendered = kiavc_font_render_text(console_font, renderer, console_text, &color,
+			NULL, kiavc_screen_width * kiavc_screen_scale);
 		SDL_Log("Showing console\n");
 	}
 	return true;
@@ -3577,8 +3640,79 @@ static bool kiavc_engine_remove_text(const char *id) {
 	SDL_Log("Removed text '%s'\n", id);
 	return true;
 }
+static bool kiavc_engine_load_plugin(const char *name) {
+	if(!name)
+		return false;
+	/* Check if the plugin is already in the list */
+	kiavc_plugin *plugin = kiavc_map_lookup(plugins, name);
+	if(plugin) {
+		/* Plugin already loaded */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't load plugin, plugin '%s' already loaded\n", name);
+		return false;
+	}
+	plugin = kiavc_plugin_load(&plugin_callbacks, name);
+	if(!plugin) {
+		/* Error loading plugin */
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Can't load plugin '%s'\n", name);
+		return false;
+	}
+	kiavc_map_insert(plugins, name, plugin);
+	plugins_list = kiavc_list_append(plugins_list, plugin);
+	/* Done */
+	SDL_Log("Loaded plugin '%s' (%s)\n", name, plugin->get_name());
+	return true;
+}
+static bool kiavc_engine_is_plugin_loaded(const char *name) {
+	if(!name)
+		return false;
+	/* Check if we know about this plugin */
+	kiavc_plugin *plugin = kiavc_map_lookup(plugins, name);
+	return (plugin ? true : false);
+}
 static bool kiavc_engine_quit(void) {
 	SDL_Log("Quitting the engine\n");
 	quit = true;
 	return true;
+}
+
+/* Plugin callbacks */
+static void kiavc_plugins_add_resource(kiavc_plugin_resource *resource) {
+	if(SDL_ThreadID() != thread) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "add_resource not called from the main thread (%lu != %lu): use the update_world() callback for that",
+			SDL_ThreadID(), thread);
+		return;
+	}
+	if(!resource)
+		return;
+	if(kiavc_list_find(plugin_resources, resource))
+		return;
+	resource->res.type = KIAVC_PLUGIN;
+	plugin_resources = kiavc_list_insert_sorted(plugin_resources, resource,
+		(kiavc_list_item_compare)kiavc_engine_sort_resources);
+	if(resource->rendering == KIAVC_PLUGIN_RENDERING_REGULAR) {
+		engine.render_list = kiavc_list_insert_sorted(engine.render_list, resource,
+			(kiavc_list_item_compare)kiavc_engine_sort_resources);
+	}
+}
+static void kiavc_plugins_remove_resource(kiavc_plugin_resource *resource) {
+	if(SDL_ThreadID() != thread) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "remove_resource not called from the main thread (%lu != %lu): use the update_world() callback for that",
+			SDL_ThreadID(), thread);
+		return;
+	}
+	if(!resource)
+		return;
+	plugin_resources = kiavc_list_remove(plugin_resources, resource);
+	engine.render_list = kiavc_list_remove(engine.render_list, resource);
+}
+static void kiavc_plugins_run_command(const char *fmt, ...) {
+	if(SDL_ThreadID() != thread) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Lua function not called from the main thread (%lu != %lu): use the update_world() callback for that",
+			SDL_ThreadID(), thread);
+		return;
+	}
+	va_list args;
+	va_start(args, fmt);
+	kiavc_scripts_run_command(fmt, args);
+	va_end(args);
 }

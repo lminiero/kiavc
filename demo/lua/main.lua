@@ -1,6 +1,6 @@
 -- We may want to make sure we're using a specific version of the engine
 major, minor, patch = getVersion()
-if major ~= 0 or minor ~= 1 or patch ~= 0 then
+if major ~= 0 or minor ~= 2 or patch ~= 0 then
 	kiavcLog('Unsupported KIAVC engine version')
 	return
 end
