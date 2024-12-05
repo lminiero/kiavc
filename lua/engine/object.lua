@@ -1,6 +1,5 @@
 -- Global properties
 objects = {}
-objectInteractions = {}
 selectedObject = nil
 
 -- Objects class
@@ -8,6 +7,10 @@ Object = {
 	inventory = false,
 	ui = false,
 	interactable = true,
+	objectInteractions = {},
+	objectInteractionNotOwned = function()
+		return
+	end,
 	onAction = 'useWith',
 	defaultVerbs = {
 		lookAt = function(self)
@@ -64,23 +67,25 @@ Object = {
 				activeActor:say(text('defaultUse'))
 			end
 		end,
-		useWith = function(self, object)
-			if object == nil or objects[object] == nil then
+		useWith = function(self, objectId)
+			if objectId == nil or objects[objectId] == nil then
 				return
 			end
-			kiavcLog('Trying to use ' .. self.id .. ' with ' .. object)
-			if self.id == object then
+			kiavcLog("Trying to use '" .. self.id .. "' with '" .. objectId .. "'")
+			if self.id == objectId then
 				return
 			end
-			if objectInteractions[object] and objectInteractions[object][self.id] == true then
-				local obj = objects[object]
-				obj.verbs.useWith(obj, self.id)
-				return
-			end
-			if translations == nil then
-				activeActor:say("I can't use them together.")
+			local obj = objects[objectId]
+			if obj.owner == nil then
+				obj.objectInteractionNotOwned()
+			elseif obj.objectInteractions[self.id] ~= nil then
+				obj.objectInteractions[self.id]()
 			else
-				activeActor:say(text('defaultUseWith'))
+				if translations == nil then
+					activeActor:say("I can't use them together.")
+				else
+					activeActor:say(text('defaultUseWith'))
+				end
 			end
 		end,
 		giveTo = function(self, object)
@@ -375,12 +380,7 @@ Object = {
 				waitMs(200)
 			end
 			if selectedObject ~= nil and self.onAction ~= nil and self.verbs[self.onAction] ~= nil then
-				if self.onAction == 'useWith' and objectInteractions[selectedObject] and objectInteractions[selectedObject][self.id] == true then
-					local obj = objects[selectedObject]
-					obj.verbs.useWith(obj, self.id)
-				else
-					self.verbs[self.onAction](self, selectedObject)
-				end
+				self.verbs[self.onAction](self, selectedObject)
 			elseif self.onLeftClick ~= nil and self.verbs[self.onLeftClick] ~= nil then
 				self.verbs[self.onLeftClick](self, selectedObject)
 			end
